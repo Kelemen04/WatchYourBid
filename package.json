@@ -1,0 +1,27 @@
+{
+  "name": "watchyourbid",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "dev:backend": "npm run dev --workspace=backend",
+    "install:all": "npm install"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kelemen04/WatchYourBid.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Kelemen04/WatchYourBid/issues"
+  },
+  "homepage": "https://github.com/Kelemen04/WatchYourBid#readme",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ]
+}
