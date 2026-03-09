@@ -1,17 +1,11 @@
 import express from 'express';
+import {router} from "./routes/index";
 
 const app = express();
-const port = 8000;
+const port = process.env.PORT;
 
-app.get('/', (req,res) => {
-    res.send("Helllo");
-}) 
-
-app.get('/:id', (req,res) => {
-    console.log(`${JSON.stringify(req.query)}`)
-    console.log(`${JSON.stringify(req.headers)}`)
-    res.send(`Sziaa ${req.params.id}`);
-})
+app.use(express.json());
+app.use("/api", router);
 
 app.listen(port, () => {
     console.log(`Server listening on port - ${port}`);
