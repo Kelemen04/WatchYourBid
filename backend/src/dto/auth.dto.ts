@@ -9,7 +9,7 @@ export const RegisterSchema = z.object({
 });
 
 export const LoginSchema = z.object({
-  email: z.string(),
+  username: z.string(),
   password: z.string(),
 });
 

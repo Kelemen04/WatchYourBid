@@ -2,10 +2,10 @@
   "compilerOptions": {
     "rootDir": "./",
     "outDir": "./dist",
+    "typeRoots" : ["./src/types", "./node_modules/@types"],
     "moduleResolution": "bundler",
     "esModuleInterop": true,
     "target": "esnext",
-    "types": ["node"],
     "lib": ["esnext"],
     "sourceMap": true,
     "declaration": true,
