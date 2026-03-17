@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: Inter;
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("../public/fonts/Inter/Inter-VariableFont_opsz,wght.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: Playfair;
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("../public/fonts/Playfair_Display/PlayfairDisplay-VariableFont_wght.ttf") format("truetype");
+}
+
+@theme {
+  --color-background: #0a0a0a;
+  --color-surface: #141414;
+  --color-primary: #c9a84c;
+  --color-primary-hover: #e2c068;
+  --color-text: #f5f5f5;
+  --color-text-muted: #8a8a8a;
+  --color-border: #2a2a2a;
+
+  --font-inter: "Inter", sans-serif;
+  --font-playfair: "Playfair", sans-serif;
+}

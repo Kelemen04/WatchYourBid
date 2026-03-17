@@ -1,7 +1,11 @@
-import "./App.css";
+import { BrowserRouter } from "react-router-dom";
+import "./styles/index.css";
+import AppRouter from "./routes";
 
-function App() {
-  return <h1>Szia</h1>;
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppRouter />
+    </BrowserRouter>
+  );
 }
-
-export default App;

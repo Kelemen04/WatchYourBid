@@ -66,22 +66,18 @@ export const authService = {
   async refresh(token: string) {
     if (!token) throw new Error("No refresh token provided!");
 
-    // 1. Megkeressük az adatbázisban
     const session = await prisma.session.findFirst({
       where: { refreshToken: token }
     });
 
-    // Ha nincs meg, vagy a dátum szerint már lejárt
     if (!session || session.exipresAt < new Date()) {
         if (session) await prisma.session.delete({ where: { id: session.id } });
         throw new Error("Refresh token expired or invalid!");
     }
 
     try {
-      // 2. JWT ellenőrzés
       const decoded = jwt.verify(token, `${process.env.REFRESH_TOKEN_SECRET}`) as UserPayload;
 
-      // 3. Új Access Token
       const accessToken = generateAccessToken({ username: decoded.username });
 
       return { accessToken };
@@ -91,7 +87,6 @@ export const authService = {
   },
 
   async logout(token: string) {
-    // Kijelentkezéskor egyszerűen töröljük a tokent az adatbázisból
     try {
         await prisma.session.deleteMany({
             where: { refreshToken: token }
