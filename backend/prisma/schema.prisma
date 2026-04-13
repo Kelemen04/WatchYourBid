@@ -8,16 +8,72 @@ datasource db {
 }
 
 model User {
-  id                Int       @id @default(autoincrement())
-  firstName         String    @map("first_name")
-  lastName          String    @map("last_name")
-  username          String    @unique
+  id                Int        @id @default(autoincrement())
+  username          String     @unique
+  firstName         String?    @map("first_name")
+  lastName          String?    @map("last_name")
   password          String
-  email             String    @unique
-  passwordResetCode String?   @map("password_reset_code")
-  verified          Boolean   @default(false)
-  createdAt         DateTime  @default(now())
+  email             String     @unique
+  passwordResetCode String?    @map("password_reset_code")
+  verified          UserStatus @default(PENDING)
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  profilePicture    String?
+  role              Role       @default(USER)
+  phoneNumber       String?    @map("phone_number")
+  balance           Int        @default(0)
+  watchList         Auction[]
   sessions          Session[]
+  seller            Seller?
+  buyer             Buyer?
+  bids              Bid[]
+  autoBids          AutoBid[]
+}
+
+enum UserStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  BANNED
+}
+
+enum Role {
+  ADMIN
+  MODERATOR
+  USER
+}
+
+model Seller {
+  id          Int     @id @default(autoincrement())
+  address     Address @relation(fields: [addressId], references: [id])
+  userId      Int     @unique @map("user_id")
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rating      Float   @default(0)
+  description String?
+  addressId   Int     @unique
+}
+
+model Address {
+  id        Int     @id @default(autoincrement())
+  country   String
+  region    String
+  city      String
+  street    String
+  number    String
+  building  String?
+  floor     String?
+  apartment String?
+  zipCode   String  @map("zip_code")
+  buyer     Buyer?
+  seller    Seller?
+}
+
+model Buyer {
+  id                Int     @id @default(autoincrement())
+  userId            Int     @unique @map("user_id")
+  shippingAddress   Address @relation(fields: [shippingAddressId], references: [id])
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shippingAddressId Int     @unique
 }
 
 model Session {
@@ -25,6 +81,61 @@ model Session {
   userId       Int      @map("user_id")
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   refreshToken String   @map("refresh_token")
-  exipresAt    DateTime @map("expires_at")
+  expiresAt    DateTime @map("expires_at")
   createdAt    DateTime @default(now()) @map("created_at")
+}
+
+enum AuctionType {
+  ENGLISH
+  DUTCH
+  VICKREY
+  FPSB
+}
+
+enum AuctionStatus {
+  PENDING
+  UPCOMING
+  ACTIVE
+  ENDED
+  CANCELLED
+}
+
+model Auction {
+  id            Int           @id @default(autoincrement())
+  user          User?         @relation(fields: [userId], references: [id])
+  userId        Int?
+  status        AuctionStatus @default(PENDING)
+  auctionType   AuctionType   @default(ENGLISH) @map("auction_type")
+  startTime     DateTime      @map("start_time")
+  endTime       DateTime      @map("end_time")
+  minimalPrice  Int?          @map("minimal_price")
+  currentPrice  Int
+  startingPrice Int           @default(0) @map("starting_price")
+  buyingPrice   Int?          @map("buying_price")
+  timeInterval  Int?          @map("time_interval")
+  moneyInterval Int?          @map("money_interval")
+  isAscending   Boolean?      @map("is_ascending")
+  bids          Bid[]
+  autoBids      AutoBid[]
+}
+
+model Bid {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  auction   Auction  @relation(fields: [auctionId], references: [id], onDelete: Cascade)
+  bidTime   DateTime @default(now()) @map("bid_time")
+  bidAmount Int      @map("bid_amount")
+  userId    Int
+  auctionId Int
+}
+
+model AutoBid {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  auction   Auction  @relation(fields: [auctionId], references: [id], onDelete: Cascade)
+  bidTime   DateTime @default(now()) @map("bid_time")
+  maxAmount Int      @map("max_amount")
+  increment Int
+  userId    Int
+  auctionId Int
 }

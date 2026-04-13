@@ -1,6 +1,6 @@
 export default function LoginForm() {
   return (
-    <form className="flex flex-col bg-pimary text-center px-30">
+    <form className="flex flex-col bg-pimary text-center px-20">
       <label className="text-left ml-30 py-2 font-inter text-text-muted text-xl">
         Username:<br></br>
         <input type="text" className="w-xs border rounded-2xl" />

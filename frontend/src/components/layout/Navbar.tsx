@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 
 export default function Navbar() {
   return (
-    <nav className="flex items-center flex-row font-playfair font-bold text-primary justify-between gap-x-20 w-screen h-20 bg-surface px-10">
+    <nav className="flex items-center flex-row font-playfair font-bold text-primary justify-between gap-x-20 w-full h-20 bg-surface px-10">
       <Link to="/home" className="h-full">
         <img
           src="./public/images/WatchYourBid1.png"

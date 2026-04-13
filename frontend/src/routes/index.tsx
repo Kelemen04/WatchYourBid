@@ -1,5 +1,5 @@
 import { Routes, Route } from "react-router";
-import Dashboard from "../pages/Dashboard";
+import Home from "../pages/Home";
 import LoginPage from "../pages/LoginPage";
 import Navbar from "../components/layout/Navbar";
 
@@ -8,7 +8,7 @@ export default function AppRouter() {
     <>
       <Navbar />
       <Routes>
-        <Route path="/" element={<Dashboard />} />
+        <Route path="/home" element={<Home />} />
         <Route path="/login" element={<LoginPage />} />
       </Routes>
     </>
