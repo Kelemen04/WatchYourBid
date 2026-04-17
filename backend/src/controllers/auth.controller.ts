@@ -7,7 +7,7 @@ export async function register(req: Request, res: Response) {
 
   try {
     const user = await authService.register(body);
-    res.status(201).json({ id: user.id, username: user.username });
+    res.status(201).json({ username: user.user.username });
   } catch(e) {
     return res.status(400).json({ error: e instanceof Error ? e.message : "Unknown error" });
   }
@@ -24,6 +24,16 @@ export async function login(req: Request, res: Response) {
   }
 }
 
+export async function logout(req: Request, res: Response) {
+  const token = req.body.token;
+  try {
+    await authService.logout(token)
+    res.status(201).json({ message: "Logout successful!"})
+  } catch (e) {
+     return res.status(400).json({ error: e instanceof Error ? e.message : "Unknown error" });
+  }
+}
+
 export async function refresh(req: Request, res: Response) {
   const refreshToken = req.body.token;
 
@@ -33,8 +43,4 @@ export async function refresh(req: Request, res: Response) {
   } catch(e) {
     return res.status(400).json({ error: e instanceof Error ? e.message : "Unknown error" });
   }
-}
-
-export async function getMe(req: Request, res: Response) {
-  res.status(200).json(req.user);
 }

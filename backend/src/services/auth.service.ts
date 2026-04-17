@@ -18,15 +18,16 @@ export const authService = {
 
     const hashedPassword = await argon2.hash(data.password);
 
-    return await prisma.user.create({
+    const user = await prisma.user.create({
       data: {
-        firstName: data.firstName,
-        lastName: data.lastName,
         username: data.username,
         password: hashedPassword,
         email: data.email,
       },
     });
+
+    const { password, ...userWithoutPassword } = user;
+    return { user: userWithoutPassword };
   },
 
   async login(data: LoginDTO) {
@@ -43,7 +44,7 @@ export const authService = {
       throw new Error("Wrong password!");
     }
 
-    const userPayload: UserPayload = { username: existing.username };
+    const userPayload: UserPayload = { username: existing.username, id: existing.id, role: existing.role };
 
     const accessToken = generateAccessToken(userPayload);
     const refreshToken = jwt.sign(userPayload, `${process.env.REFRESH_TOKEN_SECRET}`, { expiresIn: '7d' });
@@ -54,7 +55,7 @@ export const authService = {
     await prisma.session.create({
       data: {
         refreshToken: refreshToken,
-        exipresAt: expireDate,
+        expiresAt: expireDate,
         userId: existing.id
       }
     });
@@ -70,7 +71,7 @@ export const authService = {
       where: { refreshToken: token }
     });
 
-    if (!session || session.exipresAt < new Date()) {
+    if (!session || session.expiresAt < new Date()) {
         if (session) await prisma.session.delete({ where: { id: session.id } });
         throw new Error("Refresh token expired or invalid!");
     }
@@ -78,7 +79,7 @@ export const authService = {
     try {
       const decoded = jwt.verify(token, `${process.env.REFRESH_TOKEN_SECRET}`) as UserPayload;
 
-      const accessToken = generateAccessToken({ username: decoded.username });
+      const accessToken = generateAccessToken({ username: decoded.username, id: decoded.id, role: decoded.role });
 
       return { accessToken };
     } catch (e) {

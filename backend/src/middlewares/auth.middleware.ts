@@ -2,7 +2,6 @@ import type { Request, Response,NextFunction } from "express";
 import type { ZodType } from "zod";
 import "dotenv/config";
 import jwt from "jsonwebtoken";
-import { error } from "console";
 import type { UserPayload } from "../types/express";
 
 export function validate(schema: ZodType){
@@ -25,7 +24,7 @@ export function authenticateToken(){
         const token = authHeader && authHeader.split(' ')[1];
 
         if(token == null){
-            return res.status(401);
+            return res.sendStatus(401);
         }
 
         jwt.verify(token,`${process.env.ACCESS_TOKEN_SECRET}`, (err,user) => {
@@ -40,5 +39,5 @@ export function authenticateToken(){
 }
 
 export function generateAccessToken(user: UserPayload){
-    return jwt.sign(user, `${process.env.ACCESS_TOKEN_SECRET}`, { expiresIn: '10s' })
+    return jwt.sign(user, `${process.env.ACCESS_TOKEN_SECRET}`, { expiresIn: '15m' })
 }
