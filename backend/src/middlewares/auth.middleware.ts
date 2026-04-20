@@ -41,3 +41,7 @@ export function authenticateToken(){
 export function generateAccessToken(user: UserPayload){
     return jwt.sign(user, `${process.env.ACCESS_TOKEN_SECRET}`, { expiresIn: '15m' })
 }
+
+export function generateRefreshToken(user: UserPayload){
+    return jwt.sign(user, `${process.env.REFRESH_TOKEN_SECRET}`, { expiresIn: '7d' })
+}

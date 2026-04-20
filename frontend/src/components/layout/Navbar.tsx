@@ -1,6 +1,17 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useLogout } from "../../hooks/useAuth";
 
 export default function Navbar() {
+  const navigate = useNavigate();
+  const logout = useLogout();
+
+  const handleLogout = (e: React.MouseEvent) => {
+    console.log("ITT");
+    e.preventDefault();
+    logout();
+    navigate("/home");
+  };
+
   return (
     <nav className="flex items-center flex-row font-playfair font-bold text-primary justify-between gap-x-20 w-full h-20 bg-surface px-10">
       <Link to="/home" className="h-full">
@@ -10,7 +21,7 @@ export default function Navbar() {
           className="h-full"
         />
       </Link>
-      <div className="flex flex-row  items-center gap-x-15">
+      <div className="flex flex-row items-center gap-x-15">
         <div className="relative group">
           <button className="flex items-center gap-1 hover:text-amber-500 transition-colors uppercase font-medium font-bold">
             Category
@@ -69,6 +80,12 @@ export default function Navbar() {
         </Link>
         <Link to="/register" className="px-2">
           Register
+        </Link>
+        <Link to="/logout" onClick={handleLogout} className="px-2">
+          Logout
+        </Link>
+        <Link to="/dashboard" className="px-2">
+          Dashboard
         </Link>
       </div>
     </nav>

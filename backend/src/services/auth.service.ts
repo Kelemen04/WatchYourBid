@@ -3,7 +3,7 @@ import { prisma } from "../db/client";
 import type { LoginDTO, RegisterDTO } from "../dto/auth.dto";
 import jwt from "jsonwebtoken";
 import "dotenv/config";
-import { generateAccessToken } from "../middlewares/auth.middleware";
+import { generateAccessToken, generateRefreshToken } from "../middlewares/auth.middleware";
 import type { UserPayload } from "../types/express";
 
 export const authService = {
@@ -47,7 +47,7 @@ export const authService = {
     const userPayload: UserPayload = { username: existing.username, id: existing.id, role: existing.role };
 
     const accessToken = generateAccessToken(userPayload);
-    const refreshToken = jwt.sign(userPayload, `${process.env.REFRESH_TOKEN_SECRET}`, { expiresIn: '7d' });
+    const refreshToken = generateRefreshToken(userPayload);
 
     const expireDate = new Date();
     expireDate.setDate(expireDate.getDate() + 7);
@@ -89,6 +89,7 @@ export const authService = {
 
   async logout(token: string) {
     try {
+        console.log(token)
         await prisma.session.deleteMany({
             where: { refreshToken: token }
         });

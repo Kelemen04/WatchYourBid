@@ -18,29 +18,40 @@ export async function login(req: Request, res: Response) {
 
   try {
     const user = await authService.login(body);
-    res.status(201).json({ message: "Login successful!", accessToken: user.accessToken, refreshToken: user.refreshToken, user: user.user});
+    res.cookie('refreshToken', user.refreshToken ,{ httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 });
+    res.status(200).json({ message: "Login successful!", accessToken: user.accessToken, username: user.user.username, role: user.user.role, id: user.user.id });
   } catch(e) {
     return res.status(400).json({ error: e instanceof Error ? e.message : "Unknown error" });
   }
 }
 
 export async function logout(req: Request, res: Response) {
-  const token = req.body.token;
+  const refreshToken = req.cookies.refreshToken;
+  console.log("ITT IS ", refreshToken);
   try {
-    await authService.logout(token)
+    if( refreshToken ){
+      await authService.logout(refreshToken)
+    }
+
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+    });
+
     res.status(201).json({ message: "Logout successful!"})
   } catch (e) {
+    res.clearCookie('refreshToken');
      return res.status(400).json({ error: e instanceof Error ? e.message : "Unknown error" });
   }
 }
 
 export async function refresh(req: Request, res: Response) {
-  const refreshToken = req.body.token;
+  const refreshToken = req.cookies.refreshToken;
 
   try {
     const refresh = await authService.refresh(refreshToken);
     res.status(200).json({ message: "Token refreshed!", accessToken: refresh.accessToken });
   } catch(e) {
+    res.clearCookie('refreshToken')
     return res.status(400).json({ error: e instanceof Error ? e.message : "Unknown error" });
   }
 }
