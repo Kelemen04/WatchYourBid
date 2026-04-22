@@ -201,7 +201,7 @@ export const authService = {
 
       const forgotToken = jwt.sign({ userId: existing.id }, process.env.RESET_PASSWORD_TOKEN_SECRET as string, { expiresIn: '1h' });
 
-      const forgotLink = `http://localhost:8080/api/auth/reset-password?token=${forgotToken}`;
+      const forgotLink = `http://localhost:8080/reset-password?token=${forgotToken}`;
     
       await transporter.sendMail({
         to: existing.email,

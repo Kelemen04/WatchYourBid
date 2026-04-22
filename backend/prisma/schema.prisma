@@ -42,6 +42,7 @@ enum Role {
   ADMIN
   MODERATOR
   USER
+  SUPER_ADMIN
 }
 
 model Seller {
