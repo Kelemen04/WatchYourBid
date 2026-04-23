@@ -6,6 +6,7 @@ export async function register(req: Request, res: Response) {
   const body = req.body as RegisterDTO;
 
   try {
+    console.log("ITI");
     const user = await authService.register(body);
     res.status(201).json({ username: user.user.username });
   } catch(e) {
@@ -71,7 +72,7 @@ export async function resendEmailVerification(req: Request, res: Response) {
 
   try{
     const resendEmailVerification = await authService.resendEmailVerification(body);
-    res.status(200).json({ message: "Email verification resent!"})
+    res.status(200).json(resendEmailVerification)
   }  catch(e) {
     return res.status(400).json({ error: e instanceof Error ? e.message : "Unknown error" });
   }
@@ -92,6 +93,7 @@ export async function resetPassword(req: Request, res: Response) {
   const body = req.body as ResetPasswordDTO;
 
   try{
+    console.log("CONT")
     const resetPassword = await authService.resetPassword(body);
     res.status(200).json(resetPassword);
   } catch(e){

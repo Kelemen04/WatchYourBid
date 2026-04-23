@@ -1,7 +1,10 @@
 import type { Request, Response,NextFunction } from "express";
 import Redis from 'ioredis';
 
-const redis = new Redis();
+const redis = new Redis({
+  host: process.env.REDIS_HOST || 'redis',
+  port: process.env.REDIS_PORT ? Number(process.env.REDIS_PORT) : 6379,
+});
 
 export function rateLimiter(){
     return async (req: Request, res: Response, next: NextFunction) => {

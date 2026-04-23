@@ -68,6 +68,7 @@ export default function LoginForm() {
         >
           {isPending ? "Logging in..." : "Login"}
         </button>
+        <a href="/forgot-password">Forgot password</a>
       </form>
     </>
   );

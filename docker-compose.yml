@@ -22,6 +22,7 @@ services:
     backend:
       depends_on:
         - database
+        - redis
       build: ./backend
       env_file:
         - ./backend/.env
@@ -55,5 +56,14 @@ services:
       volumes:
         - watchyourbid:/var/lib/postgresql/data
 
+    redis:
+      image: redis:alpine
+      restart: always
+      ports: 
+        - 6379:6379
+      volumes:
+        - redis_data:/data
+
 volumes:
   watchyourbid:
+  redis_data:
