@@ -15,7 +15,7 @@ model User {
   password          String
   email             String     @unique
   passwordResetCode String?    @map("password_reset_code")
-  verified          UserStatus @default(PENDING)
+  status            UserStatus @default(PENDING)
   emailVerified     Boolean    @default(false) @map("email_verified")
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
@@ -92,6 +92,7 @@ enum AuctionType {
   DUTCH
   VICKREY
   FPSB
+  JAPANESE
 }
 
 enum AuctionStatus {
@@ -103,32 +104,45 @@ enum AuctionStatus {
 }
 
 model Auction {
-  id            Int           @id @default(autoincrement())
-  user          User?         @relation(fields: [userId], references: [id])
-  userId        Int?
-  status        AuctionStatus @default(PENDING)
-  auctionType   AuctionType   @default(ENGLISH) @map("auction_type")
-  startTime     DateTime      @map("start_time")
-  endTime       DateTime      @map("end_time")
-  minimalPrice  Int?          @map("minimal_price")
+  id          Int           @id @default(autoincrement())
+  user        User?         @relation(fields: [userId], references: [id])
+  userId      Int?
+  status      AuctionStatus @default(PENDING)
+  auctionType AuctionType   @default(ENGLISH) @map("auction_type")
+
+  startTime DateTime @map("start_time")
+  endTime   DateTime @map("end_time")
+
+  reservePrice  Int? @map("reserve_price")
   currentPrice  Int
-  startingPrice Int           @default(0) @map("starting_price")
-  buyingPrice   Int?          @map("buying_price")
-  timeInterval  Int?          @map("time_interval")
-  moneyInterval Int?          @map("money_interval")
-  isAscending   Boolean?      @map("is_ascending")
-  bids          Bid[]
-  autoBids      AutoBid[]
+  startingPrice Int  @default(0) @map("starting_price")
+
+  buyingPrice Int? @map("buying_price")
+
+  title       String
+  description String @db.Text
+
+  tickInterval    Int?       @map("tick_interval")
+  moneyInterval   Int?       @map("money_interval")
+  minBidIncrement Int?       @default(1) @map("min_bid_increment")
+  isAscending     Boolean?   @map("is_ascending")
+  bids            Bid[]
+  autoBids        AutoBid[]
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  watchItem       WatchItem?
+  trendings       Trendings?
 }
 
 model Bid {
   id        Int      @id @default(autoincrement())
-  user      User     @relation(fields: [userId], references: [id])
-  auction   Auction  @relation(fields: [auctionId], references: [id], onDelete: Cascade)
   bidTime   DateTime @default(now()) @map("bid_time")
   bidAmount Int      @map("bid_amount")
+  isWinner  Boolean  @default(false) @map("is_winner")
   userId    Int
   auctionId Int
+  user      User     @relation(fields: [userId], references: [id])
+  auction   Auction  @relation(fields: [auctionId], references: [id], onDelete: Cascade)
 }
 
 model AutoBid {
@@ -140,4 +154,89 @@ model AutoBid {
   increment Int
   userId    Int
   auctionId Int
+}
+
+enum WatchCategory {
+  WRISTWATCH
+  POCKETWATCH
+  SMARTWATCH
+  CLOCK
+}
+
+model WatchItem {
+  id             Int     @id @default(autoincrement())
+  brand          String
+  model          String
+  productionYear Int?    @map("production_year")
+  material       String
+  condition      String
+  weight         Float?
+  hasBox         Boolean @default(false) @map("has_box")
+  hasPapers      Boolean @default(false) @map("has_papers")
+  isOriginal     Boolean @default(true) @map("is_original")
+
+  auctionId Int     @unique @map("auction_id")
+  auction   Auction @relation(fields: [auctionId], references: [id], onDelete: Cascade)
+
+  category WatchCategory
+
+  wristwatch  Wristwatch?
+  pocketWatch PocketWatch?
+  smartwatch  Smartwatch?
+  clock       Clock?
+}
+
+model Wristwatch {
+  id          Int       @id @default(autoincrement())
+  watchItemId Int       @unique @map("watch_item_id")
+  watchItem   WatchItem @relation(fields: [watchItemId], references: [id], onDelete: Cascade)
+
+  movementType    String @map("movement_type")
+  caseDiameter    Int    @map("case_diameter")
+  waterResistance String @map("water_resistance")
+  strapMaterial   String @map("strap_material")
+  glassType       String @map("glass_type")
+}
+
+model PocketWatch {
+  id          Int       @id @default(autoincrement())
+  watchItemId Int       @unique @map("watch_item_id")
+  watchItem   WatchItem @relation(fields: [watchItemId], references: [id], onDelete: Cascade)
+
+  caseType      String  @map("case_type")
+  movementType  String  @map("movement_type")
+  hasChain      Boolean @default(false) @map("has_chain")
+  complications String?
+}
+
+model Smartwatch {
+  id          Int       @id @default(autoincrement())
+  watchItemId Int       @unique @map("watch_item_id")
+  watchItem   WatchItem @relation(fields: [watchItemId], references: [id], onDelete: Cascade)
+
+  os            String
+  batteryLife   Int    @map("battery_life")
+  screenType    String @map("screen_type")
+  sensors       String
+  compatibility String
+}
+
+model Clock {
+  id          Int       @id @default(autoincrement())
+  watchItemId Int       @unique @map("watch_item_id")
+  watchItem   WatchItem @relation(fields: [watchItemId], references: [id], onDelete: Cascade)
+
+  clockType   String  @map("clock_type")
+  powerSource String  @map("power_source")
+  chimeType   String? @map("chime_type")
+  dimensions  String
+}
+
+model Trendings {
+  id        Int     @id @default(autoincrement())
+  auctionId Int     @unique @map("auction_id")
+  auction   Auction @relation(fields: [auctionId], references: [id], onDelete: Cascade)
+
+  clicks    Int      @default(0)
+  updatedAt DateTime @updatedAt
 }

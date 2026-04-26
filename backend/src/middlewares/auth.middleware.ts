@@ -27,7 +27,7 @@ export function authenticateToken(){
             return res.sendStatus(401);
         }
 
-        jwt.verify(token,`${process.env.ACCESS_TOKEN_SECRET}`, (err,user) => {
+        jwt.verify(token,process.env.ACCESS_TOKEN_SECRET as string, (err,user) => {
             if(err){
                 return res.status(403).json({ error: "error"})
             }
