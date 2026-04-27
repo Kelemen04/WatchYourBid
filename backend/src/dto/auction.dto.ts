@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { AuctionType } from "../../generated/prisma";
-import { createAuction } from "../controllers/auction.controller";
+import { AuctionType, WatchCategory } from "../../generated/prisma";
 
 export const CreateAuctionSchema = z.object({
   title: z.string().min(5, "Title too short").max(200),
@@ -60,7 +59,51 @@ export const CreateAuctionSchema = z.object({
   }).optional(),
 });
 
+export const AuctionFilterSchema = z.object({
+  searchTerm: z.string({ error: "Search term must be a text!" }).optional(),
+  
+  category: z.nativeEnum(WatchCategory, {
+    error: () => ({ message: "The selected category does not exist!" })
+  }).optional(),
+  minPrice: z.coerce
+    .number({ error: "Minimum price must be a number!" })
+    .min(0, "Price cannot be negative!")
+    .optional(),
+  maxPrice: z.coerce
+    .number({ error: "Maximum price must be a number!" })
+    .min(0, "Price cannot be negative!")
+    .optional(),
+  auctionType: z.nativeEnum(AuctionType, {
+    error: () => ({ message: "Invalid auction type!" })
+  }).optional(),
+  brand: z.string({ error: "Brand must be a text!" }).optional(),
+  condition: z.string({ error: "Condition must be a text!" }).optional(),
+  material: z.string({ error: "Material must be a text!" }).optional(),
+  minYear: z.coerce
+    .number({ error: "Year must be a number!" })
+    .min(0, "Year cannot be negative!")
+    .optional(),
+  maxYear: z.coerce
+    .number({ error: "Year must be a number!" })
+    .min(0, "Year cannot be negative!")
+    .optional(),
+  sortBy: z.string({ error: "Sort by must be a text!" })
+    .optional()
+    .default("newest"),
+  skip: z.coerce
+    .number({ error: "Skip must be a number!" })
+    .min(0, "Skip cannot be negative!")
+    .optional()
+    .default(0),
+  take: z.coerce
+    .number({ error: "Take must be a number!" })
+    .min(1, "Take must be at least 1!")
+    .optional()
+    .default(20),
+});
+
 export const UpdateAuctionSchema = CreateAuctionSchema.partial();
 
 export type CreateAuctionDTO = z.infer<typeof CreateAuctionSchema>;
 export type UpdateAuctionDTO = z.infer<typeof UpdateAuctionSchema>;
+export type AuctionFilterDTO = z.infer<typeof AuctionFilterSchema>;

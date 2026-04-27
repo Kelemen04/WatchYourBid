@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { WatchCategory } from "../../generated/prisma";
 import { prisma } from "../db/client";
-import { error } from "console";
+import { AuctionFilterSchema } from "../dto/auction.dto";
 
 export function validateId(req: Request, res: Response, next: NextFunction){
     const id = Number(req.params.id);
@@ -45,4 +45,19 @@ export async function incrementClick(req: Request, res: Response, next: NextFunc
     }
 
     next()
+}
+
+export function validateFilters(req: Request, res: Response, next: NextFunction){
+
+    const result = AuctionFilterSchema.safeParse(req.query);
+
+    if(!result.success){
+        return res.status(400).json({ error: "Invalid filter parameter!", details: result.error.format()})
+    }
+
+    const validData = result.data;
+
+    req.filters = validData;
+
+    next();
 }

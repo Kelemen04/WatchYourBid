@@ -1,5 +1,6 @@
 import express from "express";
-import type { Role, User } from "../../../generated/prisma";
+import type { AuctionType, Role, User, WatchCategory } from "../../../generated/prisma";
+import type { AuctionFilterDTO } from "../../dto/auction.dto";
 
 interface UserPayload {
   username: string;
@@ -15,6 +16,7 @@ declare global {
       user?: UserPayload;
       validatedId?: number;
       validatedCategory?: string;
+      filters: AuctionFilterDTO;
     }
   }
 }

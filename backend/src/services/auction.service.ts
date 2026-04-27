@@ -1,7 +1,8 @@
-import type { CreateAuctionDTO } from "../dto/auction.dto";
+import type { AuctionFilterDTO, CreateAuctionDTO } from "../dto/auction.dto";
 import { prisma } from "../db/client";
 import type { WatchCategory } from "../../generated/prisma";
-import { networkInterfaces } from "os";
+import { auctionTasks } from "../jobs/auction.queues";
+import { de } from "zod/locales";
 
 function parseSortBy(sortBy: string) {
     switch (sortBy) {
@@ -42,6 +43,7 @@ export const auctionService = {
                 currentPrice: data.startingPrice,
                 auctionType: data.auctionType,
                 userId: userId,
+                status: data.startTime.getTime() > Date.now() ? "UPCOMING" : "ACTIVE",
 
                 reservePrice: data.reservePrice ?? null,
                 buyingPrice: data.buyingPrice ?? null,
@@ -63,7 +65,6 @@ export const auctionService = {
                         hasPapers: data.hasPapers ?? false,
                         isOriginal: data.isOriginal ?? true,
 
-                        // --- Wristwatch ---
                         ...(data.category === 'WRISTWATCH' && data.wristwatch ? {
                         wristwatch: {
                             create: {
@@ -87,7 +88,6 @@ export const auctionService = {
                         }
                         } : {}),
 
-                        // --- Smartwatch ---
                         ...(data.category === 'SMARTWATCH' && data.smartwatch ? {
                         smartwatch: {
                             create: {
@@ -115,33 +115,61 @@ export const auctionService = {
             }
         })
 
+        if (auction.status === "ACTIVE") {
+            const date = new Date().getTime();
+            const date2 = auction.endTime.getTime();
+            const delay = Math.max(0, date2 - date);
+
+            await auctionTasks.add("auction-close-job", 
+                { auctionId: auction.id, action: "CLOSE" }, 
+                { delay: delay, jobId: `close-${auction.id}` }
+            );
+
+            switch(auction.auctionType) { 
+                case "DUTCH": { 
+                    await auctionTasks.add("auction-dutch-job", 
+                        { auctionId: auction.id, action: "PRICE_DROP" }, 
+                        { delay: auction.tickInterval || 0, jobId: `price-drop-${auction.id}-${Date.now()}` }
+                    );
+                    break; 
+                } 
+                case "JAPANESE": { 
+                    await auctionTasks.add("auction-japanese-job", 
+                        { auctionId: auction.id, action: "PRICE_UP" }, 
+                        { delay: auction.tickInterval || 0, jobId: `price-up-${auction.id}-${Date.now()}` }
+                    );
+                    break; 
+                }
+            }
+        } else if (auction.status === "UPCOMING") {
+            const startDelay = Math.max(0, auction.startTime.getTime() - Date.now());
+            await auctionTasks.add("auction-start-job", 
+                { auctionId: auction.id, action: "START" }, 
+                { delay: startDelay, jobId: `start-${auction.id}` }
+            );
+        }
+
         return { message: "Auction created successfully", auction}
     },
     async deleteAuction(auctionId: number, userId: number){
-        const auction = await prisma.auction.findUnique({
-            where: {id: auctionId}
-        })
-
         const user = await prisma.user.findUnique({
             where: {id: userId}
         })
 
-        if(auction?.userId !== userId && user?.role != "ADMIN" && user?.role != "MODERATOR"){
-            throw new Error("You don't have permission to delete this auction!")
-        }
-
-        const hasBids = await prisma.auction.findUnique({
+        const auction = await prisma.auction.findUnique({
             where: { id: auctionId },
             include: { _count: { select: { bids: true } } }
         })
 
-        if(!hasBids){
+        if(!auction){
             throw new Error("Auction not found!");
         }
 
-        const bidCount = hasBids._count?.bids ?? 0;
+        if(auction.userId !== userId && user?.role != "ADMIN" && user?.role != "MODERATOR"){
+            throw new Error("You don't have permission to delete this auction!")
+        }
 
-        if (bidCount > 0) {
+        if (auction._count.bids > 0) {
             throw new Error("You can't delete an auction that has active bids!");
         }
 
@@ -149,34 +177,38 @@ export const auctionService = {
             where: { id: auctionId}
         })
 
+        const deleteJob = await auctionTasks.getJob(`close-${auctionId}`)
+        if(deleteJob){
+            await deleteJob?.remove();
+            console.log("Job torolve: ", `${deleteJob.id}`);
+        }
+
+        const delayedJobs = await auctionTasks.getDelayed();
+        for (const job of delayedJobs) {
+            if (job.id?.startsWith(`price-drop-${auctionId}`) || job.id?.startsWith(`price-up-${auctionId}`) || job.id?.startsWith(`start-${auctionId}`)) {
+            await job.remove();
+            console.log(`Japanese or dutch job deleted: ${job.id}`);
+            }
+        }
+
         return { message: "Auction deletion completed successfully!"}
     },
     async updateAuction(auctionId: number, userId: number, data: CreateAuctionDTO){
         const auction = await prisma.auction.findUnique({
-            where: {id: auctionId}
-        })
-
-        const user = await prisma.user.findUnique({
-            where: {id: userId}
-        })
-
-        if(auction?.userId !== userId){
-            throw new Error("You don't have permission to update this auction!")
-        }
-
-        const hasBids = await prisma.auction.findUnique({
             where: { id: auctionId },
             include: { _count: { select: { bids: true } } }
         })
 
-        if(!hasBids){
+        if(!auction){
             throw new Error("Auction not found!");
         }
 
-        const bidCount = hasBids._count?.bids ?? 0;
+        if(auction.userId !== userId){
+            throw new Error("You don't have permission to update this auction!")
+        }
 
-        if (bidCount > 0) {
-            throw new Error("You can't delete an auction that has active bids!");
+        if (auction._count.bids > 0) {
+            throw new Error("You can't update an auction that has active bids!");
         }
 
         const updated = await prisma.auction.update({
@@ -190,7 +222,7 @@ export const auctionService = {
                 currentPrice: data.startingPrice,
                 auctionType: data.auctionType,
                 userId: userId,
-
+                ...(data.startTime.getTime() > Date.now() ?{ status: "UPCOMING" } : {status: "ACTIVE"} ),
                 reservePrice: data.reservePrice ?? null,
                 buyingPrice: data.buyingPrice ?? null,
                 tickInterval: data.tickInterval ?? null,
@@ -211,7 +243,6 @@ export const auctionService = {
                         hasPapers: data.hasPapers ?? false,
                         isOriginal: data.isOriginal ?? true,
 
-                        // --- Wristwatch ---
                         ...(data.category === 'WRISTWATCH' && data.wristwatch ? {
                         wristwatch: {
                             create: {
@@ -235,7 +266,6 @@ export const auctionService = {
                         }
                         } : {}),
 
-                        // --- Smartwatch ---
                         ...(data.category === 'SMARTWATCH' && data.smartwatch ? {
                         smartwatch: {
                             create: {
@@ -263,6 +293,54 @@ export const auctionService = {
             }
         })
 
+        const deleteJob = await auctionTasks.getJob(`close-${auctionId}`)
+        if(deleteJob){
+            await deleteJob?.remove();
+            console.log("Job torolve: ", `${deleteJob.id}`);
+        }
+
+        const delayedJobs = await auctionTasks.getDelayed();
+        for (const job of delayedJobs) {
+            if (job.id?.startsWith(`price-drop-${auctionId}`) || job.id?.startsWith(`price-up-${auctionId}`) || job.id?.startsWith(`start-${auctionId}`)) {
+            await job.remove();
+            console.log(`Japanese or dutch job deleted: ${job.id}`);
+            }
+        }
+
+        if (updated.status === "ACTIVE") {
+            const date = new Date().getTime();
+            const date2 = updated.endTime.getTime();
+            const delay = Math.max(0, date2 - date);
+
+            await auctionTasks.add("auction-close-job", 
+                { auctionId: updated.id, action: "CLOSE" }, 
+                { delay: delay, jobId: `close-${updated.id}` }
+            );
+
+            switch(updated.auctionType) { 
+                case "DUTCH": { 
+                    await auctionTasks.add("auction-dutch-job", 
+                        { auctionId: updated.id, action: "PRICE_DROP" }, 
+                        { delay: updated.tickInterval || 0, jobId: `price-drop-${updated.id}-${Date.now()}` }
+                    );
+                    break; 
+                } 
+                case "JAPANESE": { 
+                    await auctionTasks.add("auction-japanese-job", 
+                        { auctionId: updated.id, action: "PRICE_UP" }, 
+                        { delay: updated.tickInterval || 0, jobId: `price-up-${updated.id}-${Date.now()}` }
+                    );
+                    break; 
+                }
+            }
+        } else if (updated.status === "UPCOMING") {
+            const startDelay = Math.max(0, updated.startTime.getTime() - Date.now());
+            await auctionTasks.add("auction-start-job", 
+                { auctionId: updated.id, action: "START" }, 
+                { delay: startDelay, jobId: `start-${updated.id}` }
+            );
+        }
+
         return { message: "Auction updated successfully!"}
     },
     async getHomeAuctions(){
@@ -272,47 +350,32 @@ export const auctionService = {
                 where: { updatedAt: { gte: trendingDate }},
                 orderBy: { clicks: "desc"},
                 take: 20,
+                include: { auction: true }
             }),
             prisma.auction.findMany({ 
                 orderBy: { startTime: "desc"},
                 take: 20,
             }),
             prisma.auction.findMany({ 
-                where: { 
-                    watchItem: {
-                        category: "SMARTWATCH"
-                    }
-                },
+                where: { watchItem: { category: "SMARTWATCH" } },
                 include: { watchItem: true },
                 orderBy: {startTime: "desc"},
                 take: 20,
             }),
             prisma.auction.findMany({ 
-                where: { 
-                    watchItem: {
-                        category: "CLOCK"
-                    }
-                },
+                where: { watchItem: { category: "CLOCK" } },
                 include: { watchItem: true },
                 orderBy: {startTime: "desc"},
                 take: 20,
             }),
             prisma.auction.findMany({ 
-                where: { 
-                    watchItem: {
-                        category: "WRISTWATCH"
-                    }
-                },
+                where: { watchItem: { category: "WRISTWATCH" } },
                 include: { watchItem: true },
                 orderBy: {startTime: "desc"},
                 take: 20,
             }),
             prisma.auction.findMany({ 
-                where: { 
-                    watchItem: {
-                        category: "POCKETWATCH"
-                    }
-                },
+                where: { watchItem: { category: "POCKETWATCH" } },
                 include: { watchItem: true },
                 orderBy: {startTime: "desc"},
                 take: 20,
@@ -338,74 +401,54 @@ export const auctionService = {
                         clock: true
                     }
                 }
-
             }
         })
 
         return result;
     },
-    async getAuctionByFilters(filters: any) {
-        const now = new Date();
-
+    async getAuctionByFilters(filters: AuctionFilterDTO) {
         const result = await prisma.auction.findMany({
             where: {
                 status: "ACTIVE",
-                
                 ...(filters.searchTerm ? {
                     OR: [
-                    { title: { contains: filters.searchTerm, mode: "insensitive" } },
-                    { description: { contains: filters.searchTerm, mode: "insensitive" } },
-                    { watchItem: { brand: { contains: filters.searchTerm, mode: "insensitive" } } },
-                    { watchItem: { model: { contains: filters.searchTerm, mode: "insensitive" } } },
-                    ]
+                        { title: { contains: filters.searchTerm, mode: "insensitive" } },
+                        { description: { contains: filters.searchTerm, mode: "insensitive" } },
+                        { watchItem: { brand: { contains: filters.searchTerm, mode: "insensitive" } } },
+                        { watchItem: { model: { contains: filters.searchTerm, mode: "insensitive" } } },
+                    ],
                 } : {}),
                 currentPrice: {
-                    gte: filters.minPrice ?? undefined,
-                    lte: filters.maxPrice ?? undefined,
+                    gte: filters.minPrice,
+                    lte: filters.maxPrice,
                 },
-                auctionType: filters.auctionType ?? undefined,
-                buyingPrice: filters.onlyWithBuyingPrice ? { not: null } : undefined,
-
-                endTime: filters.endingSoon ? {
-                    gte: now,
-                    lte: new Date(now.getTime() + 24 * 60 * 60 * 1000)
-                } : { gte: now },
-
+                auctionType: filters.auctionType,
                 watchItem: {
-                    category: filters.category ?? undefined,
-                    brand: filters.brand?.length > 0 ? { in: filters.brand } : undefined,
-                    condition: filters.condition?.length > 0 ? { in: filters.condition } : undefined,
-                    material: filters.material?.length > 0 ? { in: filters.material } : undefined,
-                    productionYear: {
-                    gte: filters.minYear ?? undefined,
-                    lte: filters.maxYear ?? undefined,
-                    },
-                    
-                    // Mélyebb szűrők (Karóra specifikus)
-                    wristwatch: (filters.movementType?.length > 0 || filters.minCaseDiameter || filters.maxCaseDiameter) ? {
-                    movementType: filters.movementType?.length > 0 ? { in: filters.movementType } : undefined,
-                    caseDiameter: {
-                        gte: filters.minCaseDiameter ?? undefined,
-                        lte: filters.maxCaseDiameter ?? undefined,
-                    }
-                    } : undefined
+                    category: filters.category,
+                    brand: filters.brand,
+                    condition: filters.condition,
+                    material: filters.material,
+                    ...(filters.minYear !== undefined || filters.maxYear !== undefined ? {
+                        productionYear: {
+                            gte: filters.minYear,
+                            lte: filters.maxYear,
+                        }
+                    } : {}),
                 }
             },
             include: {
                 watchItem: {
                     include: {
-                    wristwatch: true,
-                    smartwatch: true,
-                    pocketWatch: true,
-                    clock: true
+                        wristwatch: true,
+                        smartwatch: true,
+                        pocketWatch: true,
+                        clock: true
                     }
                 }
             },
-
             orderBy: parseSortBy(filters.sortBy),
-
-            skip: (filters.page - 1) * filters.limit,
-            take: filters.limit,
+            skip: filters.skip,
+            take: filters.take,
         });
 
         return result;
@@ -424,6 +467,10 @@ export const auctionService = {
                 }
             }
         })
+
+        if(!result){
+            throw new Error("Auction not found!");
+        }
 
         return result;
     }
