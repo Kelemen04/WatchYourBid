@@ -6,9 +6,9 @@ import { incrementClick, validateCategory, validateId } from "../middlewares/auc
 
 const router = express.Router();
 
-router.post('/',authenticateToken,validate(CreateAuctionSchema),createAuction);
-router.put('/:id',authenticateToken,validate(UpdateAuctionSchema),validateId, updateAuction);
-router.delete('/:id',authenticateToken,validateId,deleteAuction);
+router.post('/',authenticateToken(),validate(CreateAuctionSchema),createAuction);
+router.put('/:id',authenticateToken(),validate(UpdateAuctionSchema),validateId, updateAuction);
+router.delete('/:id',authenticateToken(),validateId,deleteAuction);
 
 router.get('/', getAuctionByFilters)
 router.get('/home', getHomeAuctions)

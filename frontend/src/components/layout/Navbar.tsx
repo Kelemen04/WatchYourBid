@@ -41,25 +41,25 @@ export default function Navbar() {
             </button>
             <div className="absolute left-0 mt-2 w-48 font-playfair bg-white text-slate-900 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
               <Link
-                to="/auctions?cat=wristwatches"
+                to="/auctions/wristwatch"
                 className="block px-4 py-3 hover:bg-slate-100 rounded-t-lg"
               >
                 Wristwatches
               </Link>
               <Link
-                to="/auctions?cat=pocket-watches"
+                to="/auctions/pocketwatch"
                 className="block px-4 py-3 hover:bg-slate-100"
               >
                 Pocket Watches
               </Link>
               <Link
-                to="/auctions?cat=clocks"
+                to="/auctions/clock"
                 className="block px-4 py-3 hover:bg-slate-100"
               >
                 Clocks
               </Link>
               <Link
-                to="/auctions?cat=smartwatches"
+                to="/auctions/smartwatch"
                 className="block px-4 py-3 hover:bg-slate-100 rounded-b-lg"
               >
                 Smartwatches

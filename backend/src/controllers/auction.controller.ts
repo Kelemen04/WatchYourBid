@@ -4,6 +4,7 @@ import type { AuctionFilterDTO, CreateAuctionDTO } from "../dto/auction.dto";
 import type { WatchCategory } from "../../generated/prisma";
 
 export async function createAuction(req: Request, res: Response) {
+    console.log("BODY:", req.body);
     const body = req.body as CreateAuctionDTO;
     const userId = req.user?.id as number;
 
@@ -62,7 +63,7 @@ export async function getAuctionById(req: Request, res: Response) {
 
 export async function getAuctionByCategory(req: Request, res: Response) {
     const category = req.validatedCategory as WatchCategory;
-
+    console.log(category)
     try {
         const result = await auctionService.getAuctionByCategory(category);
         res.status(200).json(result);

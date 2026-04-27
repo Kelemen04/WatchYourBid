@@ -1,6 +1,8 @@
 // WE CAN CHANGE THE STATIC PARTS WITH DATABASES FOR THE HERO SECTION
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useHomeData } from "../hooks/useAuctions";
+import AuctionCard from "../components/layout/AuctionCard";
 
 export default function Home() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -48,6 +50,8 @@ export default function Home() {
   }, []);
 
   const current = heroSections[currentIndex];
+
+  const { data } = useHomeData();
 
   return (
     <main className="w-full">
@@ -99,9 +103,9 @@ export default function Home() {
           Most Popular
         </h1>
         <div className="flex flew-row gap-10 mx-25">
-          <div className="h-50 w-50 border-1">AUKCIO</div>
-          <div className="h-50 w-50 border-1">AUKCIO2</div>
-          <div className="h-50 w-50 border-1">AUKCIO3</div>
+          {data?.trending.map((item, index) => (
+            <AuctionCard key={index} auction={item.auction} />
+          ))}
         </div>
       </div>
       <div>
@@ -109,29 +113,47 @@ export default function Home() {
           Ending Soon
         </h1>
         <div className="flex flew-row gap-10 mx-25">
-          <div className="h-50 w-50 border-1">AUKCIO</div>
-          <div className="h-50 w-50 border-1">AUKCIO2</div>
-          <div className="h-50 w-50 border-1">AUKCIO3</div>
+          {data?.latest.map((auction) => (
+            <AuctionCard key={auction.id} auction={auction} />
+          ))}
         </div>
       </div>
       <div>
         <h1 className="font-playfair text-4xl text-surface mx-20">
-          Most watched
+          Smartwatches
         </h1>
         <div className="flex flew-row gap-10 mx-25">
-          <div className="h-50 w-50 border-1">AUKCIO</div>
-          <div className="h-50 w-50 border-1">AUKCIO2</div>
-          <div className="h-50 w-50 border-1">AUKCIO3</div>
+          {data?.smartwatches.map((auction) => (
+            <AuctionCard key={auction.id} auction={auction} />
+          ))}
         </div>
       </div>
       <div>
         <h1 className="font-playfair text-4xl text-surface mx-20">
-          You might also like
+          Wristwatches
         </h1>
         <div className="flex flew-row gap-10 mx-25">
-          <div className="h-50 w-50 border-1">AUKCIO</div>
-          <div className="h-50 w-50 border-1">AUKCIO2</div>
-          <div className="h-50 w-50 border-1">AUKCIO3</div>
+          {data?.wristwatches.map((auction) => (
+            <AuctionCard key={auction.id} auction={auction} />
+          ))}
+        </div>
+      </div>
+      <div>
+        <h1 className="font-playfair text-4xl text-surface mx-20">
+          Pocket Wathes
+        </h1>
+        <div className="flex flew-row gap-10 mx-25">
+          {data?.pocketWatches.map((auction) => (
+            <AuctionCard key={auction.id} auction={auction} />
+          ))}
+        </div>
+      </div>
+      <div>
+        <h1 className="font-playfair text-4xl text-surface mx-20">Clocks</h1>
+        <div className="flex flew-row gap-10 mx-25">
+          {data?.clocks.map((auction) => (
+            <AuctionCard key={auction.id} auction={auction} />
+          ))}
         </div>
       </div>
     </main>

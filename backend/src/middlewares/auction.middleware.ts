@@ -17,6 +17,7 @@ export function validateId(req: Request, res: Response, next: NextFunction){
 
 export function validateCategory(req: Request, res: Response, next: NextFunction){
     const category = req.params.categoryName as string;
+    console.log("CAT: ",category);
 
     if(category.toUpperCase() !== WatchCategory.CLOCK && category.toUpperCase() !== WatchCategory.SMARTWATCH 
         && category.toUpperCase() !== WatchCategory.WRISTWATCH && category.toUpperCase() !== WatchCategory.POCKETWATCH){

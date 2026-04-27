@@ -1,7 +1,7 @@
 import "dotenv/config";
 
 export const connection = {
-  host: process.env.BULLMQ_HOST || "localhost", 
-  port: Number(process.env.BULLMQ_PORT) || 6379    
+  host: process.env.REDIS_HOST || "localhost", 
+  port: Number(process.env.REDIS_PORT) || 6379    
 };
 

@@ -9,6 +9,9 @@
     "generate": "npx prisma generate",
     "start": "npx prisma migrate deploy && npx prisma generate && npm run dev"
   },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
