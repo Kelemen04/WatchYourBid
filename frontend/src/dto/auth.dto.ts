@@ -10,6 +10,13 @@ export const RegisterSchema = z.object({
     .regex(/[0-9]/, "Must contain a number!")
     .regex(/[!@#$%^&*.?_-]/, "Must contain special characters!"),
   email: z.string().email("Invalid email!").toLowerCase().trim(),
+})
+
+export const RegisterFormSchema = RegisterSchema.extend({
+  confirmPassword: z.string()
+}).refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
 });
 
 export const ForgotPasswordSchema = z.object({
@@ -26,6 +33,10 @@ export const PasswordResetSchema = z.object({
   token: z.string(),
 });
 
+export const PasswordResetFormSchema = PasswordResetSchema.extend({
+  confirmNewPassword: z.string(),
+})
+
 export const LoginSchema = z.object({
   username: z.string().min(1, "Username is mandatory!"),
   password: z.string().min(1, "Password is mandatory!"),
@@ -33,5 +44,7 @@ export const LoginSchema = z.object({
 
 export type LoginDTO = z.infer<typeof LoginSchema>;
 export type RegisterDTO = z.infer<typeof RegisterSchema>;
+export type RegisterFormDTO = z.infer<typeof RegisterFormSchema>;
 export type ForgotPasswordDTO = z.infer<typeof ForgotPasswordSchema>;
 export type PasswordResetDTO = z.infer<typeof PasswordResetSchema>;
+export type PasswordResetFormDTO = z.infer<typeof PasswordResetFormSchema>;

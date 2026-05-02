@@ -1,91 +1,122 @@
-import { useState, useRef } from "react";
-import { RegisterSchema } from "../../dto/auth.dto";
+import {
+  RegisterFormSchema,
+  RegisterSchema,
+  type RegisterFormDTO,
+} from "../../dto/auth.dto";
 import { useRegister } from "../../hooks/useAuth";
+import { zodResolver } from "@hookform/resolvers/zod";
+import type { AxiosError } from "axios";
+import { useForm } from "react-hook-form";
 
 export default function RegisterForm() {
-  const userRef = useRef<HTMLInputElement>(null);
-
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [pwd, setPwd] = useState("");
-  const [matchPwd, setMatchPwd] = useState("");
-
-  const validation = RegisterSchema.safeParse({
-    username,
-    email,
-    password: pwd,
+  const {
+    handleSubmit,
+    register,
+    setError,
+    formState: { errors },
+  } = useForm<RegisterFormDTO>({
+    resolver: zodResolver(RegisterFormSchema),
+    mode: "onTouched",
   });
 
-  const fieldErrors = !validation.success
-    ? validation.error.flatten().fieldErrors
-    : {};
-  const isMatch = pwd === matchPwd && pwd !== "";
+  const { mutate, isPending, isSuccess } = useRegister();
 
-  const { mutate, isPending, error } = useRegister();
+  const onSubmit = (data: RegisterFormDTO) => {
+    const backendData = RegisterSchema.parse(data);
+    mutate(backendData, {
+      onError: (err) => {
+        const serverError = err as AxiosError<{ error: string }>;
+        const msg = serverError?.response?.data?.error;
 
-  const serverError = error?.response?.data?.error || "";
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (validation.success && isMatch) {
-      mutate({ username, email, password: pwd });
-    }
+        setError("username", {
+          type: "server",
+          message: msg,
+        });
+      },
+    });
   };
+
+  if (isSuccess) {
+    return (
+      <div className="text-center p-10 bg-primary rounded-2xl border-2 border-green-500">
+        <h2 className="text-2xl font-bold text-green-500 italic uppercase">
+          Welcome on board!
+        </h2>
+        <a href="/login" className="inline-block mt-6 underline font-bold">
+          Go to login
+        </a>
+      </div>
+    );
+  }
 
   return (
     <>
-      <p className={serverError ? "text-red-500 font-bold" : "hidden"}>
-        {serverError}
-      </p>
-
       <form
-        onSubmit={handleSubmit}
+        onSubmit={handleSubmit(onSubmit)}
+        noValidate
         className="flex flex-col bg-pimary text-center px-20"
       >
-        <label className="text-left ml-30 py-2 font-inter text-text-muted text-xl">
-          Username:<br></br>
-          <input
-            ref={userRef}
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            className={`w-xs border rounded-2xl ${username && fieldErrors.username ? "border-red-500" : "border-gray-300"}`}
-          />
+        <label
+          htmlFor="username-input"
+          className="text-left ml-30 py-2 font-inter text-text-muted text-xl"
+        >
+          Username:
         </label>
+        <input
+          id="username-input"
+          type="text"
+          {...register("username")}
+          className={`w-xs border rounded-2xl border-gray-300`}
+        />
+        {errors.username && <span>{errors.username?.message}</span>}
 
-        <label className="text-left ml-30 py-2 font-inter text-text-muted text-xl">
-          Email:<br></br>
-          <input
-            type="text"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className={`w-xs border rounded-2xl ${email && fieldErrors.email ? "border-red-500" : "border-gray-300"}`}
-          />
+        <label
+          htmlFor="email-input"
+          className="text-left ml-30 py-2 font-inter text-text-muted text-xl"
+        >
+          Email:
         </label>
+        <input
+          id="email-input"
+          type="text"
+          {...register("email")}
+          className={`w-xs border rounded-2xl border-gray-300`}
+        />
+        {errors.email && <span>{errors.email?.message}</span>}
 
-        <label className="text-left ml-30 py-2 font-inter text-text-muted text-xl">
-          Password:<br></br>
-          <input
-            type="password"
-            value={pwd}
-            onChange={(e) => setPwd(e.target.value)}
-            className={`w-xs border rounded-2xl ${pwd && fieldErrors.password ? "border-red-500" : "border-gray-300"}`}
-          />
+        <label
+          htmlFor="password-input"
+          className="text-left ml-30 py-2 font-inter text-text-muted text-xl"
+        >
+          Password:
         </label>
+        <input
+          id="password-input"
+          type="password"
+          {...register("password")}
+          className={`w-xs border rounded-2xl border-gray-300`}
+        />
+        {errors.password && <span>{errors.password?.message}</span>}
 
-        <label className="text-left ml-30 py-2 font-inter text-text-muted text-xl">
+        <label
+          htmlFor="confirm-input"
+          className="text-left ml-30 py-2 font-inter text-text-muted text-xl"
+        >
           Confirm password:<br></br>
-          <input
-            type="password"
-            value={matchPwd}
-            onChange={(e) => setMatchPwd(e.target.value)}
-            className={`w-xs border rounded-2xl ${matchPwd && !isMatch ? "border-red-500" : "border-gray-300"}`}
-          />
         </label>
+        <input
+          id="confirm-input"
+          type="password"
+          {...register("confirmPassword")}
+          className={`w-xs border rounded-2xl border-gray-300`}
+        />
+        {errors.confirmPassword && (
+          <span>{errors.confirmPassword?.message}</span>
+        )}
 
         <button
           type="submit"
-          disabled={!validation.success || !isMatch || isPending}
+          disabled={isPending}
           className="text-white mx-30 my-5 bg-gradient-to-r from-background to-primary-hover hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-2xl text-sm px-4 py-2.5 text-center leading-5 disabled:opacity-50"
         >
           {isPending ? "Registering..." : "Register"}

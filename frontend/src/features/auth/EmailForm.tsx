@@ -1,25 +1,39 @@
-import { ForgotPasswordSchema } from "../../dto/auth.dto";
-import { useRef, useState } from "react";
+import {
+  ForgotPasswordSchema,
+  type ForgotPasswordDTO,
+} from "../../dto/auth.dto";
 import { useForgotPassword } from "../../hooks/useAuth";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import type { AxiosError } from "axios";
 
 export default function EmailForm() {
-  const userRef = useRef<HTMLInputElement>(null);
-
-  const [email, setEmail] = useState("");
-
-  const validation = ForgotPasswordSchema.safeParse({
-    email,
+  const {
+    register,
+    handleSubmit,
+    getValues,
+    setError,
+    formState: { errors },
+  } = useForm<ForgotPasswordDTO>({
+    resolver: zodResolver(ForgotPasswordSchema),
+    mode: "onTouched",
   });
 
-  const { mutate, isPending, error, isSuccess } = useForgotPassword();
+  const { mutate, isPending, isSuccess } = useForgotPassword();
 
-  const serverError = error?.response?.data?.error || "";
+  const onSubmit = (data: ForgotPasswordDTO) => {
+    mutate(data, {
+      onError: (err: unknown) => {
+        const axiosError = err as AxiosError<{ error: string }>;
+        const msg =
+          axiosError?.response?.data?.error || "Something went wrong!";
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (validation.success) {
-      mutate({ email });
-    }
+        setError("email", {
+          type: "server",
+          message: msg,
+        });
+      },
+    });
   };
 
   if (isSuccess) {
@@ -27,7 +41,8 @@ export default function EmailForm() {
       <div className="text-center p-10 bg-primary rounded-2xl">
         <h2 className="text-2xl font-bold text-green-500">Check your email!</h2>
         <p className="text-text-muted mt-4">
-          We've sent a password reset link to <strong>{email}</strong>.
+          We've sent a password reset link to{" "}
+          <strong>{getValues("email")}</strong>.
         </p>
       </div>
     );
@@ -35,33 +50,25 @@ export default function EmailForm() {
 
   return (
     <>
-      <p className={serverError ? "text-red-500 font-bold" : "hidden"}>
-        {serverError}
-      </p>
       <form
         className="flex flex-col bg-pimary text-center px-20"
-        onSubmit={handleSubmit}
+        onSubmit={handleSubmit(onSubmit)}
+        noValidate
       >
         <label className="text-left ml-30 py-2 font-inter text-text-muted text-xl">
           Email:<br></br>
-          <input
-            ref={userRef}
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-xs border rounded-2xl border-gray-300"
-          />
         </label>
-
-        {!validation.success && email && (
-          <p className="text-red-400 text-sm">
-            Please enter a valid email address.
-          </p>
+        <input
+          type="email"
+          className="w-xs border rounded-2xl border-gray-300"
+          {...register("email")}
+        />
+        {errors.email && (
+          <span className="text-red-500">{errors.email.message}</span>
         )}
-
         <button
           type="submit"
-          disabled={isPending || !validation.success}
+          disabled={isPending}
           className="text-white mx-30 my-5 bg-gradient-to-r from-background to-primary-hover hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-2xl text-sm px-4 py-2.5 text-center leading-5 disabled:opacity-50"
         >
           {isPending ? "Sending..." : "Send email"}

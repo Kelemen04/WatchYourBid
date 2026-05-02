@@ -33,7 +33,7 @@ export const useLogin = () => {
 
   return useMutation<LoginResponse, AxiosError<{ error: string }>, LoginDTO>({
     mutationFn: async (data: LoginDTO) => {
-      const response = await api.post('/auth/login', data);
+      const response = await api.post('/auth/login', data, { withCredentials: true});
       return response.data;
     },
     
@@ -91,7 +91,7 @@ export const useRegister = () => {
         console.error(err.response?.data?.error || "Registration failed!");
       },
     });
-};
+};  
 
 export const useForgotPassword = () => {
   return useMutation<
@@ -107,7 +107,7 @@ export const useForgotPassword = () => {
         console.log("Success! Email sent for resetting password: ", data.message);
       },
       onError: (err) => {
-        console.error(err.response?.data?.error || "Registration failed!");
+        console.error(err.response?.data?.error || "Email sending failed for resetting password!");
       },
     });
 };
@@ -119,16 +119,14 @@ export const useResetPassword = () => {
       PasswordResetDTO
     >({
       mutationFn: async (data: PasswordResetDTO) => {
-        console.log("USE")
         const response = await api.post<MessageResponse>("/auth/reset-password", data);
-        console.log("EDDIG")
         return response.data;
       },
       onSuccess: (data) => {
         console.log("Success! Password reset successful: ", data.message);
       },
       onError: (err) => {
-        console.error(err.response?.data?.error || "Registration failed!");
+        console.error(err.response?.data?.error || "Password reset failed!");
       },
     });
 };

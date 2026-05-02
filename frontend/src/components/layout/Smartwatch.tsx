@@ -7,7 +7,6 @@ export default function Smartwatch() {
 
   const { data } = useCategoryData(category || "");
 
-  console.log("AAA");
   return (
     <>
       <div>

@@ -7,6 +7,7 @@ import UserDashboard from "../pages/UserDashboard";
 import ForgotPassword from "../pages/ForgotPassword";
 import ResetPasswordPage from "../pages/ResetPasswordPage";
 import WatchCategoryPage from "../pages/WatchCategoryPage";
+import AuctionPage from "../pages/AuctionPage";
 
 export default function AppRouter() {
   return (
@@ -15,7 +16,11 @@ export default function AppRouter() {
         <Route element={<Navbar />}>
           <Route path="/dashboard" element={<UserDashboard />} />
           <Route path="/home" element={<Home />} />
-          <Route path="/auctions/:category" element={<WatchCategoryPage />} />
+          <Route
+            path="/auction/category/:category"
+            element={<WatchCategoryPage />}
+          />
+          <Route path="/auction/:id" element={<AuctionPage />} />
         </Route>
 
         <Route path="/login" element={<LoginPage />} />

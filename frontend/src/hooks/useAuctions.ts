@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import api from '../api/axios';
 import type { AxiosError } from 'axios';
-import type { AuctionCardData, AuctionItemData } from '../dto/auction.dto';
+import type { AuctionCardData, AuctionInformtion, AuctionItemData } from '../dto/auction.dto';
 
 interface HomeAuctionsResponse {
   trending: { auction: AuctionCardData }[];
@@ -29,6 +29,19 @@ export const useCategoryData = (categoryName: string) => {
     queryFn: async () => {
         console.log(categoryName);
       const response = await api.get<AuctionItemData[]>(`/auction/category/${categoryName}`);
+      console.log(response);
+      return response.data;
+    },
+    refetchOnWindowFocus: false, 
+  });
+};
+
+export const useAuctionData = ( id: number) => {
+  return useQuery<AuctionInformtion , AxiosError<{ error: string }>>({
+    queryKey: ['categoryAuctions', id], 
+    queryFn: async () => {
+        console.log(id);
+      const response = await api.get<AuctionInformtion>(`/auction/${id}`);
       console.log(response);
       return response.data;
     },
