@@ -1,13 +1,23 @@
 import express from 'express';
-import {router} from "./routes/index";
-import cookieParser from 'cookie-parser';
+import { createServer } from 'node:http';
+import { Server } from 'socket.io';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
+import { router } from "./routes/index";
+
 import { rateLimiter } from './middlewares/rateLimiter.middleware';
 
 const app = express();
+const server = createServer(app);
 const port = process.env.PORT || 8000;
 
-app.set('trust proxy', true);
+export const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:8080",
+    methods: ["GET", "POST","PUT"],
+    credentials: true
+  }
+});
 
 app.use(cors({
     origin: "http://localhost:8080",
@@ -21,6 +31,22 @@ app.use(cookieParser());
 
 app.use("/api", router);
 
-app.listen(port, () => {
+io.on('connection', (socket) => {
+  socket.on('joinAuction', (auctionId) => {
+    const room = `auction-${auctionId}`;
+    socket.join(room);
+  });
+
+  socket.on('leaveAuction', (auctionId) => {
+    const room = `auction-${auctionId}`;
+    socket.leave(room);
+  });
+
+  socket.on('disconnect', (auctionId) => {
+    console.log('User disconnected');
+  });
+});
+
+server.listen(port, () => {
     console.log(`Server listening on port - ${port}`);
 });

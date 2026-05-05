@@ -8,6 +8,7 @@ import ForgotPassword from "../pages/ForgotPassword";
 import ResetPasswordPage from "../pages/ResetPasswordPage";
 import WatchCategoryPage from "../pages/WatchCategoryPage";
 import AuctionPage from "../pages/AuctionPage";
+import CreateAuctionPage from "../pages/CreateAuctionPage";
 
 export default function AppRouter() {
   return (
@@ -20,6 +21,7 @@ export default function AppRouter() {
             path="/auction/category/:category"
             element={<WatchCategoryPage />}
           />
+          <Route path="/auction" element={<CreateAuctionPage />} />
           <Route path="/auction/:id" element={<AuctionPage />} />
         </Route>
 

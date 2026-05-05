@@ -1,13 +1,14 @@
 import { z } from "zod";
-import { AuctionType, WatchCategory } from "../../../backend/generated/prisma";
 
+export const AuctionTypes = ["ENGLISH", "DUTCH", "VICKREY", "FPSB", "JAPANESE"] as const;
+export const WatchCategories = ["WRISTWATCH" , "POCKETWATCH" , "SMARTWATCH" , "CLOCK"] as const;
 
 export const AuctionSchema = z.object({
   title: z.string().min(5, "Title too short").max(200),
   description: z.string().min(20, "Description should be more detailed"),
-  auctionType: z.nativeEnum(AuctionType),
-  startTime: z.string().transform((val) => new Date(val)),
-  endTime: z.string().transform((val) => new Date(val)),
+  auctionType: z.enum(AuctionTypes),
+  startTime: z.coerce.date(),
+  endTime: z.coerce.date(),
   startingPrice: z.number().min(0),
   reservePrice: z.number().optional(),
   buyingPrice: z.number().optional(),
@@ -28,7 +29,7 @@ export const AuctionSchema = z.object({
     hasPapers: z.boolean().default(false),
     isOriginal: z.boolean().default(true),
 
-    category: z.enum(WatchCategory),
+    category: z.enum(WatchCategories),
 
     wristwatch: z.object({
       movementType: z.string(),
@@ -77,3 +78,6 @@ export const AuctionItemSchema = AuctionCardSchema.extend({
 export type AuctionCardData = z.infer<typeof AuctionCardSchema>;
 export type AuctionItemData = z.infer<typeof AuctionItemSchema>;
 export type AuctionInformtion = z.infer<typeof AuctionSchema>;
+
+export type AuctionInput = z.input<typeof AuctionSchema>;
+export type AuctionOutput = z.infer<typeof AuctionSchema>;

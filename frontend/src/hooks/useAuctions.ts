@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import api from '../api/axios';
 import type { AxiosError } from 'axios';
 import type { AuctionCardData, AuctionInformtion, AuctionItemData } from '../dto/auction.dto';
@@ -10,6 +10,10 @@ interface HomeAuctionsResponse {
   clocks: AuctionCardData[];
   wristwatches: AuctionCardData[];
   pocketWatches: AuctionCardData[];
+}
+
+interface CreateAuctionResponse {
+  data: AuctionInformtion;
 }
 
 export const useHomeData = () => {
@@ -48,3 +52,22 @@ export const useAuctionData = ( id: number) => {
     refetchOnWindowFocus: false, 
   });
 };
+
+export const useAuctionCreate = () => {
+  return useMutation<
+      CreateAuctionResponse,
+      AxiosError<{ error: string }>,
+      AuctionInformtion
+    >({
+      mutationFn: async (data: AuctionInformtion) => {
+        const response = await api.post<CreateAuctionResponse>("/auction/", data);
+        return response.data;
+      },
+      onSuccess: (data) => {
+        console.log("Success! Aucction created successfully: ", data.data.title);
+      },
+      onError: (err) => {
+        console.error(err.response?.data?.error || "Auction creation failed!");
+      },
+    });
+}

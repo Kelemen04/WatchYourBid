@@ -1,9 +1,25 @@
 import { useParams } from "react-router-dom";
 import { useAuctionData } from "../../hooks/useAuctions";
+import { socket } from "../../main";
+import { useEffect } from "react";
 
 export default function AuctionInformation() {
   const { id } = useParams();
   const { data } = useAuctionData(Number(id));
+
+  useEffect(() => {
+    if (!id) return;
+    socket.emit("joinAuction", id);
+
+    socket.on("BidUpdated", (updatedData) => {
+      console.log("New bid: ", updatedData);
+    });
+
+    return () => {
+      socket.emit("leaveAuction", id);
+      socket.off("BidUpdated");
+    };
+  }, [id]);
 
   return (
     <>

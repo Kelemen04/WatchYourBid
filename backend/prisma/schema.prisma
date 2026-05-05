@@ -141,8 +141,10 @@ model Bid {
   isWinner  Boolean  @default(false) @map("is_winner")
   userId    Int
   auctionId Int
+  autoBidId Int?
   user      User     @relation(fields: [userId], references: [id])
   auction   Auction  @relation(fields: [auctionId], references: [id], onDelete: Cascade)
+  autoBid   AutoBid? @relation(fields: [autoBidId], references: [id], onDelete: SetNull)
 }
 
 model AutoBid {
@@ -154,6 +156,9 @@ model AutoBid {
   increment Int
   userId    Int
   auctionId Int
+  bids      Bid[]
+
+  @@unique([userId, auctionId])
 }
 
 enum WatchCategory {

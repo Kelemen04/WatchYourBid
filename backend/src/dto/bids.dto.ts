@@ -8,7 +8,7 @@ export const PlaceBidSchema = z.object({
 export const AutoBidSchema = z.object({
   auctionId: z.number(),
   maxAmount: z.number().positive("Max amount must be positive"),
-  increment: z.number().positive("Increment must be positive").default(1),
+  increment: z.number().positive("Increment must be positive").optional(),
 });
 
 export type AutoBidDTO = z.infer<typeof AutoBidSchema>;
