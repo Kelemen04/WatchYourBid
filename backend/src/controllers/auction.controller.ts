@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import { auctionService } from "../services/auction.service";
 import type { AuctionFilterDTO, CreateAuctionDTO } from "../dto/auction.dto";
 import type { WatchCategory } from "../../generated/prisma";
-import { io } from "../app"
+import { io } from "../utils/socket"
 
 export async function createAuction(req: Request, res: Response) {
     console.log("BODY:", req.body);

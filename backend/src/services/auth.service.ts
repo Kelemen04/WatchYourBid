@@ -6,7 +6,6 @@ import "dotenv/config";
 import { generateAccessToken, generateRefreshToken } from "../middlewares/auth.middleware";
 import type { UserPayload } from "../types/express";
 import nodemailer from "nodemailer";
-import type { forgotPassword } from "../controllers/auth.controller";
 
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
@@ -108,20 +107,32 @@ export const authService = {
     if (!token) throw new Error("No refresh token provided!");
 
     const session = await prisma.session.findFirst({
-      where: { refreshToken: token }
+      where: { refreshToken: token },
+      include: { user: true }
     });
 
     if (!session || session.expiresAt < new Date()) {
-        if (session) await prisma.session.delete({ where: { id: session.id } });
-        throw new Error("Refresh token expired or invalid!");
+      if (session) await prisma.session.delete({ where: { id: session.id } });
+      throw new Error("Refresh token expired or invalid!");
     }
 
     try {
       const decoded = jwt.verify(token, `${process.env.REFRESH_TOKEN_SECRET}`) as UserPayload;
 
-      const accessToken = generateAccessToken({ username: decoded.username, id: decoded.id, role: decoded.role });
+      const accessToken = generateAccessToken({ 
+        username: session.user.username, 
+        id: session.user.id, 
+        role: session.user.role 
+      });
 
-      return { accessToken };
+      return { 
+        accessToken, 
+        user: {
+          username: session.user.username,
+          id: session.user.id,
+          role: session.user.role
+        }
+      };
     } catch (e) {
       throw new Error("Invalid or expired refresh token!");
     }

@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import type { AutoBidDTO, PlaceBidDTO } from "../dto/bids.dto";
 import { bidService } from "../services/bid.service";
-import { io } from "../app";
+import { io } from "../utils/socket";
 
 export async function placeBid(req: Request, res: Response) {
   const userId = req.user?.id as number;

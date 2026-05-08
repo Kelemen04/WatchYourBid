@@ -2,7 +2,6 @@ import type { AuctionFilterDTO, CreateAuctionDTO } from "../dto/auction.dto";
 import { prisma } from "../db/client";
 import type { WatchCategory } from "../../generated/prisma";
 import { auctionTasks } from "../jobs/auction.queues";
-import { de } from "zod/locales";
 
 function parseSortBy(sortBy: string) {
     switch (sortBy) {

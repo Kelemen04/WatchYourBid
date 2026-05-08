@@ -1,4 +1,4 @@
-import { string, z } from "zod"
+import { z } from "zod"
 import { Country, State, City } from "country-state-city"
 
 const PersonInfoSchema = z.object({
@@ -8,7 +8,7 @@ const PersonInfoSchema = z.object({
   profilePicture: z.string().min(2),
 });
 
-const AddressSchema = z.object({
+const BaseAddressSchema = z.object({
   country: z.string().min(1).max(100),
   region: z.string().min(1).max(100),
   city: z.string().min(1).max(100),
@@ -18,52 +18,50 @@ const AddressSchema = z.object({
   building: z.string().max(50).optional(),
   floor: z.string().max(50).optional(),
   apartment: z.string().max(50).optional(),
-})
-.superRefine(
-  (data,ctx) => {
+});
+
+const ValidatedAddressSchema = BaseAddressSchema.superRefine(
+  (data, ctx) => {
     const countries = Country.getAllCountries().map(c => c.isoCode);
 
-    if(!countries.includes(data.country)){
+    if (!countries.includes(data.country)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "Invalid country!",
         path: ["country"],
       });
-
       return;
     }
-    
+
     const states = State.getStatesOfCountry(data.country).map(s => s.isoCode);
 
-    if(!states.includes(data.region)){
+    if (!states.includes(data.region)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "Invalid state/region!",
         path: ["region"],
       });
-    
       return;
     }
 
-    const cities = City.getCitiesOfState(data.country,data.region).map(ci => ci.name);
+    const cities = City.getCitiesOfState(data.country, data.region).map(ci => ci.name);
 
-    if(!cities.includes(data.city)){
+    if (!cities.includes(data.city)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "Invalid city!",
         path: ["city"],
       });
-    
       return;
     }
   }
 );
 
-export const BuyerRegisterSchema = PersonInfoSchema.merge(AddressSchema).extend({
+export const BuyerRegisterSchema = PersonInfoSchema.merge(ValidatedAddressSchema).extend({
   shippingAddressName: z.string().min(1).max(50).optional().default("Default Shipping"),
 });
 
-export const SellerRegisterSchema = PersonInfoSchema.merge(AddressSchema).extend({
+export const SellerRegisterSchema = PersonInfoSchema.merge(ValidatedAddressSchema).extend({
   description: z.string().min(50).max(3000).default("No description.")
 });
 
@@ -77,12 +75,12 @@ export const MeResponseSchema = z.object({
 
   buyer: z.object({
     shippingAddressName: z.string(),
-    shippingAddress: AddressSchema
+    shippingAddress: BaseAddressSchema
   }).nullable(),
 
   seller: z.object({
     description: z.string(),
-    address: AddressSchema,
+    address: BaseAddressSchema,
   }).nullable()
 });
 
@@ -93,8 +91,13 @@ export const UpdateUserSchema = z.object({
   profilePicture: z.string().min(2).nullable(),
 }).partial();
 
-export const UpdateBuyerSchema = BuyerRegisterSchema.partial();
-export const UpdateSellerSchema = SellerRegisterSchema.partial();
+export const UpdateBuyerSchema = PersonInfoSchema.merge(BaseAddressSchema).extend({
+  shippingAddressName: z.string().min(1).max(50).optional(),
+}).partial();
+
+export const UpdateSellerSchema = PersonInfoSchema.merge(BaseAddressSchema).extend({
+  description: z.string().min(50).max(3000).optional()
+}).partial();
 
 export type BuyerRegisterDTO = z.infer<typeof BuyerRegisterSchema>;
 export type SellerRegisterDTO = z.infer<typeof SellerRegisterSchema>;

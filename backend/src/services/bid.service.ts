@@ -1,6 +1,6 @@
 import type { AutoBidDTO, PlaceBidDTO } from "../dto/bids.dto";
 import { prisma } from '../db/client'
-import { io } from "../app"
+import { io } from "../utils/socket"
 
 export const bidService = {
     async placeBid(data: PlaceBidDTO, userId: number, auctionId: number) {

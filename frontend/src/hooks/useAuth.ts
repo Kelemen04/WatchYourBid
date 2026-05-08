@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import type { RegisterDTO, LoginDTO, ForgotPasswordDTO, PasswordResetDTO } from '../dto/auth.dto';
 import { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
+import { setAccessToken } from '../api/axios';
 
 interface RegisterResponse {
   username: string;
@@ -38,6 +39,7 @@ export const useLogin = () => {
     },
     
     onSuccess: (data) => {
+      setAccessToken(data.accessToken);
       setAuth({
         user: { 
           username: data.username, 
@@ -49,7 +51,7 @@ export const useLogin = () => {
 
       console.log("Login successful, global state updated!");
       
-      navigate('/dashboard');
+      navigate('/home');
     },
 
     onError: (err) => {
@@ -68,6 +70,7 @@ export const useLogout = () => {
     } catch (err) {
       console.error("Logout error:", err);
     } finally {
+      setAccessToken(null);
       setAuth({ user: null, accessToken: null });
       navigate('/login');
     }
@@ -129,4 +132,31 @@ export const useResetPassword = () => {
         console.error(err.response?.data?.error || "Password reset failed!");
       },
     });
+};
+
+export const useRefreshToken = () => {
+  const { setAuth } = useAuth();
+
+  const refresh = async () => {
+    try {
+      const response = await api.post('/auth/refresh', {}, { withCredentials: true });
+      
+      const { accessToken, user } = response.data;
+
+      setAccessToken(accessToken);
+
+      setAuth({
+        user: user,
+        accessToken: accessToken
+      });
+
+      return accessToken;
+    } catch {
+      setAccessToken(null);
+      setAuth({ user: null, accessToken: null });
+      return null;
+    }
+  };
+
+  return refresh;
 };

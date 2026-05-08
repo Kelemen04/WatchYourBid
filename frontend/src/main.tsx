@@ -4,7 +4,10 @@ import "./styles/index.css";
 import App from "./App.tsx";
 import { io } from "socket.io-client";
 
-export const socket = io("http://localhost:8000");
+export const socket = io("http://localhost:8000", {
+  transports: ["websocket"],
+  withCredentials: true,
+});
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

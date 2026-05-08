@@ -6,18 +6,12 @@ import cookieParser from 'cookie-parser';
 import { router } from "./routes/index";
 
 import { rateLimiter } from './middlewares/rateLimiter.middleware';
+import { initSocket } from './utils/socket';
 
 const app = express();
 const server = createServer(app);
 const port = process.env.PORT || 8000;
-
-export const io = new Server(server, {
-  cors: {
-    origin: "http://localhost:8080",
-    methods: ["GET", "POST","PUT"],
-    credentials: true
-  }
-});
+initSocket(server);
 
 app.use(cors({
     origin: "http://localhost:8080",
@@ -30,22 +24,6 @@ app.use(cookieParser());
 //app.use(rateLimiter()); // Minden hivast vedunk(lehet torlom)
 
 app.use("/api", router);
-
-io.on('connection', (socket) => {
-  socket.on('joinAuction', (auctionId) => {
-    const room = `auction-${auctionId}`;
-    socket.join(room);
-  });
-
-  socket.on('leaveAuction', (auctionId) => {
-    const room = `auction-${auctionId}`;
-    socket.leave(room);
-  });
-
-  socket.on('disconnect', (auctionId) => {
-    console.log('User disconnected');
-  });
-});
 
 server.listen(port, () => {
     console.log(`Server listening on port - ${port}`);

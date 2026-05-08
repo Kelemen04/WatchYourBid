@@ -11,6 +11,8 @@ export function verifyRoles(requiredRole: string) {
   return (req: Request, res: Response, next: NextFunction) => {
     const user = req.user;
 
+    console.log(user)
+
     if (!user || !user.role) {
       return res.status(401).json({ message: "Unauthorized" });
     }

@@ -6,7 +6,9 @@ import type { UserPayload } from "../types/express";
 
 export function validate(schema: ZodType){
     return (req: Request, res: Response, next: NextFunction) => {
+        console.log("VAL")
         const result = schema.safeParse(req.body);
+        console.log("VAL")
 
         if(!result.success){    
             res.status(400).json({error: result.error.format()});
@@ -21,8 +23,14 @@ export function validate(schema: ZodType){
 export function authenticateToken(){
     return (req : Request,res : Response, next: NextFunction) => {
         const authHeader = req.headers['authorization'];
-        const token = authHeader && authHeader.split(' ')[1];
-        console.log("MIDDLE")
+        let token = authHeader && authHeader.split(' ')[1];
+        console.log(token)
+
+        if (!token && req.cookies) {
+            token = req.cookies.accessToken || req.cookies.refreshToken; 
+        }
+
+        console.log("Érkezett token:", token);
 
         if(token == null){
             return res.sendStatus(401);
@@ -30,6 +38,7 @@ export function authenticateToken(){
 
         jwt.verify(token,process.env.ACCESS_TOKEN_SECRET as string, (err,user) => {
             if(err){
+                console.error("JWT Ellenőrzési hiba:", err.name, err.message);
                 return res.status(403).json({ error: "error"})
             }
             req.user = user as UserPayload;
