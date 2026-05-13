@@ -2,7 +2,6 @@ import type { Request, Response } from "express";
 import { auctionService } from "../services/auction.service";
 import type { AuctionFilterDTO, CreateAuctionDTO } from "../dto/auction.dto";
 import type { WatchCategory } from "../../generated/prisma";
-import { io } from "../utils/socket"
 
 export async function createAuction(req: Request, res: Response) {
     console.log("BODY:", req.body);
@@ -10,7 +9,22 @@ export async function createAuction(req: Request, res: Response) {
     const userId = req.user?.id as number;
 
     try {
-        const result = await auctionService.createAuction(body,userId);
+        let result = await auctionService.createAuction(body,userId);
+
+        if(req.files && req.files.length as number > 0){
+            const files = req.files as Express.Multer.File[];
+            const updatedAuction = await auctionService.uploadAuctionFiles(
+                result.auction.id, 
+                userId, 
+                files
+            );
+
+            result = {
+                message: "Auction created with images",
+                auction: updatedAuction as any
+            };
+        }
+
         res.status(200).json(result);
     } catch (err) {
         return res.status(400).json({ error: err instanceof Error ? err .message : "Unknown error" });

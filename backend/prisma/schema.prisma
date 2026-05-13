@@ -23,6 +23,7 @@ model User {
   role              Role       @default(USER)
   phoneNumber       String?    @map("phone_number")
   balance           Int        @default(0)
+  image             String?
   watchList         Auction[]
   sessions          Session[]
   seller            Seller?
@@ -126,6 +127,7 @@ model Auction {
   moneyInterval   Int?       @map("money_interval")
   minBidIncrement Int?       @default(1) @map("min_bid_increment")
   isAscending     Boolean?   @map("is_ascending")
+  images          String[]
   bids            Bid[]
   autoBids        AutoBid[]
   createdAt       DateTime   @default(now())

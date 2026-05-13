@@ -1,6 +1,7 @@
 import express from "express";
 import type { AuctionType, Role, User, WatchCategory } from "../../../generated/prisma";
 import type { AuctionFilterDTO } from "../../dto/auction.dto";
+import 'multer';
 
 interface UserPayload {
   username: string;
@@ -17,6 +18,7 @@ declare global {
       validatedId?: number;
       validatedCategory?: string;
       filters: AuctionFilterDTO;
+      files: Express.Multer.File[];
     }
   }
 }

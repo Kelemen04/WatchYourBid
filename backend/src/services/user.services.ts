@@ -1,5 +1,6 @@
 import { prisma } from "../db/client"
 import type { BuyerRegisterDTO, SellerRegisterDTO, MeResponse, UpdateBuyer, UpdateSeller, UpdateUser } from "../dto/user.dto";
+import { minioService } from "./minio.service";
 
 export const userService = {
     async getMe(userId: number){
@@ -155,5 +156,19 @@ export const userService = {
     } catch(e: any) {
       throw new Error(e.message || "Seller registration failed");
     }
+  },
+  async uploadUserFiles(userId: number, file: Express.Multer.File){
+    const uploaded = await minioService.uploadUserProfilePicture(userId,file);
+    const image = uploaded.url;
+  
+    return await prisma.user.update({
+      where: { id: userId},
+      data: { image: image},
+      include: {
+        buyer: true,
+        seller: true,
+      }
+    })
   }
 };
+

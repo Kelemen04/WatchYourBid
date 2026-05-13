@@ -75,9 +75,14 @@ export const AuctionItemSchema = AuctionCardSchema.extend({
   description: z.string(),
 });
 
+export const AuctionFullSchema = AuctionSchema.extend({
+  id: z.number(),
+});
+
 export type AuctionCardData = z.infer<typeof AuctionCardSchema>;
 export type AuctionItemData = z.infer<typeof AuctionItemSchema>;
-export type AuctionInformtion = z.infer<typeof AuctionSchema>;
+export type AuctionInformtion = z.infer<typeof AuctionSchema>; 
+export type AuctionFullData = z.infer<typeof AuctionFullSchema>;
 
 export type AuctionInput = z.input<typeof AuctionSchema>;
 export type AuctionOutput = z.infer<typeof AuctionSchema>;

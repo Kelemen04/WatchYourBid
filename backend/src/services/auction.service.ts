@@ -2,6 +2,8 @@ import type { AuctionFilterDTO, CreateAuctionDTO } from "../dto/auction.dto";
 import { prisma } from "../db/client";
 import type { WatchCategory } from "../../generated/prisma";
 import { auctionTasks } from "../jobs/auction.queues";
+import { minioService } from "./minio.service";
+import "multer";
 
 function parseSortBy(sortBy: string) {
     switch (sortBy) {
@@ -52,60 +54,60 @@ export const auctionService = {
 
                 watchItem: {
                     create: {
-                        brand: data.brand,
-                        model: data.model,
-                        material: data.material,
-                        condition: data.condition,
-                        category: data.category,
+                        brand: data.watchItem?.brand ?? "",
+                        model: data.watchItem?.model ?? "",
+                        material: data.watchItem?.material ?? "",
+                        condition: data.watchItem?.condition ?? "",
+                        category: data.watchItem?.category ?? "CLOCK",
                         
-                        productionYear: data.productionYear ?? null,
-                        weight: data.weight ?? null,
-                        hasBox: data.hasBox ?? false,
-                        hasPapers: data.hasPapers ?? false,
-                        isOriginal: data.isOriginal ?? true,
+                        productionYear: data.watchItem?.productionYear ?? null,
+                        weight: data.watchItem?.weight ?? null,
+                        hasBox: data.watchItem?.hasBox ?? false,
+                        hasPapers: data.watchItem?.hasPapers ?? false,
+                        isOriginal: data.watchItem?.isOriginal ?? true,
 
-                        ...(data.category === 'WRISTWATCH' && data.wristwatch ? {
+                        ...(data.watchItem?.category === 'WRISTWATCH' && data.watchItem.wristwatch ? {
                         wristwatch: {
                             create: {
-                            movementType: data.wristwatch.movementType,
-                            caseDiameter: data.wristwatch.caseDiameter,
-                            waterResistance: data.wristwatch.waterResistance,
-                            strapMaterial: data.wristwatch.strapMaterial,
-                            glassType: data.wristwatch.glassType,
+                            movementType: data.watchItem.wristwatch.movementType,
+                            caseDiameter: data.watchItem.wristwatch.caseDiameter,
+                            waterResistance: data.watchItem.wristwatch.waterResistance,
+                            strapMaterial: data.watchItem.wristwatch.strapMaterial,
+                            glassType: data.watchItem.wristwatch.glassType,
                             }
                         }
                         } : {}),
 
-                        ...(data.category === 'POCKETWATCH' && data.pocketWatch ? {
+                        ...(data.watchItem?.category === 'POCKETWATCH' && data.watchItem.pocketWatch ? {
                         pocketWatch: {
                             create: {
-                            caseType: data.pocketWatch.caseType,
-                            movementType: data.pocketWatch.movementType,
-                            hasChain: data.pocketWatch.hasChain,
-                            complications: data.pocketWatch.complications ?? null, 
+                            caseType: data.watchItem.pocketWatch.caseType,
+                            movementType: data.watchItem.pocketWatch.movementType,
+                            hasChain: data.watchItem.pocketWatch.hasChain,
+                            complications: data.watchItem.pocketWatch.complications ?? null, 
                             }
                         }
                         } : {}),
 
-                        ...(data.category === 'SMARTWATCH' && data.smartwatch ? {
+                        ...(data.watchItem?.category === 'SMARTWATCH' && data.watchItem.smartwatch ? {
                         smartwatch: {
                             create: {
-                            os: data.smartwatch.os,
-                            batteryLife: data.smartwatch.batteryLife,
-                            screenType: data.smartwatch.screenType,
-                            sensors: data.smartwatch.sensors,
-                            compatibility: data.smartwatch.compatibility,
+                            os: data.watchItem.smartwatch.os,
+                            batteryLife: data.watchItem.smartwatch.batteryLife,
+                            screenType: data.watchItem.smartwatch.screenType,
+                            sensors: data.watchItem.smartwatch.sensors,
+                            compatibility: data.watchItem.smartwatch.compatibility,
                             }
                         }
                         } : {}),
 
-                        ...(data.category === 'CLOCK' && data.clock ? {
+                        ...(data.watchItem?.category === 'CLOCK' && data.watchItem.clock ? {
                         clock: {
                             create: {
-                            clockType: data.clock.clockType,
-                            powerSource: data.clock.powerSource,
-                            dimensions: data.clock.dimensions,
-                            chimeType: data.clock.chimeType ?? null, 
+                            clockType: data.watchItem.clock.clockType,
+                            powerSource: data.watchItem.clock.powerSource,
+                            dimensions: data.watchItem.clock.dimensions,
+                            chimeType: data.watchItem.clock.chimeType ?? null, 
                             }
                         }
                         } : {}),
@@ -221,7 +223,7 @@ export const auctionService = {
                 currentPrice: data.startingPrice,
                 auctionType: data.auctionType,
                 userId: userId,
-                ...(data.startTime.getTime() > Date.now() ?{ status: "UPCOMING" } : {status: "ACTIVE"} ),
+                ...(data.startTime.getTime() > Date.now() ? { status: "UPCOMING" } : { status: "ACTIVE" }),
                 reservePrice: data.reservePrice ?? null,
                 buyingPrice: data.buyingPrice ?? null,
                 tickInterval: data.tickInterval ?? null,
@@ -230,67 +232,104 @@ export const auctionService = {
 
                 watchItem: {
                     update: {
-                        brand: data.brand,
-                        model: data.model,
-                        material: data.material,
-                        condition: data.condition,
-                        category: data.category,
-                        
-                        productionYear: data.productionYear ?? null,
-                        weight: data.weight ?? null,
-                        hasBox: data.hasBox ?? false,
-                        hasPapers: data.hasPapers ?? false,
-                        isOriginal: data.isOriginal ?? true,
+                        brand: data.watchItem?.brand ?? "",
+                        model: data.watchItem?.model ?? "",
+                        material: data.watchItem?.material ?? "",
+                        condition: data.watchItem?.condition ?? "",
+                        category: data.watchItem?.category ?? "CLOCK",
+                        productionYear: data.watchItem?.productionYear ?? null,
+                        weight: data.watchItem?.weight ?? null,
+                        hasBox: data.watchItem?.hasBox ?? false,
+                        hasPapers: data.watchItem?.hasPapers ?? false,
+                        isOriginal: data.watchItem?.isOriginal ?? true,
 
-                        ...(data.category === 'WRISTWATCH' && data.wristwatch ? {
-                        wristwatch: {
-                            create: {
-                            movementType: data.wristwatch.movementType,
-                            caseDiameter: data.wristwatch.caseDiameter,
-                            waterResistance: data.wristwatch.waterResistance,
-                            strapMaterial: data.wristwatch.strapMaterial,
-                            glassType: data.wristwatch.glassType,
+                        // WRISTWATCH UPSERT
+                        ...(data.watchItem?.category === 'WRISTWATCH' && data.watchItem.wristwatch ? {
+                            wristwatch: {
+                                upsert: {
+                                    create: {
+                                        movementType: data.watchItem.wristwatch.movementType,
+                                        caseDiameter: data.watchItem.wristwatch.caseDiameter,
+                                        waterResistance: data.watchItem.wristwatch.waterResistance,
+                                        strapMaterial: data.watchItem.wristwatch.strapMaterial,
+                                        glassType: data.watchItem.wristwatch.glassType,
+                                    },
+                                    update: {
+                                        movementType: data.watchItem.wristwatch.movementType,
+                                        caseDiameter: data.watchItem.wristwatch.caseDiameter,
+                                        waterResistance: data.watchItem.wristwatch.waterResistance,
+                                        strapMaterial: data.watchItem.wristwatch.strapMaterial,
+                                        glassType: data.watchItem.wristwatch.glassType,
+                                    }
+                                }
                             }
-                        }
                         } : {}),
 
-                        ...(data.category === 'POCKETWATCH' && data.pocketWatch ? {
-                        pocketWatch: {
-                            create: {
-                            caseType: data.pocketWatch.caseType,
-                            movementType: data.pocketWatch.movementType,
-                            hasChain: data.pocketWatch.hasChain,
-                            complications: data.pocketWatch.complications ?? null, 
+                        // POCKETWATCH UPSERT
+                        ...(data.watchItem?.category === 'POCKETWATCH' && data.watchItem.pocketWatch ? {
+                            pocketWatch: {
+                                upsert: {
+                                    create: {
+                                        caseType: data.watchItem.pocketWatch.caseType,
+                                        movementType: data.watchItem.pocketWatch.movementType,
+                                        hasChain: data.watchItem.pocketWatch.hasChain,
+                                        complications: data.watchItem.pocketWatch.complications ?? null,
+                                    },
+                                    update: {
+                                        caseType: data.watchItem.pocketWatch.caseType,
+                                        movementType: data.watchItem.pocketWatch.movementType,
+                                        hasChain: data.watchItem.pocketWatch.hasChain,
+                                        complications: data.watchItem.pocketWatch.complications ?? null,
+                                    }
+                                }
                             }
-                        }
                         } : {}),
 
-                        ...(data.category === 'SMARTWATCH' && data.smartwatch ? {
-                        smartwatch: {
-                            create: {
-                            os: data.smartwatch.os,
-                            batteryLife: data.smartwatch.batteryLife,
-                            screenType: data.smartwatch.screenType,
-                            sensors: data.smartwatch.sensors,
-                            compatibility: data.smartwatch.compatibility,
+                        // SMARTWATCH UPSERT
+                        ...(data.watchItem?.category === 'SMARTWATCH' && data.watchItem.smartwatch ? {
+                            smartwatch: {
+                                upsert: {
+                                    create: {
+                                        os: data.watchItem.smartwatch.os,
+                                        batteryLife: data.watchItem.smartwatch.batteryLife,
+                                        screenType: data.watchItem.smartwatch.screenType,
+                                        sensors: data.watchItem.smartwatch.sensors,
+                                        compatibility: data.watchItem.smartwatch.compatibility,
+                                    },
+                                    update: {
+                                        os: data.watchItem.smartwatch.os,
+                                        batteryLife: data.watchItem.smartwatch.batteryLife,
+                                        screenType: data.watchItem.smartwatch.screenType,
+                                        sensors: data.watchItem.smartwatch.sensors,
+                                        compatibility: data.watchItem.smartwatch.compatibility,
+                                    }
+                                }
                             }
-                        }
                         } : {}),
 
-                        ...(data.category === 'CLOCK' && data.clock ? {
-                        clock: {
-                            create: {
-                            clockType: data.clock.clockType,
-                            powerSource: data.clock.powerSource,
-                            dimensions: data.clock.dimensions,
-                            chimeType: data.clock.chimeType ?? null, 
+                        // CLOCK UPSERT
+                        ...(data.watchItem?.category === 'CLOCK' && data.watchItem.clock ? {
+                            clock: {
+                                upsert: {
+                                    create: {
+                                        clockType: data.watchItem.clock.clockType,
+                                        powerSource: data.watchItem.clock.powerSource,
+                                        dimensions: data.watchItem.clock.dimensions,
+                                        chimeType: data.watchItem.clock.chimeType ?? null,
+                                    },
+                                    update: {
+                                        clockType: data.watchItem.clock.clockType,
+                                        powerSource: data.watchItem.clock.powerSource,
+                                        dimensions: data.watchItem.clock.dimensions,
+                                        chimeType: data.watchItem.clock.chimeType ?? null,
+                                    }
+                                }
                             }
-                        }
                         } : {}),
                     }
                 }
             }
-        })
+        });
 
         const deleteJob = await auctionTasks.getJob(`close-${auctionId}`)
         if(deleteJob){
@@ -472,5 +511,19 @@ export const auctionService = {
         }
 
         return result;
+    },
+
+    async uploadAuctionFiles(auctionId: number, userId: number, files: Express.Multer.File[]){
+        const uploaded = await minioService.uploadAuctionFiles(auctionId,userId,files);
+        const images = uploaded.map(img => img.url)
+
+        return await prisma.auction.update({
+            where: { id: auctionId},
+            data: { images: images},
+            include: {
+                watchItem: true,
+                user: true,
+            }
+        })
     }
 }

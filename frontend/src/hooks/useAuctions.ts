@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import api from '../api/axios';
 import type { AxiosError } from 'axios';
-import type { AuctionCardData, AuctionInformtion, AuctionItemData } from '../dto/auction.dto';
+import type { AuctionCardData, AuctionFullData, AuctionInformtion, AuctionInput, AuctionItemData } from '../dto/auction.dto';
 
 interface HomeAuctionsResponse {
   trending: { auction: AuctionCardData }[];
@@ -13,7 +13,7 @@ interface HomeAuctionsResponse {
 }
 
 interface CreateAuctionResponse {
-  data: AuctionInformtion;
+  data: AuctionFullData;
 }
 
 export const useHomeData = () => {
@@ -55,19 +55,34 @@ export const useAuctionData = ( id: number) => {
 
 export const useAuctionCreate = () => {
   return useMutation<
-      CreateAuctionResponse,
-      AxiosError<{ error: string }>,
-      AuctionInformtion
-    >({
-      mutationFn: async (data: AuctionInformtion) => {
-        const response = await api.post<CreateAuctionResponse>("/auction/", data);
-        return response.data;
-      },
-      onSuccess: (data) => {
-        console.log("Success! Aucction created successfully: ", data.data.title);
-      },
-      onError: (err) => {
-        console.error(err.response?.data?.error || "Auction creation failed!");
-      },
-    });
-}
+    CreateAuctionResponse,
+    AxiosError<{ error: string }>,
+    { auctionData: AuctionInput; images: File[] }
+  >({
+    mutationFn: async ({ auctionData, images }) => {
+      
+      const response = await api.post<CreateAuctionResponse>("/auction/", auctionData);
+      
+      const auctionId = response.data.data.id; 
+
+      if (images && images.length > 0) {
+        const formData = new FormData();
+        images.forEach((file) => {
+          formData.append("files", file);
+        });
+
+        await api.post(`/auction/${auctionId}/upload`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+      }
+
+      return response.data;
+    },
+    onSuccess: (data) => {
+      console.log("Success! Auction created successfully: ", data.data.title);
+    },
+    onError: (err) => {
+      console.error(err.response?.data?.error || "Auction creation failed!");
+    },
+  });
+};
