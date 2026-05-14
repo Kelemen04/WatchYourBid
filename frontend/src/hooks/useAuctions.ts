@@ -68,7 +68,7 @@ export const useAuctionCreate = () => {
       if (images && images.length > 0) {
         const formData = new FormData();
         images.forEach((file) => {
-          formData.append("files", file);
+          formData.append("images", file);
         });
 
         await api.post(`/auction/${auctionId}/upload`, formData, {

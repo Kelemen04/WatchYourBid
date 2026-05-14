@@ -27,6 +27,15 @@ export const minioService = {
             path: `${objectName}`,
         };
     },
+    async removeObjectFromMinio(
+        objectName: string,
+    ) {
+        await minioClient.removeObject(bucket, objectName);
+
+        return {
+            message: "Profile picture removed from minio!"
+        };
+    },
     async uploadAuctionFiles(auctionId: number, userId: number, files: Express.Multer.File[]) {
         
         const uploadPromises = files.map(async (file, index) => {
@@ -43,5 +52,10 @@ export const minioService = {
         const objectName = `users/user-${userId}/avatar${ext}`;
         
         return await this.uploadObjectToMinio(file.buffer, objectName, file.mimetype, file.size);
+    },
+    async deleteUserProfilePicture(userId: number,profilePictureUrl: string) {
+        const objectName = profilePictureUrl.split(`${bucket}/`)[1];
+        
+        return await this.removeObjectFromMinio(objectName);
     }
 }

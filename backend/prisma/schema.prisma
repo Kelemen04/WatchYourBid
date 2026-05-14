@@ -23,7 +23,6 @@ model User {
   role              Role       @default(USER)
   phoneNumber       String?    @map("phone_number")
   balance           Int        @default(0)
-  image             String?
   watchList         Auction[]
   sessions          Session[]
   seller            Seller?
@@ -106,7 +105,7 @@ enum AuctionStatus {
 
 model Auction {
   id          Int           @id @default(autoincrement())
-  user        User?         @relation(fields: [userId], references: [id])
+  user        User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      Int?
   status      AuctionStatus @default(PENDING)
   auctionType AuctionType   @default(ENGLISH) @map("auction_type")
@@ -144,14 +143,14 @@ model Bid {
   userId    Int
   auctionId Int
   autoBidId Int?
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   auction   Auction  @relation(fields: [auctionId], references: [id], onDelete: Cascade)
   autoBid   AutoBid? @relation(fields: [autoBidId], references: [id], onDelete: SetNull)
 }
 
 model AutoBid {
   id        Int      @id @default(autoincrement())
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   auction   Auction  @relation(fields: [auctionId], references: [id], onDelete: Cascade)
   bidTime   DateTime @default(now()) @map("bid_time")
   maxAmount Int      @map("max_amount")

@@ -6,6 +6,12 @@ export default function UserDashboard() {
       <Link to="/auction">
         <div>CREATE AUCTION</div>
       </Link>
+      <Link to="/dashboard/register-buyer">
+        <div>REGISTER BUYER</div>
+      </Link>
+      <Link to="/dashboard/register-seller">
+        <div>REGISTER SELLER</div>
+      </Link>
     </>
   );
 }

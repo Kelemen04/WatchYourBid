@@ -10,21 +10,6 @@ export async function createAuction(req: Request, res: Response) {
 
     try {
         let result = await auctionService.createAuction(body,userId);
-
-        if(req.files && req.files.length as number > 0){
-            const files = req.files as Express.Multer.File[];
-            const updatedAuction = await auctionService.uploadAuctionFiles(
-                result.auction.id, 
-                userId, 
-                files
-            );
-
-            result = {
-                message: "Auction created with images",
-                auction: updatedAuction as any
-            };
-        }
-
         res.status(200).json(result);
     } catch (err) {
         return res.status(400).json({ error: err instanceof Error ? err .message : "Unknown error" });
@@ -95,5 +80,23 @@ export async function getAuctionByFilters(req: Request, res: Response) {
         res.status(200).json(result);
     } catch (err) {
         return res.status(400).json({ error: err instanceof Error ? err.message : "Unknown error" });
+    }
+}
+
+export async function uploadAuctionImages(req: Request, res: Response) {
+    const auctionId = Number(req.params.id);
+    const userId = req.user?.id as number;
+
+    try {
+        if (!req.files || (req.files as Express.Multer.File[]).length === 0) {
+            return res.status(400).json({ error: "No images provided" });
+        }
+
+        const files = req.files as Express.Multer.File[];
+        const updatedAuction = await auctionService.uploadAuctionFiles(auctionId, userId, files);
+
+        res.status(200).json({ message: "Images uploaded successfully", auction: updatedAuction });
+    } catch (err) {
+        res.status(400).json({ error: err instanceof Error ? err.message : "Unknown error" });
     }
 }

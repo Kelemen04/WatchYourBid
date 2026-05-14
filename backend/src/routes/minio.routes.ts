@@ -1,13 +1,13 @@
 import express from 'express';
-import { createAuction } from '../controllers/auction.controller';
+import { createAuction, uploadAuctionImages } from '../controllers/auction.controller';
 import { upload } from '../middlewares/minio.middleware';
-import { registerBuyer, registerSeller } from '../controllers/user.controller';
+import { registerBuyer, registerSeller, uploadUserImage } from '../controllers/user.controller';
+import { authenticateToken } from '../middlewares/auth.middleware';
 
 const router = express.Router();
 
-router.post('/auctions', upload.array("images"), createAuction);
+router.post('/auction/:id/upload',authenticateToken(), upload.array("images"), uploadAuctionImages);
 
-router.post('/me/register-buyer', upload.single("image"), registerBuyer)
-router.post('/me/register-seller', upload.single("image"), registerSeller)
+router.post('/me/upload-avatar', authenticateToken(), upload.single("image"), uploadUserImage)
 
 export default router;
