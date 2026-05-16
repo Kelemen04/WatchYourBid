@@ -8,27 +8,30 @@ datasource db {
 }
 
 model User {
-  id                Int        @id @default(autoincrement())
-  username          String     @unique
-  firstName         String?    @map("first_name")
-  lastName          String?    @map("last_name")
+  id                Int             @id @default(autoincrement())
+  username          String          @unique
+  firstName         String?         @map("first_name")
+  lastName          String?         @map("last_name")
   password          String
-  email             String     @unique
-  passwordResetCode String?    @map("password_reset_code")
-  status            UserStatus @default(PENDING)
-  emailVerified     Boolean    @default(false) @map("email_verified")
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @updatedAt
+  email             String          @unique
+  passwordResetCode String?         @map("password_reset_code")
+  status            UserStatus      @default(PENDING)
+  emailVerified     Boolean         @default(false) @map("email_verified")
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
   profilePicture    String?
-  role              Role       @default(USER)
-  phoneNumber       String?    @map("phone_number")
-  balance           Int        @default(0)
-  watchList         Auction[]
+  role              Role            @default(USER)
+  phoneNumber       String?         @map("phone_number")
+  balance           Int             @default(0)
+  watchList         WatchList[]
   sessions          Session[]
   seller            Seller?
   buyer             Buyer?
   bids              Bid[]
   autoBids          AutoBid[]
+  auctions          Auction[]
+  writtenReviews    Review[]        @relation("WrittenReviews")
+  promotingBids     PromotingBids[]
 }
 
 enum UserStatus {
@@ -46,13 +49,30 @@ enum Role {
 }
 
 model Seller {
-  id          Int     @id @default(autoincrement())
-  address     Address @relation(fields: [addressId], references: [id])
-  userId      Int     @unique @map("user_id")
-  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  rating      Float   @default(0)
+  id          Int      @id @default(autoincrement())
+  address     Address  @relation(fields: [addressId], references: [id])
+  userId      Int      @unique @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rating      Float    @default(0)
   description String?
-  addressId   Int     @unique
+  addressId   Int      @unique
+  reviews     Review[]
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  rating    Int
+  comment   String
+  createdAt DateTime @default(now())
+
+  authorId Int
+  author   User @relation("WrittenReviews", fields: [authorId], references: [id])
+
+  auctionId Int     @unique
+  auction   Auction @relation(fields: [auctionId], references: [id])
+
+  sellerId Int
+  seller   Seller @relation(fields: [sellerId], references: [id])
 }
 
 model Address {
@@ -122,17 +142,45 @@ model Auction {
   title       String
   description String @db.Text
 
-  tickInterval    Int?       @map("tick_interval")
-  moneyInterval   Int?       @map("money_interval")
-  minBidIncrement Int?       @default(1) @map("min_bid_increment")
-  isAscending     Boolean?   @map("is_ascending")
-  images          String[]
-  bids            Bid[]
-  autoBids        AutoBid[]
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
-  watchItem       WatchItem?
-  trendings       Trendings?
+  tickInterval         Int?            @map("tick_interval")
+  moneyInterval        Int?            @map("money_interval")
+  minBidIncrement      Int?            @default(1) @map("min_bid_increment")
+  isAscending          Boolean?        @map("is_ascending")
+  images               String[]
+  bids                 Bid[]
+  autoBids             AutoBid[]
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  watchItem            WatchItem?
+  trendings            Trendings?
+  watchList            WatchList[]
+  review               Review?
+  promotingBids        PromotingBids[]
+  promotedHomeRank     Int?
+  promotedCategoryRank Int?
+}
+
+model WatchList {
+  userId    Int
+  auctionId Int
+  users     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  auctions  Auction @relation(fields: [auctionId], references: [id], onDelete: Cascade)
+
+  @@id([userId, auctionId])
+}
+
+model PromotingBids {
+  id Int @id @default(autoincrement())
+
+  maxAmount  Int
+  targetDate DateTime @default(now()) @map("target_date")
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  auctionId Int
+  auction   Auction @relation(fields: [auctionId], references: [id], onDelete: Cascade)
+
+  @@unique([auctionId, targetDate])
 }
 
 model Bid {

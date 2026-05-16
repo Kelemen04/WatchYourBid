@@ -41,6 +41,17 @@ export async function deleteAuction(req: Request, res: Response) {
     }
 }
 
+export async function getUserAuctions(req: Request, res: Response) {
+    const userId = req.user?.id as number;
+
+    try {
+        const result = await auctionService.getUserAuctions(userId);
+        res.status(200).json(result);
+    } catch (err) {
+        return res.status(400).json({ error: err instanceof Error ? err.message : "Unknown error" });
+    }
+}
+
 export async function getHomeAuctions(req: Request, res: Response) {
     try {
         const result = await auctionService.getHomeAuctions();
@@ -72,6 +83,48 @@ export async function getAuctionByCategory(req: Request, res: Response) {
     }
 }
 
+export async function addToWatchList(req: Request, res: Response) {
+    const userId = req.user?.id as number;
+    const auctionId = Number(req.body.auctionId);
+
+    if (isNaN(auctionId)) {
+        return res.status(400).json({ error: "Invalid Auction ID" })
+    }
+
+    try{
+        const watchList = await auctionService.addToWatchList(userId,auctionId);
+        return res.status(200).json(watchList);
+    } catch (err) {
+        return res.status(400).json({ error: err instanceof Error ? err.message : "Unknown error"})
+    }
+}
+
+export async function getWatchList(req: Request, res: Response) {
+    const userId = req.user?.id as number;
+
+    try{
+        const watchList = await auctionService.getWatchList(userId);
+        return res.status(200).json(watchList);
+    } catch (err) {
+        return res.status(400).json({ error: err instanceof Error ? err.message : "Unknown error"})
+    }
+}
+
+export async function deleteAuctionFromWatchList(req: Request, res: Response) {
+    const userId = req.user?.id as number;
+    const auctionId = Number(req.body.auctionId);
+
+    if (isNaN(auctionId)) {
+        return res.status(400).json({ error: "Invalid Auction ID" })
+    }
+
+    try{
+        const watchList = await auctionService.deleteAuctionFromWatchList(userId,auctionId);
+        return res.status(200).json({ message: "Auction deleted successfully from watch list!"});
+    } catch (err) {
+        return res.status(400).json({ error: err instanceof Error ? err.message : "Unkowon error"})
+    }
+}
 
 export async function getAuctionByFilters(req: Request, res: Response) {
     const filters = req.filters as AuctionFilterDTO;

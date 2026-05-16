@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "PromotingBids" ALTER COLUMN "targetDate" SET DEFAULT CURRENT_TIMESTAMP;

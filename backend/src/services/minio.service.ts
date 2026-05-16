@@ -36,6 +36,15 @@ export const minioService = {
             message: "Profile picture removed from minio!"
         };
     },
+    async removeObjectsFromMinio(
+        objectName: string[],
+    ) {
+        await minioClient.removeObjects(bucket, objectName);
+
+        return {
+            message: "Pictures removed from minio!"
+        };
+    },
     async uploadAuctionFiles(auctionId: number, userId: number, files: Express.Multer.File[]) {
         
         const uploadPromises = files.map(async (file, index) => {
@@ -56,6 +65,15 @@ export const minioService = {
     async deleteUserProfilePicture(userId: number,profilePictureUrl: string) {
         const objectName = profilePictureUrl.split(`${bucket}/`)[1];
         
+        if(!objectName) return;
+
         return await this.removeObjectFromMinio(objectName);
+    },
+    async deleteAuctionPictures(userId: number,profilePictureUrl: string[]) {
+        const objectNames = profilePictureUrl.map((p) => p.split(`${bucket}/`)[1]).filter((name): name is string => !!name);;
+        
+        if(objectNames.length === 0) return;
+
+        return await this.removeObjectsFromMinio(objectNames);
     }
 }

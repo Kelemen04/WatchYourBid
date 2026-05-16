@@ -1,8 +1,9 @@
 import express from 'express';
-import { getMe, updateMe, registerBuyer, registerSeller, deleteMe } from '../controllers/user.controller'
+import { getMe, updateMe, registerBuyer, registerSeller, deleteMe, getUserById } from '../controllers/user.controller'
 import { BuyerRegisterSchema , SellerRegisterSchema } from '../dto/user.dto';
 import { authenticateToken, validate } from '../middlewares/auth.middleware';
 import { verifyRoles } from '../middlewares/roleAuth.middleware';
+import { validateId } from '../middlewares/auction.middleware';
 
 const router = express.Router();
 
@@ -12,5 +13,7 @@ router.delete('/me', authenticateToken(), deleteMe)
 
 router.post('/me/register-buyer', authenticateToken(), validate(BuyerRegisterSchema), verifyRoles("USER"), registerBuyer)
 router.post('/me/register-seller', authenticateToken(), validate(SellerRegisterSchema), verifyRoles("USER"), registerSeller)
+
+router.get('/:id',validateId, getUserById)
 
 export default router;

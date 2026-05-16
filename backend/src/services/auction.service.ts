@@ -1,6 +1,6 @@
 import type { AuctionFilterDTO, CreateAuctionDTO } from "../dto/auction.dto";
 import { prisma } from "../db/client";
-import type { WatchCategory } from "../../generated/prisma";
+import type { Auction, WatchCategory } from "../../generated/prisma";
 import { auctionTasks } from "../jobs/auction.queues";
 import { minioService } from "./minio.service";
 import "multer";
@@ -13,6 +13,18 @@ function parseSortBy(sortBy: string) {
         case "newest": 
         default: return { createdAt: "desc" as const };
     }
+}
+
+function hideFields(auction: any) {
+    if ((auction.auctionType === "FPSB" || auction.auctionType === "VICKREY") && auction.status === "ACTIVE") {
+        return {
+            ...auction,
+            currentPrice: 0,
+            bids: [],
+        };
+    }
+
+    return auction;
 }
 
 export const auctionService = {
@@ -122,7 +134,7 @@ export const auctionService = {
             const delay = Math.max(0, date2 - date);
 
             await auctionTasks.add("auction-close-job", 
-                { auctionId: auction.id, action: "CLOSE" }, 
+                { auctionId: auction.id, userId: user.id, action: "CLOSE" }, 
                 { delay: delay, jobId: `close-${auction.id}` }
             );
 
@@ -190,6 +202,10 @@ export const auctionService = {
             await job.remove();
             console.log(`Japanese or dutch job deleted: ${job.id}`);
             }
+        }
+
+        if(auction?.images){
+            await minioService.deleteAuctionPictures(userId,auction?.images);
         }
 
         return { message: "Auction deletion completed successfully!"}
@@ -383,15 +399,23 @@ export const auctionService = {
     },
     async getHomeAuctions(){
         const trendingDate = new Date(Date.now() - (1000 * 60 * 60 * 24));
-        const [trending, latest, smartwatches, clocks, wristwatches, pocketWatches ] = await Promise.all([
+        const [promoted, trending, latest, smartwatches, clocks, wristwatches, pocketWatches ] = await Promise.all([
+            prisma.auction.findMany({ 
+                where: { promotedHomeRank: { not: null}, status: "ACTIVE"},
+                include: { watchItem: true },
+                orderBy: { promotedHomeRank: "asc"},
+                take: 10,
+            }),
             prisma.trendings.findMany({ 
                 where: { updatedAt: { gte: trendingDate }},
                 orderBy: { clicks: "desc"},
                 take: 20,
-                include: { auction: true }
+                include: { auction: { include: { watchItem: true } } }
             }),
             prisma.auction.findMany({ 
+                where: { status: "ACTIVE" },
                 orderBy: { startTime: "desc"},
+                include: { watchItem: true },
                 take: 20,
             }),
             prisma.auction.findMany({ 
@@ -420,29 +444,119 @@ export const auctionService = {
             }),
         ])
 
-        return { trending, latest, smartwatches, clocks, wristwatches, pocketWatches }
+        const newPromoted = promoted.map(hideFields);
+        const newTrending = trending.map(a => ({...a, auction: hideFields(a.auction)}));
+        const newLatest = latest.map(hideFields);
+        const newSmartwatches = smartwatches.map(hideFields);
+        const newClocks = clocks.map(hideFields);
+        const newWristwatches = wristwatches.map(hideFields);
+        const newPocketWatches = pocketWatches.map(hideFields);
+
+        return { 
+            promoted: newPromoted,
+            trending: newTrending, 
+            latest: newLatest, 
+            smartwatches: newSmartwatches, 
+            clocks: newClocks, 
+            wristwatches: newWristwatches, 
+            pocketWatches: newPocketWatches 
+        }
     },
-    async getAuctionByCategory(type: WatchCategory){
-        const result = await prisma.auction.findMany({
-            where: {
-                status: "ACTIVE",
-                watchItem: {
-                    category: type,
-                }
-            },
-            include: {
-                watchItem: {
-                    include: {
-                        wristwatch: true,
-                        smartwatch: true,
-                        pocketWatch: true,
-                        clock: true
-                    }
-                }
-            }
+    async addToWatchList(userId: number,auctionId: number) {
+        if(!userId){
+            throw new Error("User ID not given!")
+        }
+
+        if(!auctionId){
+            throw new Error("Auction ID not given!")
+        }
+        try {
+            return await prisma.watchList.create({
+                data: { userId: userId, auctionId: auctionId }
+            })
+        } catch (err) {
+            throw new Error("Item already in the list!");
+        }
+    },
+    async getWatchList(userId: number) {
+        if(!userId){
+            throw new Error("User ID not given!")
+        }
+
+        const watchList = await prisma.watchList.findMany({
+            where: { userId: userId },
+            include: { auctions: { include: { watchItem: true } } }
         })
 
-        return result;
+
+        return watchList.map(entry => hideFields(entry.auctions) ) || [];
+    },
+    async deleteAuctionFromWatchList(userId: number, auctionId: number) {
+        if(!userId){
+            throw new Error("User ID not given!")
+        }
+
+        if(!auctionId){
+            throw new Error("Auction ID not given!")
+        }
+        try {
+            return await prisma.watchList.delete({
+                where: { userId_auctionId: { userId, auctionId: auctionId } }
+            })
+        } catch (err) {
+            throw new Error("Item not found on watchlist or already deleted.");
+        }
+    },
+    async getAuctionByCategory(type: WatchCategory){
+        const [ promoted, others ] = await Promise.all([
+            prisma.auction.findMany({
+                where: {
+                    promotedCategoryRank: { not: null},
+                    status: "ACTIVE",
+                    watchItem: {
+                        category: type,
+                    }
+                },
+                orderBy: { promotedCategoryRank: "asc"},
+                include: {
+                    watchItem: {
+                        include: {
+                            wristwatch: true,
+                            smartwatch: true,
+                            pocketWatch: true,
+                            clock: true
+                        }
+                    }
+                }
+            }),
+            prisma.auction.findMany({
+                where: {
+                    status: "ACTIVE",
+                    watchItem: {
+                        category: type,
+                    },
+                    promotedCategoryRank: null,
+                },
+                orderBy: { startTime: "desc" },
+                include: {
+                    watchItem: {
+                        include: {
+                            wristwatch: true,
+                            smartwatch: true,
+                            pocketWatch: true,
+                            clock: true
+                        }
+                    }
+                }
+            })
+        ]);
+
+        const newPromoted = promoted.map(hideFields);
+        const newOthers = others.map(hideFields);
+        return {
+            promoted: newPromoted,
+            others: newOthers
+        };
     },
     async getAuctionByFilters(filters: AuctionFilterDTO) {
         const result = await prisma.auction.findMany({
@@ -489,6 +603,23 @@ export const auctionService = {
             take: filters.take,
         });
 
+        const newResult = result.map(hideFields);
+
+        return newResult;
+    },
+    async getUserAuctions(userId: number){
+        const result = await prisma.auction.findMany({
+            where: { userId: userId },
+            orderBy: { createdAt: "desc"},
+            include: { 
+                watchItem: true
+                }
+        })
+
+        if(!result){
+            throw new Error("User auctions not found!");
+        }
+
         return result;
     },
     async getAuctionById(auctionId: number){
@@ -508,6 +639,14 @@ export const auctionService = {
 
         if(!result){
             throw new Error("Auction not found!");
+        }
+
+        if ((result.auctionType === "FPSB" || result.auctionType === "VICKREY") && result.status === "ACTIVE") {
+            return {
+                ...result,
+                currentPrice: 0,
+                bids: [],
+            };
         }
 
         return result;

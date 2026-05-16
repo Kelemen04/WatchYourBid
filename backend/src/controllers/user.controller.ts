@@ -13,6 +13,17 @@ export async function getMe(req: Request, res: Response) {
   }
 }
 
+export async function getUserById(req: Request, res: Response) {
+  const userId = req.validatedId as number;
+
+  try {
+    const me = await userService.getUserById(userId);
+    res.status(200).json(me);
+  } catch (e) {
+    return res.status(400).json({ error: e instanceof Error ? e.message : "Unknown error" });
+  }
+}
+
 export async function updateMe(req: Request, res: Response) {
   const userId = req.user?.id as number;
   const body = req.body;

@@ -7,6 +7,7 @@ import { router } from "./routes/index";
 
 import { rateLimiter } from './middlewares/rateLimiter.middleware';
 import { initSocket } from './utils/socket';
+import { promotingTasks } from './jobs/auction.queues';
 
 const app = express();
 const server = createServer(app);
@@ -25,6 +26,16 @@ app.use(cookieParser());
 
 app.use("/api", router);
 
-server.listen(port, () => {
+server.listen(port, async () => {
     console.log(`Server listening on port - ${port}`);
+
+    try {
+        await promotingTasks.add('daily-change', 
+            { reportType: 'daily' }, 
+            { repeat: { pattern: '0 0 * * *' } }
+        );
+        console.log("Promoted auctions refreshed");
+    } catch (error) {
+        console.error("Failed to refresh promoted auctions:", error);
+    }
 });

@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import type { AutoBidDTO, PlaceBidDTO } from "../dto/bids.dto";
+import type { AutoBidDTO, PlaceBidDTO, PlacePromotingBidDTO } from "../dto/bids.dto";
 import { bidService } from "../services/bid.service";
 import { io } from "../utils/socket";
 
@@ -11,6 +11,19 @@ export async function placeBid(req: Request, res: Response) {
   try{
     const placeBid= await bidService.placeBid(body,userId,auctionId);
     res.status(200).json(placeBid);
+  } catch(e){
+    return res.status(400).json({ error: e instanceof Error ? e.message : "Unknown error" });
+  }
+}
+
+export async function placePromotingBid(req: Request, res: Response) {
+  const userId = req.user?.id as number;
+  const body = req.body as PlacePromotingBidDTO;
+  const auctionId = Number(req.params.id);
+
+  try{
+    const placePromotingBid= await bidService.placePromotingBid(body,userId,auctionId);
+    res.status(200).json(placePromotingBid);
   } catch(e){
     return res.status(400).json({ error: e instanceof Error ? e.message : "Unknown error" });
   }

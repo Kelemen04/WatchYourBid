@@ -5,6 +5,10 @@ export const PlaceBidSchema = z.object({
   bidAmount: z.number().positive("Bid must be greater than zero"),
 });
 
+export const PlacePromotingBidSchema = z.object({
+  maxAmount: z.number().positive("Bid must be greater than zero"),
+});
+
 export const AutoBidSchema = z.object({
   auctionId: z.number(),
   maxAmount: z.number().positive("Max amount must be positive"),
@@ -13,3 +17,4 @@ export const AutoBidSchema = z.object({
 
 export type AutoBidDTO = z.infer<typeof AutoBidSchema>;
 export type PlaceBidDTO = z.infer<typeof PlaceBidSchema>;
+export type PlacePromotingBidDTO = z.infer<typeof PlacePromotingBidSchema>;

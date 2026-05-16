@@ -1,4 +1,4 @@
-import type { AutoBidDTO, PlaceBidDTO } from "../dto/bids.dto";
+import type { AutoBidDTO, PlaceBidDTO, PlacePromotingBidDTO } from "../dto/bids.dto";
 import { prisma } from '../db/client'
 import { io } from "../utils/socket"
 
@@ -19,6 +19,30 @@ export const bidService = {
 
             if (!auction) {
                 throw new Error("This auction doesn't exist!")
+            }
+
+            if (auction.auctionType === "DUTCH") {
+                await tx.auction.update({
+                    where: { id: auctionId },
+                    data: { status: "ENDED", currentPrice: data.bidAmount }
+                });
+                
+                const winningBid = await tx.bid.create({
+                    data: {
+                        bidAmount: data.bidAmount,
+                        userId: userId,
+                        auctionId: auctionId,
+                        isWinner: true
+                    }
+                });
+
+                io.to(`auction-${auctionId}`).emit("AuctionEnded", {
+                    auctionId: auctionId,
+                    winnerId: userId,
+                    finalPrice: data.bidAmount
+                });
+
+                return winningBid;
             }
 
             if (data.bidAmount < auction.currentPrice + (auction.minBidIncrement || 0)) {
@@ -68,22 +92,82 @@ export const bidService = {
                 }
             });
 
+            return newBid;
+        });
+
+        const auction = await prisma.auction.findFirst({
+            where: { id: newBid.auctionId }
+        })
+
+        if(auction?.auctionType === "FPSB" || auction?.auctionType === "VICKREY"){
+            io.to(`auction-${auctionId}`).emit("BidUpdated", {
+                auctionId: auctionId,
+            });
+        } else {
             io.to(`auction-${auctionId}`).emit("BidUpdated", {
                 auctionId: auctionId,
                 newPrice: newBid.bidAmount,
                 bidderId: userId
-            })
-
-            return newBid;
-        });
-
-        io.to(`auction-${auctionId}`).emit("BidUpdated", {
-            auctionId: auctionId,
-            newPrice: newBid.bidAmount,
-            bidderId: userId
-        });
+            });
+        }
 
         await this.processAutoBids(auctionId, userId);
+
+        return newBid;
+    },
+
+    async placePromotingBid(data: PlacePromotingBidDTO, userId: number, auctionId: number) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const newBid = await prisma.$transaction(async (tx) => {
+            const user = await tx.user.findUnique({
+                where: { id: userId }
+            })
+
+            if (!user) {
+                throw new Error("This user doesn't exist!")
+            }
+
+            const auction = await tx.auction.findUnique({
+                where: { id: auctionId }
+            })
+
+            if (!auction) {
+                throw new Error("This auction doesn't exist!")
+            }
+
+            if(auction.userId !== userId){
+                throw new Error("This is not your auction,you can't promote it!")
+            }
+
+            if (auction.status !== "ACTIVE") {
+                throw new Error("You can only promote active auctions!");
+            }
+
+            const existingBid = await tx.promotingBids.findFirst({
+                where: {
+                    auctionId: auctionId,
+                    targetDate: today
+                }
+            })
+
+            if (existingBid) {
+                throw new Error("You already promoted this auction today!");
+            }
+
+            const newPromotingBid = await tx.promotingBids.create({
+                data: {
+                    maxAmount: data.maxAmount,
+                    userId: userId,
+                    auctionId: auctionId,
+                    targetDate: today,
+                }
+            });
+
+            return newPromotingBid;
+        });
+
 
         return newBid;
     },

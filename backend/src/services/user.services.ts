@@ -1,5 +1,5 @@
 import { prisma } from "../db/client"
-import type { BuyerRegisterDTO, SellerRegisterDTO, MeResponse, UpdateBuyer, UpdateSeller, UpdateUser } from "../dto/user.dto";
+import type { BuyerRegisterDTO, SellerRegisterDTO, MeResponse, UpdateUser, PublicProfileDTO } from "../dto/user.dto";
 import { minioService } from "./minio.service";
 
 export const userService = {
@@ -17,8 +17,24 @@ export const userService = {
                 lastName: true,
                 phoneNumber: true,
                 profilePicture: true,
-                buyer: { include: { shippingAddress: true } },
-                seller: { include: { address: true } }
+                buyer: {
+                    select: {
+                        id: true,
+                        userId: true,
+                        shippingAddressId: true,
+                        shippingAddress: true
+                    }
+                },
+                seller: {
+                    select: {
+                        id: true,
+                        userId: true,
+                        addressId: true,
+                        rating: true,
+                        description: true,
+                        address: true
+                    }
+                }
             }
         });
 
@@ -27,6 +43,29 @@ export const userService = {
         }
 
         return user as MeResponse;
+    },
+
+    async getUserById(userId: number) {
+        if (!userId) {
+            throw new Error("No user id was given")
+        }
+
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                username: true,
+                firstName: true,
+                lastName: true,
+                profilePicture: true,
+                seller: { select: { address: true, description: true, rating: true } },
+            }
+        });
+
+        if (!user) {
+            throw new Error("No user found!")
+        }
+
+        return user as PublicProfileDTO;
     },
 
     async updateMe(data: UpdateUser, userId: number) {
@@ -45,10 +84,7 @@ export const userService = {
         try {
             const userContext = await prisma.user.findUnique({
                 where: { id: userId },
-                include: { 
-                    buyer: true, 
-                    seller: true 
-                }
+                include: { buyer: true, seller: true }
             });
 
             if (!userContext) throw new Error("User not found!");
@@ -57,7 +93,7 @@ export const userService = {
                 where: { userId: userId, status: "ACTIVE" }
             })
 
-            if( activeAuctions.length > 0){
+            if(activeAuctions.length > 0){
                 throw new Error("You can't delete your account while having active auctions!");
             }
 
@@ -81,7 +117,7 @@ export const userService = {
             });
 
             if(userContext?.profilePicture){
-                await minioService.deleteUserProfilePicture(userId,userContext?.profilePicture);
+                await minioService.deleteUserProfilePicture(userId, userContext.profilePicture);
             }
 
             return { message: "User deleted successfully!" };
@@ -92,15 +128,13 @@ export const userService = {
             )) {
                 throw error; 
             }
-        throw new Error("Failed to delete account. User might not exist.");
-    }
+            throw new Error("Failed to delete account. User might not exist.");
+        }
     },
 
     async registerBuyer(data: BuyerRegisterDTO, userId: number) {
         try {
-            if (!userId) {
-                throw new Error("No user id was given")
-            }
+            if (!userId) throw new Error("No user id was given");
 
             const user = await prisma.user.findUnique({
                 where: { id: userId },
@@ -116,9 +150,7 @@ export const userService = {
                 },
             });
 
-            if (existing) {
-                throw new Error("Phone number already exists!");
-            }
+            if (existing) throw new Error("Phone number already exists!");
 
             return await prisma.$transaction(async (tx) => {
                 return await tx.user.update({
@@ -156,9 +188,7 @@ export const userService = {
 
     async registerSeller(data: SellerRegisterDTO, userId: number) {
         try {
-            if (!userId) {
-                throw new Error("No user id was given")
-            }
+            if (!userId) throw new Error("No user id was given");
 
             const user = await prisma.user.findUnique({
                 where: { id: userId },
@@ -174,9 +204,7 @@ export const userService = {
                 },
             });
 
-            if (existing) {
-                throw new Error("Phone number already exists!");
-            }
+            if (existing) throw new Error("Phone number already exists!");
 
             return await prisma.$transaction(async (tx) => {
                 return await tx.user.update({
@@ -215,13 +243,10 @@ export const userService = {
 
     async uploadUserFile(userId: number, file: Express.Multer.File) {
         if (!userId) throw new Error("User ID is required");
-
-        const user = await prisma.user.findUnique({
-            where: { id: userId }
-        });
+        const user = await prisma.user.findUnique({ where: { id: userId } });
 
         if(user?.profilePicture){
-            await minioService.deleteUserProfilePicture(userId,user.profilePicture);
+            await minioService.deleteUserProfilePicture(userId, user.profilePicture);
         }
         const uploaded = await minioService.uploadUserProfilePicture(userId, file);
 
