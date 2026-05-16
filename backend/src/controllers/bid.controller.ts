@@ -41,3 +41,15 @@ export async function placeAutoBid(req: Request, res: Response) {
     return res.status(400).json({ error: e instanceof Error ? e.message : "Unknown error" });
   }
 }
+
+export async function buyNow(req: Request, res: Response) {
+  const userId = req.user?.id as number;
+  const auctionId = Number(req.params.id);
+
+  try{
+    const placeAutoBid = await bidService.buyNow(userId,auctionId);
+    res.status(200).json(placeAutoBid);
+  } catch(e){
+    return res.status(400).json({ error: e instanceof Error ? e.message : "Unknown error" });
+  }
+}

@@ -22,7 +22,7 @@ model User {
   profilePicture    String?
   role              Role            @default(USER)
   phoneNumber       String?         @map("phone_number")
-  balance           Int             @default(0)
+  balance           Float           @default(0.0)
   watchList         WatchList[]
   sessions          Session[]
   seller            Seller?
@@ -32,6 +32,7 @@ model User {
   auctions          Auction[]
   writtenReviews    Review[]        @relation("WrittenReviews")
   promotingBids     PromotingBids[]
+  transactions      Transaction[]
 }
 
 enum UserStatus {
@@ -293,4 +294,29 @@ model Trendings {
 
   clicks    Int      @default(0)
   updatedAt DateTime @updatedAt
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  PROMOTION_PAYMENT
+  AUCTION_PAYMENT
+  AUCTION_RECEIVE
+}
+
+enum TransactionStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+model Transaction {
+  id              String            @id @default(uuid())
+  userId          Int
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount          Float
+  type            TransactionType
+  status          TransactionStatus @default(PENDING)
+  stripeSessionId String?           @unique
+  createdAt       DateTime          @default(now())
 }

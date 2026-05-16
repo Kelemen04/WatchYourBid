@@ -6,6 +6,6 @@ import { createReview, deleteReview } from "../controllers/review.controller";
 
 const router = express.Router();
 
-router.delete('/:id',authenticateToken, verifyRoles("MODERATOR"), deleteReview);
+router.delete('/:id',authenticateToken(), verifyRoles("MODERATOR"), deleteReview);
 
 export default router;
