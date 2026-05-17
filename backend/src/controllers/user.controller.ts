@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import type { BuyerRegisterDTO, SellerRegisterDTO } from "../dto/user.dto";
 import { userService } from "../services/user.services";
+import { minioService } from "../services/minio.service";
 
 export async function getMe(req: Request, res: Response) {
   const userId = req.user?.id as number;
@@ -41,7 +42,7 @@ export async function deleteMe(req: Request, res: Response) {
 
   try {
     const me = await userService.deleteMe(userId);
-    res.clearCookie("access_token");
+    res.clearCookie("refresh_token");
     res.status(200).json(me);
   } catch (e) {
     return res.status(400).json({ error: e instanceof Error ? e.message : "Unknown error" });
@@ -51,8 +52,15 @@ export async function deleteMe(req: Request, res: Response) {
 export async function registerBuyer(req: Request, res: Response) {
   const body = req.body as BuyerRegisterDTO;
   const userId = req.user?.id as number;
+  const image = req.file;
 
   try {
+    if(image){
+      const uploadImage = await minioService.uploadUserProfilePicture(userId,image);
+
+      body.profilePicture = uploadImage.url;
+    }
+
     let user = await userService.registerBuyer(body, userId);
     res.status(200).json({ message: "Buyer registered successfully", user });
   } catch (e) {
@@ -63,8 +71,15 @@ export async function registerBuyer(req: Request, res: Response) {
 export async function registerSeller(req: Request, res: Response) {
   const body = req.body as SellerRegisterDTO;
   const userId = req.user?.id as number;
+  const image = req.file;
 
   try {
+    if(image){
+      const uploadImage = await minioService.uploadUserProfilePicture(userId,image);
+
+      body.profilePicture = uploadImage.url;
+    }
+
     let user = await userService.registerSeller(body, userId);
     res.status(200).json({ message: "Seller registered successfully", user });
   } catch (e) {

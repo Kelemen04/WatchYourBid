@@ -90,7 +90,7 @@ export const UpdateUserSchema = z.object({
   firstName: z.string().min(2).max(100).trim().nullable(),
   lastName: z.string().min(2).max(100).trim().nullable(),
   phoneNumber: z.string().regex(/^\+?[0-9\s-]{7,20}$/).nullable(),
-  profilePicture: z.string().min(2).nullable(),
+  profilePicture: z.string().nullable(),
 }).partial();
 
 export const UpdateBuyerSchema = PersonInfoSchema.merge(BaseAddressSchema).extend({

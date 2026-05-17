@@ -1,5 +1,6 @@
 import { useFormContext } from "react-hook-form";
 import type { AuctionInput } from "../../dto/auction.dto";
+import { useEffect } from "react";
 
 interface Props {
   setStep: React.Dispatch<React.SetStateAction<number>>;
@@ -7,7 +8,11 @@ interface Props {
 
 // --- WRISTWATCH ---
 const WristwatchFields = () => {
-  const { register } = useFormContext<AuctionInput>();
+  const {
+    register,
+    formState: { errors },
+  } = useFormContext<AuctionInput>();
+
   return (
     <>
       <div>
@@ -22,6 +27,11 @@ const WristwatchFields = () => {
             valueAsNumber: true,
           })}
         />
+        {errors.watchItem?.wristwatch?.caseDiameter && (
+          <p style={{ color: "red" }}>
+            {errors.watchItem.wristwatch.caseDiameter.message}
+          </p>
+        )}
       </div>
       <div>
         <label>Water Resistance:</label>
@@ -81,7 +91,10 @@ const PocketWatchFields = () => {
 
 // --- SMARTWATCH ---
 const SmartwatchFields = () => {
-  const { register } = useFormContext<AuctionInput>();
+  const {
+    register,
+    formState: { errors },
+  } = useFormContext<AuctionInput>();
   return (
     <>
       <div>
@@ -96,6 +109,11 @@ const SmartwatchFields = () => {
             valueAsNumber: true,
           })}
         />
+        {errors.watchItem?.smartwatch?.batteryLife && (
+          <p style={{ color: "red" }}>
+            {errors.watchItem.smartwatch.batteryLife.message}
+          </p>
+        )}
       </div>
       <div>
         <label>Screen Type:</label>
@@ -104,6 +122,13 @@ const SmartwatchFields = () => {
       <div>
         <label>Sensors:</label>
         <input type="text" {...register("watchItem.smartwatch.sensors")} />
+      </div>
+      <div>
+        <label>Compatibility:</label>
+        <input
+          type="text"
+          {...register("watchItem.smartwatch.compatibility")}
+        />
       </div>
     </>
   );
@@ -123,6 +148,10 @@ const ClockFields = () => {
         <input type="text" {...register("watchItem.clock.powerSource")} />
       </div>
       <div>
+        <label>Chime Type:</label>
+        <input type="text" {...register("watchItem.clock.chimeType")} />
+      </div>
+      <div>
         <label>Dimensions:</label>
         <input type="text" {...register("watchItem.clock.dimensions")} />
       </div>
@@ -136,33 +165,49 @@ export default function AuctionCategoryDataForm({ setStep }: Props) {
     trigger,
     watch,
     formState: { errors },
+    unregister,
   } = useFormContext<AuctionInput>();
 
   const selectedCategory = watch("watchItem.category");
+
+  useEffect(() => {
+    if (selectedCategory !== "WRISTWATCH") unregister("watchItem.wristwatch");
+    if (selectedCategory !== "POCKETWATCH") unregister("watchItem.pocketWatch");
+    if (selectedCategory !== "SMARTWATCH") unregister("watchItem.smartwatch");
+    if (selectedCategory !== "CLOCK") unregister("watchItem.clock");
+  }, [selectedCategory, unregister]);
 
   const handleNext = async () => {
     const fieldsByCategory = {
       WRISTWATCH: [
         "watchItem.brand",
         "watchItem.model",
+        "watchItem.material",
+        "watchItem.condition",
         "watchItem.category",
         "watchItem.wristwatch",
       ],
       POCKETWATCH: [
         "watchItem.brand",
         "watchItem.model",
+        "watchItem.material",
+        "watchItem.condition",
         "watchItem.category",
         "watchItem.pocketWatch",
       ],
       SMARTWATCH: [
         "watchItem.brand",
         "watchItem.model",
+        "watchItem.material",
+        "watchItem.condition",
         "watchItem.category",
         "watchItem.smartwatch",
       ],
       CLOCK: [
         "watchItem.brand",
         "watchItem.model",
+        "watchItem.material",
+        "watchItem.condition",
         "watchItem.category",
         "watchItem.clock",
       ],
@@ -184,7 +229,6 @@ export default function AuctionCategoryDataForm({ setStep }: Props) {
     <div className="form-step">
       <h1>Watch Item Data</h1>
 
-      {/* Alap WatchItem mezők */}
       <div>
         <label>Brand:</label>
         <input type="text" {...register("watchItem.brand")} />
@@ -210,6 +254,30 @@ export default function AuctionCategoryDataForm({ setStep }: Props) {
       </div>
 
       <div>
+        <label>Material:</label>
+        <input type="text" {...register("watchItem.material")} />
+        {errors.watchItem?.material && (
+          <p style={{ color: "red" }}>{errors.watchItem.material.message}</p>
+        )}
+      </div>
+
+      <div>
+        <label>Condition:</label>
+        <input type="text" {...register("watchItem.condition")} />
+        {errors.watchItem?.condition && (
+          <p style={{ color: "red" }}>{errors.watchItem.condition.message}</p>
+        )}
+      </div>
+
+      <div>
+        <label>Weight(OPTIONAL):</label>
+        <input
+          type="number"
+          {...register("watchItem.weight", { valueAsNumber: true })}
+        />
+      </div>
+
+      <div>
         <label>Category:</label>
         <select {...register("watchItem.category")}>
           <option value="WRISTWATCH">Wristwatch</option>
@@ -219,7 +287,6 @@ export default function AuctionCategoryDataForm({ setStep }: Props) {
         </select>
       </div>
 
-      {/* Dinamikus mezők */}
       {selectedCategory === "WRISTWATCH" && <WristwatchFields />}
       {selectedCategory === "POCKETWATCH" && <PocketWatchFields />}
       {selectedCategory === "SMARTWATCH" && <SmartwatchFields />}
@@ -227,7 +294,6 @@ export default function AuctionCategoryDataForm({ setStep }: Props) {
 
       <hr />
 
-      {/* Extrák (Booleanok) */}
       <div>
         <label>Original:</label>
         <input type="checkbox" {...register("watchItem.isOriginal")} />

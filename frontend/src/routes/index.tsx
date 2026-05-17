@@ -11,6 +11,7 @@ import AuctionPage from "../pages/AuctionPage";
 import CreateAuctionPage from "../pages/CreateAuctionPage";
 import RegisterBuyerPage from "../pages/RegisterBuyerPage";
 import RegisterSellerPage from "../pages/RegisterSellerPage";
+import WatchlistPage from "../pages/WatchlistPage";
 
 export default function AppRouter() {
   return (
@@ -34,6 +35,7 @@ export default function AppRouter() {
             path="/dashboard/register-seller"
             element={<RegisterSellerPage />}
           />
+          <Route path="/watchlist" element={<WatchlistPage />} />
         </Route>
 
         <Route path="/login" element={<LoginPage />} />

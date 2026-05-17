@@ -10,8 +10,20 @@ const EnglishFields = () => {
     register,
     formState: { errors },
   } = useFormContext<AuctionInput>();
+
   return (
     <>
+      <div>
+        <label htmlFor="startingPrice">Starting Price:</label>
+        <input
+          type="number"
+          id="startingPrice"
+          {...register("startingPrice", { valueAsNumber: true })}
+        />
+        {errors.startingPrice && (
+          <p style={{ color: "red" }}>{errors.startingPrice.message}</p>
+        )}
+      </div>
       <div>
         <label htmlFor="minBidIncrement">Minimum Bid Increment:</label>
         <input
@@ -58,6 +70,17 @@ const DutchFields = () => {
   return (
     <>
       <div>
+        <label htmlFor="startingPrice">Starting Price:</label>
+        <input
+          type="number"
+          id="startingPrice"
+          {...register("startingPrice", { valueAsNumber: true })}
+        />
+        {errors.startingPrice && (
+          <p style={{ color: "red" }}>{errors.startingPrice.message}</p>
+        )}
+      </div>
+      <div>
         <label htmlFor="tickInterval">Price Drop Interval (seconds):</label>
         <input
           type="number"
@@ -103,6 +126,17 @@ const JapaneseFields = () => {
   return (
     <>
       <div>
+        <label htmlFor="startingPrice">Starting Price:</label>
+        <input
+          type="number"
+          id="startingPrice"
+          {...register("startingPrice", { valueAsNumber: true })}
+        />
+        {errors.startingPrice && (
+          <p style={{ color: "red" }}>{errors.startingPrice.message}</p>
+        )}
+      </div>
+      <div>
         <label htmlFor="tickInterval">Price Increase Interval (seconds):</label>
         <input
           type="number"
@@ -122,6 +156,18 @@ const JapaneseFields = () => {
         />
         {errors.moneyInterval && (
           <p style={{ color: "red" }}>{errors.moneyInterval.message}</p>
+        )}
+      </div>
+      {/* 🔥 HOZZÁADVA: Hiányzott a buyingPrice input */}
+      <div>
+        <label htmlFor="buyingPrice">Instant Buying Price:</label>
+        <input
+          type="number"
+          id="buyingPrice"
+          {...register("buyingPrice", { valueAsNumber: true })}
+        />
+        {errors.buyingPrice && (
+          <p style={{ color: "red" }}>{errors.buyingPrice.message}</p>
         )}
       </div>
     </>
@@ -147,6 +193,18 @@ const VickreyFields = () => {
           <p style={{ color: "red" }}>{errors.reservePrice.message}</p>
         )}
       </div>
+      {/* 🔥 HOZZÁADVA: A te hibrid logikád szerinti villámár input */}
+      <div>
+        <label htmlFor="buyingPrice">Instant Buying Price:</label>
+        <input
+          type="number"
+          id="buyingPrice"
+          {...register("buyingPrice", { valueAsNumber: true })}
+        />
+        {errors.buyingPrice && (
+          <p style={{ color: "red" }}>{errors.buyingPrice.message}</p>
+        )}
+      </div>
     </>
   );
 };
@@ -170,6 +228,18 @@ const FpsbFields = () => {
           <p style={{ color: "red" }}>{errors.reservePrice.message}</p>
         )}
       </div>
+      {/* 🔥 HOZZÁADVA: A te hibrid logikád szerinti villámár input */}
+      <div>
+        <label htmlFor="buyingPrice">Instant Buying Price:</label>
+        <input
+          type="number"
+          id="buyingPrice"
+          {...register("buyingPrice", { valueAsNumber: true })}
+        />
+        {errors.buyingPrice && (
+          <p style={{ color: "red" }}>{errors.buyingPrice.message}</p>
+        )}
+      </div>
     </>
   );
 };
@@ -186,11 +256,21 @@ export default function AuctionTypeDataForm({ setStep }: Props) {
 
   const handleNext = async () => {
     const fieldsByAuctionType = {
-      ENGLISH: ["minBidIncrement", "reservePrice", "buyingPrice"],
-      DUTCH: ["tickInterval", "moneyInterval", "reservePrice"],
-      JAPANESE: ["tickInterval", "moneyInterval"],
-      VICKREY: ["reservePrice"],
-      FPSB: ["reservePrice"],
+      ENGLISH: [
+        "startingPrice",
+        "minBidIncrement",
+        "reservePrice",
+        "buyingPrice",
+      ],
+      DUTCH: ["startingPrice", "tickInterval", "moneyInterval", "reservePrice"],
+      JAPANESE: [
+        "startingPrice",
+        "tickInterval",
+        "moneyInterval",
+        "buyingPrice",
+      ],
+      VICKREY: ["reservePrice", "buyingPrice"],
+      FPSB: ["reservePrice", "buyingPrice"],
     } as const;
 
     const currentType = watch("auctionType");

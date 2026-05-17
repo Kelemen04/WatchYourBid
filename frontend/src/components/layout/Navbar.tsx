@@ -1,15 +1,28 @@
 import { Link, useNavigate, Outlet } from "react-router-dom";
 import { useLogout } from "../../hooks/useAuth";
+import { useNavbar } from "../../hooks/useNavbar";
+import { getAccessToken } from "../../api/axios";
+import { BsBookmark } from "react-icons/bs";
 
 export default function Navbar() {
   const navigate = useNavigate();
   const logout = useLogout();
+
+  const isAuthenticated = () => {
+    return getAccessToken() !== null;
+  };
 
   const handleLogout = (e: React.MouseEvent) => {
     e.preventDefault();
     logout();
     navigate("/home");
   };
+
+  const { data } = useNavbar();
+
+  const profilePicture = data?.profilePicture;
+
+  console.log("prof ", profilePicture);
 
   return (
     <>
@@ -75,18 +88,79 @@ export default function Navbar() {
           </div>
         </div>
         <div className="flex flex-row justify-end divide-x-2 divide-solid">
-          <Link to="/login" className="px-2">
-            Login
-          </Link>
-          <Link to="/register" className="px-2">
-            Register
-          </Link>
-          <Link to="/logout" onClick={handleLogout} className="px-2">
-            Logout
-          </Link>
-          <Link to="/dashboard" className="px-2">
-            Dashboard
-          </Link>
+          {!isAuthenticated() && (
+            <>
+              <Link to="/login" className="px-2">
+                Login
+              </Link>
+              <Link to="/register" className="px-2">
+                Register
+              </Link>
+            </>
+          )}
+          {isAuthenticated() && (
+            <>
+              <Link to="/watchlist" className="px-2">
+                <BsBookmark />
+              </Link>
+              <div className="relative group">
+                <button className="flex items-center gap-3 hover:text-amber-500 transition-colors uppercase font-medium font-bold">
+                  {data ? (
+                    <>
+                      {profilePicture ? (
+                        <img
+                          src={profilePicture}
+                          alt="Profile"
+                          className="w-10 h-10 rounded-lg object-cover"
+                        />
+                      ) : (
+                        <img
+                          src="/images/no_profile.png"
+                          alt="No Profile"
+                          className="w-10 h-10 rounded-lg"
+                        />
+                      )}
+                      <p className="normal-case font-semibold text-sm">
+                        {data?.username}
+                      </p>
+                    </>
+                  ) : (
+                    <span className="text-sm text-gray-400">Loading...</span>
+                  )}
+
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
+
+                <div className="absolute left-0 mt-2 w-48 font-playfair bg-white text-slate-900 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+                  <Link
+                    to="/dashboard"
+                    className="block px-4 py-3 hover:bg-slate-100"
+                  >
+                    Dashboard
+                  </Link>
+                  <Link
+                    to="/logout"
+                    onClick={handleLogout}
+                    className="block px-4 py-3 hover:bg-slate-100"
+                  >
+                    Logout
+                  </Link>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </nav>
       <div className="content">

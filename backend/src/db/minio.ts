@@ -8,14 +8,35 @@ export const minioClient = new Minio.Client({
   secretKey: process.env.MINIO_SECRET_KEY || "minioadmin",
 });
 
+const bucket = process.env.MINIO_BUCKET || "watchyourbid";
+
 export async function ensureBucket() {
-    const bucket = process.env.MINIO_BUCKET!;
+  try {
     const exists = await minioClient.bucketExists(bucket);
 
     if (!exists) {
-        await minioClient.makeBucket(bucket, "");
-        console.log(`Bucket created: ${bucket}`);
+        await minioClient.makeBucket(bucket, "us-east-1");
+        console.log(`MinIO: Bucket created automatically: ${bucket}`);
     } else {
-        console.log(`Bucket exists: ${bucket}`);
+        console.log(`MinIO: Bucket exists: ${bucket}`);
     }
+
+    const publicReadPolicy = {
+      Version: "2012-10-17",
+      Statement: [
+        {
+          Effect: "Allow",
+          Principal: { AWS: ["*"] },
+          Action: ["s3:GetObject"],
+          Resource: [`arn:aws:s3:::${bucket}/*`],
+        },
+      ],
+    };
+
+    await minioClient.setBucketPolicy(bucket, JSON.stringify(publicReadPolicy));
+    console.log(`MinIO: Access policy automatically set to READ-ONLY (Public) for: ${bucket}`);
+
+  } catch (error) {
+    console.error("MinIO auto-init failed:", error);
+  }
 }

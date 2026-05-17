@@ -8,6 +8,7 @@ import { router } from "./routes/index";
 import { rateLimiter } from './middlewares/rateLimiter.middleware';
 import { initSocket } from './utils/socket';
 import { promotingTasks } from './jobs/auction.queues';
+import { ensureBucket } from './db/minio';
 
 const app = express();
 const server = createServer(app);
@@ -28,6 +29,8 @@ app.use("/api", router);
 
 server.listen(port, async () => {
     console.log(`Server listening on port - ${port}`);
+
+    await ensureBucket();
 
     try {
         await promotingTasks.add('daily-change', 

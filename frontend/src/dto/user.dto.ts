@@ -5,7 +5,7 @@ const PersonInfoSchema = z.object({
   firstName: z.string().min(2).max(100).trim(),
   lastName: z.string().min(2).max(100).trim(),
   phoneNumber: z.string().regex(/^\+?[0-9\s-]{7,20}$/, "Invalid phone number!"),
-  profilePicture: z.string().min(2),
+  profilePicture: z.string(),
 });
 
 const BaseAddressSchema = z.object({
@@ -99,9 +99,16 @@ export const UpdateSellerSchema = PersonInfoSchema.merge(BaseAddressSchema).exte
   description: z.string().min(50).max(3000).optional()
 }).partial();
 
+export const NavbarSchema = z.object({
+  username: z.string(),
+  profilePicture: z.string().nullable(),
+});
+
+
 export type BuyerRegisterDTO = z.input<typeof BuyerRegisterSchema>;
 export type SellerRegisterDTO = z.input<typeof SellerRegisterSchema>;
 export type MeResponse = z.infer<typeof MeResponseSchema>;
 export type UpdateUser = z.infer<typeof UpdateUserSchema>;
 export type UpdateSeller = z.infer<typeof UpdateSellerSchema>;
 export type UpdateBuyer = z.infer<typeof UpdateBuyerSchema>;
+export type NavbarDTO = z.infer<typeof NavbarSchema>;

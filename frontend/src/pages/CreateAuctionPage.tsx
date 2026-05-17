@@ -39,7 +39,12 @@ export default function CreateAuctionPage() {
   return (
     <>
       <FormProvider {...methods}>
-        <form onSubmit={methods.handleSubmit(onSubmit)} noValidate>
+        <form
+          onSubmit={methods.handleSubmit(onSubmit, (validationErrors) =>
+            console.log("❌ SÉMA HIBÁK:", validationErrors),
+          )}
+          noValidate
+        >
           {currentPage === 1 && (
             <CommonAuctionDataForm setStep={setCurrentPage} />
           )}

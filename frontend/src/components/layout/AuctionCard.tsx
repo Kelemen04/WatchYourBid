@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import type { AuctionCardData } from "../../dto/auction.dto";
 import { Link } from "react-router-dom";
+import { BsBookmark } from "react-icons/bs";
+import { useAddToWatchlist } from "../../hooks/useAuctions";
 
 export default function AuctionCard({ auction }: { auction: AuctionCardData }) {
   const [days, setDays] = useState(0);
@@ -42,13 +44,49 @@ export default function AuctionCard({ auction }: { auction: AuctionCardData }) {
     return () => clearInterval(interval);
   }, [auction.endTime]);
 
+  const { mutate } = useAddToWatchlist();
+
+  const handleWatchlistClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    mutate(
+      { auctionId: auction.id },
+      {
+        onSuccess: (data) => {
+          alert(data.message);
+        },
+        onError: (err) => {
+          alert(err.response?.data?.error || "Failed to add to watchlist");
+        },
+      },
+    );
+  };
+
   return (
     <Link to={`/auction/${auction.id}`}>
       <div className="w-full border-2 border-gray-400 bg-white p-3 flex flex-col gap-2 hover:shadow-md transition-shadow">
         <div className="aspect-square bg-gray-100 border border-gray-200 flex items-center justify-center relative">
-          <span className="text-gray-400 text-xs font-bold uppercase">
-            No Image
-          </span>
+          {auction.images && auction.images.length > 0 ? (
+            <img
+              src={auction.images[0]}
+              alt={auction.title}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+          ) : (
+            <span className="text-gray-400 text-xs font-bold uppercase">
+              No Image
+            </span>
+          )}
+
+          <button
+            type="button"
+            onClick={handleWatchlistClick}
+            className="absolute top-2 right-2 p-2 bg-white rounded-full border border-gray-300 shadow-sm text-gray-600 hover:text-blue-600 hover:scale-110 transition-all z-10"
+            title="Add to watchlist"
+          >
+            <BsBookmark className="w-4 h-4" />
+          </button>
         </div>
 
         <div>

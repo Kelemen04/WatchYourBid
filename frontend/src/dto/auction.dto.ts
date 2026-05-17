@@ -9,7 +9,7 @@ export const AuctionSchema = z.object({
   auctionType: z.enum(AuctionTypes),
   startTime: z.coerce.date(),
   endTime: z.coerce.date(),
-  startingPrice: z.number().min(0),
+  startingPrice: z.number().min(0).default(0),
   reservePrice: z.number().optional(),
   buyingPrice: z.number().optional(),
   
@@ -69,6 +69,7 @@ export const AuctionCardSchema = z.object({
   brand: z.string().optional(),
   currentPrice: z.number().optional(), 
   endTime: z.coerce.date(),
+  images: z.array(z.string()).optional()
 });
 
 export const AuctionItemSchema = AuctionCardSchema.extend({

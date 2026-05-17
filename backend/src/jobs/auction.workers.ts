@@ -72,6 +72,23 @@ export const worker = new Worker("auctionTasks", async (job: Job) => {
         }
 
         case "PRICE_UP": {
+            const activeBiddersCount = await prisma.bid.count({
+                where: { 
+                    auctionId: job.data.auctionId,
+                    bidAmount: auctionData.currentPrice
+                }
+            });
+
+            if (activeBiddersCount === 0 && auctionData.currentPrice > auctionData.startingPrice) {
+                await auctionTasks.add("auction-close-job", { auctionId: job.data.auctionId, action: "CLOSE" });
+                return;
+            }
+
+            if (activeBiddersCount === 1 && auctionData.currentPrice > auctionData.startingPrice) {
+                await auctionTasks.add("auction-close-job", { auctionId: job.data.auctionId, action: "CLOSE" });
+                return;
+            }
+
             const updated = await prisma.auction.update({
                 where: { id: job.data.auctionId },
                 data: { currentPrice: (auctionData.currentPrice || 0) + (auctionData.moneyInterval || 0) }
@@ -87,7 +104,9 @@ export const worker = new Worker("auctionTasks", async (job: Job) => {
             io.to(`auction-${updated.id}`).emit("BidUpdated", {
                 auctionId: updated.id,
                 newPrice: updated.currentPrice,
+                activeBidders: activeBiddersCount
             });
+            
             break;
         }
 

@@ -68,9 +68,6 @@ export default function GeneralSellerData({ setStep }: Props) {
       </div>
 
       <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
-        <button type="button" onClick={() => setStep((p) => p - 1)}>
-          Back
-        </button>
         <button type="button" onClick={handleNext}>
           Next
         </button>

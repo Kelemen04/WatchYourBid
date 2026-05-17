@@ -72,7 +72,7 @@ export const useLogout = () => {
     } finally {
       setAccessToken(null);
       setAuth({ user: null, accessToken: null });
-      navigate('/login');
+      navigate('/home');
     }
   };
 };

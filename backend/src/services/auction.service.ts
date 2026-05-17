@@ -471,9 +471,11 @@ export const auctionService = {
             throw new Error("Auction ID not given!")
         }
         try {
-            return await prisma.watchList.create({
+            await prisma.watchList.create({
                 data: { userId: userId, auctionId: auctionId }
             })
+
+            return { message: "Item successfully added to your watchlist!" };
         } catch (err) {
             throw new Error("Item already in the list!");
         }
@@ -487,7 +489,6 @@ export const auctionService = {
             where: { userId: userId },
             include: { auctions: { include: { watchItem: true } } }
         })
-
 
         return watchList.map(entry => hideFields(entry.auctions) ) || [];
     },

@@ -1,13 +1,9 @@
 import { FormProvider, useForm } from "react-hook-form";
-import { useBuyerRegister, useMeData } from "../hooks/useUser";
+import { useMeData, useSellerRegister } from "../hooks/useUser";
 import type { AxiosError } from "axios";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
-import {
-  BuyerRegisterSchema,
-  type BuyerRegisterDTO,
-  type SellerRegisterDTO,
-} from "../dto/user.dto";
+import { SellerRegisterSchema, type SellerRegisterDTO } from "../dto/user.dto";
 import AddressDataForm from "../features/auth/AddressDataFrom";
 import UserPhotoDataForm from "../features/auth/UserPhotoDataForm";
 import GeneralSellerData from "../features/auth/GeneralSellerData";
@@ -15,13 +11,13 @@ import GeneralSellerData from "../features/auth/GeneralSellerData";
 export default function RegisterSellerPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedFile, setSelectedFile] = useState<File>();
-  const { mutate } = useBuyerRegister();
+  const { mutate } = useSellerRegister();
   const { data: user, isLoading } = useMeData();
 
   const existingAddress = user?.seller?.address || user?.buyer?.shippingAddress;
 
   const methods = useForm<SellerRegisterDTO>({
-    resolver: zodResolver(BuyerRegisterSchema),
+    resolver: zodResolver(SellerRegisterSchema),
     mode: "onTouched",
     values: {
       firstName: user?.firstName || "",
@@ -43,9 +39,9 @@ export default function RegisterSellerPage() {
     },
   });
 
-  const onSubmit = (data: BuyerRegisterDTO) => {
+  const onSubmit = (data: SellerRegisterDTO) => {
     mutate(
-      { buyerData: data, image: selectedFile },
+      { sellerData: data, image: selectedFile },
       {
         onError: (err) => {
           const serverError = err as AxiosError<{ error: string }>;
@@ -65,7 +61,12 @@ export default function RegisterSellerPage() {
   return (
     <>
       <FormProvider {...methods}>
-        <form onSubmit={methods.handleSubmit(onSubmit)} noValidate>
+        <form
+          onSubmit={methods.handleSubmit(onSubmit, (validationErrors) =>
+            console.log("❌ SÉMA HIBÁK:", validationErrors),
+          )}
+          noValidate
+        >
           {currentPage === 1 && <GeneralSellerData setStep={setCurrentPage} />}
           {currentPage === 2 && <AddressDataForm setStep={setCurrentPage} />}
           {currentPage === 3 && (

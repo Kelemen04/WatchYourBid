@@ -101,7 +101,6 @@ export async function addToWatchList(req: Request, res: Response) {
 
 export async function getWatchList(req: Request, res: Response) {
     const userId = req.user?.id as number;
-
     try{
         const watchList = await auctionService.getWatchList(userId);
         return res.status(200).json(watchList);
@@ -112,7 +111,7 @@ export async function getWatchList(req: Request, res: Response) {
 
 export async function deleteAuctionFromWatchList(req: Request, res: Response) {
     const userId = req.user?.id as number;
-    const auctionId = Number(req.body.auctionId);
+    const auctionId = Number(req.params.id);
 
     if (isNaN(auctionId)) {
         return res.status(400).json({ error: "Invalid Auction ID" })

@@ -99,6 +99,14 @@ export default function Home() {
         </div>
       </div>
       <div className="">
+        <h1 className="font-playfair text-4xl text-surface mx-20">Promoted</h1>
+        <div className="flex flew-row gap-10 mx-25">
+          {data?.promoted.map((auction) => (
+            <AuctionCard key={auction.id} auction={auction} />
+          ))}
+        </div>
+      </div>
+      <div className="">
         <h1 className="font-playfair text-4xl text-surface mx-20">
           Most Popular
         </h1>

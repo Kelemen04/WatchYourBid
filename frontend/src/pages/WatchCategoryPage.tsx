@@ -16,9 +16,10 @@ export default function WatchCategoryPage() {
   const { category } = useParams();
 
   console.log("cc ", category);
+  const normalizedCategory = category?.toLowerCase() || "";
 
   const SelectedComponent = category
-    ? COMPONENTS[category as keyof typeof COMPONENTS]
+    ? COMPONENTS[normalizedCategory as keyof typeof COMPONENTS]
     : null;
 
   if (!SelectedComponent) {
