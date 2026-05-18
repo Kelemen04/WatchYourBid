@@ -1,11 +1,14 @@
 import { useParams } from "react-router-dom";
-import { useAuctionData } from "../../hooks/useAuctions";
 import { socket } from "../../main";
 import { useEffect } from "react";
+import type { AuctionFullData } from "../../dto/auction.dto";
 
-export default function AuctionInformation() {
+interface AuctionInformationProps {
+  data: AuctionFullData | undefined;
+}
+
+export default function AuctionInformation({ data }: AuctionInformationProps) {
   const { id } = useParams();
-  const { data } = useAuctionData(Number(id));
 
   useEffect(() => {
     if (!id) return;

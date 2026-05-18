@@ -3,6 +3,7 @@ import type { AuctionItemData } from "../../dto/auction.dto";
 import { Link } from "react-router-dom";
 import { BsBookmark } from "react-icons/bs";
 import { useAddToWatchlist } from "../../hooks/useAuctions";
+import { socket } from "../../main";
 
 export default function AuctionListItem({
   auction,
@@ -13,6 +14,40 @@ export default function AuctionListItem({
   const [hours, setHours] = useState(0);
   const [minutes, setMinutes] = useState(0);
   const [seconds, setSeconds] = useState(0);
+  const [livePrice, setLivePrice] = useState(auction.currentPrice);
+  const [prevPrice, setPrevPrice] = useState(auction.currentPrice);
+
+  if (auction.currentPrice !== prevPrice) {
+    setPrevPrice(auction.currentPrice);
+    setLivePrice(auction.currentPrice);
+  }
+
+  useEffect(() => {
+    if (!auction.id) return;
+
+    socket.emit("joinAuction", String(auction.id));
+
+    interface SocketBidUpdate {
+      auctionId: number | string;
+      newPrice?: number;
+    }
+
+    const handleBidUpdate = (updatedData: SocketBidUpdate) => {
+      const incomingId = Number(updatedData.auctionId);
+      const currentCardId = Number(auction.id);
+
+      if (incomingId === currentCardId && updatedData.newPrice !== undefined) {
+        setLivePrice(updatedData.newPrice);
+      }
+    };
+
+    socket.on("BidUpdated", handleBidUpdate);
+
+    return () => {
+      socket.emit("leaveAuction", String(auction.id));
+      socket.off("BidUpdated", handleBidUpdate);
+    };
+  }, [auction.id]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -115,7 +150,7 @@ export default function AuctionListItem({
             <p className="text-[10px] font-bold uppercase text-gray-400">
               Current Price
             </p>
-            <p className="text-2xl font-bold">{auction.currentPrice} EUR</p>
+            <p className="text-2xl font-bold">{livePrice} EUR</p>
           </div>
 
           <div className="w-full space-y-2">

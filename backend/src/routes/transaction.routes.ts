@@ -1,6 +1,5 @@
 import express from "express"
 import { authenticateToken, validate } from "../middlewares/auth.middleware";
-import { verifyRoles } from "../middlewares/roleAuth.middleware";
 import { confirmPayment, createCheckoutSession, getTransactionHistory, withdrawMoney } from "../controllers/transaction.controller";
 import { UploadMoneySchema } from "../dto/transaction.dto";
 

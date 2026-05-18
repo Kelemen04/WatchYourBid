@@ -4,7 +4,7 @@ import { prisma } from "../db/client";
 import { connection } from "../db/connect";
 import { io } from "../utils/socket";
 
-export const worker = new Worker("auctionTasks", async (job: Job) => {
+export const worker = new Worker("auction-tasks", async (job: Job) => {
     const auctionData = await prisma.auction.findUnique({
         where: { id: job.data.auctionId }
     });
@@ -29,12 +29,12 @@ export const worker = new Worker("auctionTasks", async (job: Job) => {
             if (auction.auctionType === "DUTCH") {
                 await auctionTasks.add("auction-dutch-job", 
                     { auctionId: auction.id, action: "PRICE_DROP" }, 
-                    { delay: auction.tickInterval || 0, jobId: `price-drop-${auction.id}-${Date.now()}` }
+                    { delay:(auction.tickInterval || 0) * 1000, jobId: `price-drop-${auction.id}-${Date.now()}` }
                 );
             } else if (auction.auctionType === "JAPANESE") {
                 await auctionTasks.add("auction-japanese-job", 
                     { auctionId: auction.id, action: "PRICE_UP" }, 
-                    { delay: auction.tickInterval || 0, jobId: `price-up-${auction.id}-${Date.now()}` }
+                    { delay: (auction.tickInterval || 0) * 1000, jobId: `price-up-${auction.id}-${Date.now()}` }
                 );
             }
 
@@ -59,7 +59,7 @@ export const worker = new Worker("auctionTasks", async (job: Job) => {
             if (updated.currentPrice > (updated.reservePrice || 0) && updated.endTime > new Date()) {
                 await auctionTasks.add("auction-dutch-job", 
                     { auctionId: updated.id, action: "PRICE_DROP" }, 
-                    { delay: updated.tickInterval || 0, jobId: `price-drop-${updated.id}-${Date.now()}` }
+                    { delay: (updated.tickInterval || 0) * 1000, jobId: `price-drop-${updated.id}-${Date.now()}` }
                 );
             }
 
@@ -79,12 +79,7 @@ export const worker = new Worker("auctionTasks", async (job: Job) => {
                 }
             });
 
-            if (activeBiddersCount === 0 && auctionData.currentPrice > auctionData.startingPrice) {
-                await auctionTasks.add("auction-close-job", { auctionId: job.data.auctionId, action: "CLOSE" });
-                return;
-            }
-
-            if (activeBiddersCount === 1 && auctionData.currentPrice > auctionData.startingPrice) {
+           if (activeBiddersCount <= 1) {
                 await auctionTasks.add("auction-close-job", { auctionId: job.data.auctionId, action: "CLOSE" });
                 return;
             }
@@ -97,7 +92,7 @@ export const worker = new Worker("auctionTasks", async (job: Job) => {
             if (updated.endTime > new Date()) {
                 await auctionTasks.add("auction-japanese-job", 
                     { auctionId: updated.id, action: "PRICE_UP" }, 
-                    { delay: updated.tickInterval || 0, jobId: `price-up-${updated.id}-${Date.now()}` }
+                    { delay: (updated.tickInterval || 0) * 1000, jobId: `price-up-${updated.id}-${Date.now()}` }
                 );
             }
 
@@ -111,10 +106,21 @@ export const worker = new Worker("auctionTasks", async (job: Job) => {
         }
 
         case "CLOSE": {
-            const auction = await prisma.auction.update({
-                where: { id: job.data.auctionId },
+            const updateRes = await prisma.auction.updateMany({
+                where: { id: job.data.auctionId, status: { not: "ENDED" } },
                 data: { status: "ENDED" }
             });
+
+            if (updateRes.count === 0) {
+                console.log(`Auction ${job.data.auctionId} already closed. Skipping transaction.`);
+                return;
+            }
+
+            const auction = await prisma.auction.findUnique({
+                where: { id: job.data.auctionId } 
+            });
+
+            if (!auction) return;
 
             const winner = await prisma.bid.findFirst({
                 where: { auctionId: auction.id },
@@ -137,7 +143,7 @@ export const worker = new Worker("auctionTasks", async (job: Job) => {
             if (winner) {
                 let payAmount = 0;
 
-                if (auction.auctionType === "VICKREY" || auction.auctionType === "ENGLISH") {
+                if (auction.auctionType === "VICKREY") {
                     const secondPrice = await prisma.bid.findFirst({
                         where: { auctionId: auction.id },
                         orderBy: { bidAmount: "desc" },
@@ -189,7 +195,7 @@ export const worker = new Worker("auctionTasks", async (job: Job) => {
     }
 }, { connection: connection });
 
-export const promotingWorker = new Worker("promotingTasks", async (job: Job) => {
+export const promotingWorker = new Worker("promoting-tasks", async (job: Job) => {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     yesterday.setHours(0, 0, 0, 0);

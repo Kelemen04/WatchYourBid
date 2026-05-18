@@ -46,6 +46,14 @@ export const auctionService = {
             throw new Error("A seller account needed before creating an auction!")
         }
 
+        if ((data.auctionType === "DUTCH" || data.auctionType === "JAPANESE") && (!data.tickInterval || !data.moneyInterval)) {
+            throw new Error("Tick interval and money interval are required for Dutch and Japanese auctions!");
+        }
+
+        if (data.auctionType === "DUTCH" && !data.reservePrice) {
+            throw new Error("Reserve price (minimum price) is required for Dutch auctions!");
+        }
+
         const auction = await prisma.auction.create({
             data: {
                 title: data.title,
@@ -142,14 +150,14 @@ export const auctionService = {
                 case "DUTCH": { 
                     await auctionTasks.add("auction-dutch-job", 
                         { auctionId: auction.id, action: "PRICE_DROP" }, 
-                        { delay: auction.tickInterval || 0, jobId: `price-drop-${auction.id}-${Date.now()}` }
+                        { delay: (auction.tickInterval || 0) * 1000, jobId: `price-drop-${auction.id}-${Date.now()}` }
                     );
                     break; 
                 } 
                 case "JAPANESE": { 
                     await auctionTasks.add("auction-japanese-job", 
                         { auctionId: auction.id, action: "PRICE_UP" }, 
-                        { delay: auction.tickInterval || 0, jobId: `price-up-${auction.id}-${Date.now()}` }
+                        { delay: (auction.tickInterval || 0) * 1000, jobId: `price-up-${auction.id}-${Date.now()}` }
                     );
                     break; 
                 }
@@ -226,6 +234,27 @@ export const auctionService = {
 
         if (auction._count.bids > 0) {
             throw new Error("You can't update an auction that has active bids!");
+        }
+
+        if ((data.auctionType === "DUTCH" || data.auctionType === "JAPANESE") && (!data.tickInterval || !data.moneyInterval)) {
+            throw new Error("Tick interval and money interval are required for Dutch and Japanese auctions!");
+        }
+
+        if (data.auctionType === "DUTCH" && !data.reservePrice) {
+            throw new Error("Reserve price (minimum price) is required for Dutch auctions!");
+        }
+
+        const currentWatchItem = await prisma.watchItem.findUnique({
+            where: { auctionId: auctionId }
+        });
+
+        if (currentWatchItem && data.watchItem?.category) {
+            await prisma.$transaction([
+                prisma.wristwatch.deleteMany({ where: { watchItemId: currentWatchItem.id } }),
+                prisma.pocketWatch.deleteMany({ where: { watchItemId: currentWatchItem.id } }),
+                prisma.smartwatch.deleteMany({ where: { watchItemId: currentWatchItem.id } }),
+                prisma.clock.deleteMany({ where: { watchItemId: currentWatchItem.id } }),
+            ]);
         }
 
         const updated = await prisma.auction.update({
@@ -353,11 +382,16 @@ export const auctionService = {
             console.log("Job torolve: ", `${deleteJob.id}`);
         }
 
-        const delayedJobs = await auctionTasks.getDelayed();
-        for (const job of delayedJobs) {
-            if (job.id?.startsWith(`price-drop-${auctionId}`) || job.id?.startsWith(`price-up-${auctionId}`) || job.id?.startsWith(`start-${auctionId}`)) {
-            await job.remove();
-            console.log(`Japanese or dutch job deleted: ${job.id}`);
+        const jobsToClean = await auctionTasks.getJobs(['delayed', 'waiting', 'paused']);
+
+        for (const job of jobsToClean) {
+            if (
+                job.id?.startsWith(`price-drop-${auctionId}`) || 
+                job.id?.startsWith(`price-up-${auctionId}`) || 
+                job.id?.startsWith(`start-${auctionId}`)
+            ) {
+                await job.remove();
+                console.log(`Old auction jobs deleted: ${job.id}`);
             }
         }
 
@@ -375,14 +409,14 @@ export const auctionService = {
                 case "DUTCH": { 
                     await auctionTasks.add("auction-dutch-job", 
                         { auctionId: updated.id, action: "PRICE_DROP" }, 
-                        { delay: updated.tickInterval || 0, jobId: `price-drop-${updated.id}-${Date.now()}` }
+                        { delay: (updated.tickInterval || 0) * 1000, jobId: `price-drop-${updated.id}-${Date.now()}` }
                     );
                     break; 
                 } 
                 case "JAPANESE": { 
                     await auctionTasks.add("auction-japanese-job", 
                         { auctionId: updated.id, action: "PRICE_UP" }, 
-                        { delay: updated.tickInterval || 0, jobId: `price-up-${updated.id}-${Date.now()}` }
+                        { delay: (updated.tickInterval || 0) * 1000, jobId: `price-up-${updated.id}-${Date.now()}` }
                     );
                     break; 
                 }

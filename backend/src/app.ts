@@ -8,6 +8,7 @@ import { router } from "./routes/index";
 import { rateLimiter } from './middlewares/rateLimiter.middleware';
 import { initSocket } from './utils/socket';
 import { promotingTasks } from './jobs/auction.queues';
+import "./jobs/auction.workers";
 import { ensureBucket } from './db/minio';
 
 const app = express();

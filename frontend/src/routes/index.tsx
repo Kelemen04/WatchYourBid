@@ -12,6 +12,9 @@ import CreateAuctionPage from "../pages/CreateAuctionPage";
 import RegisterBuyerPage from "../pages/RegisterBuyerPage";
 import RegisterSellerPage from "../pages/RegisterSellerPage";
 import WatchlistPage from "../pages/WatchlistPage";
+import PaymentSuccess from "../pages/PaymentSuccess";
+import UpdateAuctionPage from "../pages/UpdateAuctionPage";
+import UserAuctionsPage from "../pages/UserAuctionsPage";
 
 export default function AppRouter() {
   return (
@@ -26,7 +29,7 @@ export default function AppRouter() {
           />
           <Route path="/auction" element={<CreateAuctionPage />} />
           <Route path="/auction/:id" element={<AuctionPage />} />
-
+          <Route path="/auction/:id/update" element={<UpdateAuctionPage />} />
           <Route
             path="/dashboard/register-buyer"
             element={<RegisterBuyerPage />}
@@ -35,7 +38,10 @@ export default function AppRouter() {
             path="/dashboard/register-seller"
             element={<RegisterSellerPage />}
           />
+
+          <Route path="/dashboard/auctions/me" element={<UserAuctionsPage />} />
           <Route path="/watchlist" element={<WatchlistPage />} />
+          <Route path="/payment-success" element={<PaymentSuccess />} />
         </Route>
 
         <Route path="/login" element={<LoginPage />} />

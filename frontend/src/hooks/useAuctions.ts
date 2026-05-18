@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../api/axios';
 import type { AxiosError } from 'axios';
-import type { AuctionCardData, AuctionFullData, AuctionInformtion, AuctionInput, AuctionItemData } from '../dto/auction.dto';
+import type { AuctionCardData, AuctionFullData, AuctionInput, AuctionItemData } from '../dto/auction.dto';
 import { useNavigate } from 'react-router-dom';
 
 interface HomeAuctionsResponse {
@@ -108,11 +108,11 @@ export const useCategoryData = (categoryName: string) => {
 };
 
 export const useAuctionData = ( id: number) => {
-  return useQuery<AuctionInformtion , AxiosError<{ error: string }>>({
+  return useQuery<AuctionFullData , AxiosError<{ error: string }>>({
     queryKey: ['auctionDetails', id], 
     queryFn: async () => {
         console.log(id);
-      const response = await api.get<AuctionInformtion>(`/auction/${id}`);
+      const response = await api.get<AuctionFullData>(`/auction/${id}`);
       console.log(response);
       return response.data;
     },
@@ -153,5 +153,83 @@ export const useAuctionCreate = () => {
     onError: (err) => {
       console.error(err.response?.data?.error || "Auction creation failed!");
     },
+  });
+};
+
+export const useAuctionUpdate = (auctionId: number) => {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    CreateAuctionResponse,
+    AxiosError<{ error: string }>,
+    { auctionData: AuctionInput; images: File[] }
+  >({
+    mutationFn: async ({ auctionData, images }) => {
+      
+      const response = await api.put<CreateAuctionResponse>(`/auction/${auctionId}`, auctionData);
+      
+
+      if (images && images.length > 0) {
+        const formData = new FormData();
+        images.forEach((file) => {
+          formData.append("images", file);
+        });
+
+        await api.post(`/auction/${auctionId}/upload`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+      }
+
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['homeAuctions'] });
+      queryClient.invalidateQueries({ queryKey: ['auctionDetails', auctionId] });
+      queryClient.invalidateQueries({ queryKey: ['categoryAuctions'] });
+      queryClient.invalidateQueries({ queryKey: ['auctionsByUser'] });
+
+      console.log("Success!", data.message || "Auction updated successfully!");
+      navigate('/dashboard')
+    },
+    onError: (err) => {
+      console.error(err.response?.data?.error || "Auction update failed!");
+    },
+  });
+};
+
+export const useAuctionDelete = () => {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  return useMutation<MessageResponse, AxiosError<{ error: string }>, number>({
+    mutationFn: async (auctionId: number) => {
+      const response = await api.delete<MessageResponse>(`/auction/${auctionId}`);
+      return response.data;
+    },
+    onSuccess: (data, auctionId) => {
+      console.log("Auction deleted successfully:", data.message);
+
+      queryClient.invalidateQueries({ queryKey: ['homeAuctions'] });
+      queryClient.invalidateQueries({ queryKey: ['categoryAuctions'] });
+      queryClient.invalidateQueries({ queryKey: ['auctionsByUser'] });
+      queryClient.invalidateQueries({ queryKey: ['auctionDetails', auctionId] });
+      
+      navigate('/dashboard');
+    },
+    onError: (err) => {
+      console.error("Auction deletion failed:", err.response?.data?.error || "Unknown error!");
+    },
+  });
+};
+
+export const useAuctionsByUser = () => {
+  return useQuery<AuctionItemData[], AxiosError<{ error: string }>>({
+    queryKey: ['auctionsByUser'], 
+    queryFn: async () => {
+      const response = await api.get<AuctionItemData[]>("/auction/me");
+      return response.data;
+    },
+    refetchOnWindowFocus: false, 
   });
 };

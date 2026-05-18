@@ -10,6 +10,25 @@ export const getAccessToken = () => {
   return accessToken;
 };
 
+// api.ts -> Egészítsd ki a getUserId függvényt:
+
+export const getUserId = (): number | null => {
+  const token = getAccessToken();
+  if (!token) return null;
+
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(window.atob(base64));
+
+    return payload.id ? Number(payload.id) : null; 
+    
+  } catch (error) {
+    console.error("Nem sikerült kiszedni a userId-t az access tokenből:", error);
+    return null;
+  }
+};
+
 const api = axios.create({
     baseURL: 'http://localhost:8000/api',
     withCredentials: true

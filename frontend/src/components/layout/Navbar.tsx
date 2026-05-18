@@ -144,6 +144,7 @@ export default function Navbar() {
                 </button>
 
                 <div className="absolute left-0 mt-2 w-48 font-playfair bg-white text-slate-900 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+                  <p>Balance: {data?.balance}</p>
                   <Link
                     to="/dashboard"
                     className="block px-4 py-3 hover:bg-slate-100"

@@ -102,6 +102,7 @@ export const UpdateSellerSchema = PersonInfoSchema.merge(BaseAddressSchema).exte
 export const NavbarSchema = z.object({
   username: z.string(),
   profilePicture: z.string().nullable(),
+  balance: z.number(),
 });
 
 

@@ -1,7 +1,7 @@
 import type { AutoBidDTO, PlaceBidDTO, PlacePromotingBidDTO } from "../dto/bids.dto";
 import { prisma } from '../db/client'
 import { io } from "../utils/socket"
-import { DatabaseSync } from "node:sqlite";
+import { auctionTasks } from "../jobs/auction.queues";
 
 export const bidService = {
     async placeBid(data: PlaceBidDTO, userId: number, auctionId: number) {
@@ -26,7 +26,23 @@ export const bidService = {
                 throw new Error("This auction doesn't exist!")
             }
 
+             if (auction.userId == userId) {
+                throw new Error("You can't bid on your own auction!")
+            }
+
+            if (auction.status != "ACTIVE") {
+                throw new Error("Auction isn't active,you can't bid!")
+            }
+
+            if (Date.now() > auction.endTime.getTime() || Date.now() < auction.startTime.getTime()) {
+                throw new Error("Invalid bid, auction didn't start or it's already over!")
+            }
+
             if (auction.auctionType === "DUTCH") {
+                if (data.bidAmount !== auction.currentPrice) {
+                    throw new Error("In a Dutch auction, you must buy at exactly the current ticking price!");
+                }
+
                 await tx.auction.update({
                     where: { id: auctionId },
                     data: { status: "ENDED", currentPrice: data.bidAmount }
@@ -71,6 +87,13 @@ export const bidService = {
                     }
                 });
 
+                const delayedJobs = await auctionTasks.getDelayed();
+                for (const job of delayedJobs) {
+                    if (job.id?.startsWith(`price-drop-${auctionId}`) || job.id?.startsWith(`close-${auctionId}`)) {
+                        await job.remove();
+                    }
+                }
+
                 io.to(`auction-${auctionId}`).emit("AuctionEnded", {
                     auctionId: auctionId,
                     winnerId: userId,
@@ -80,43 +103,47 @@ export const bidService = {
                 return winningBid;
             }
 
-            if (data.bidAmount < auction.currentPrice + (auction.minBidIncrement || 0)) {
-                throw new Error("The given amount must be higher than the current price!")
-            }
-
-            if (Date.now() > auction.endTime.getTime() || Date.now() < auction.startTime.getTime()) {
-                throw new Error("Invalid bid, auction didn't start or it's already over!")
-            }
-
-            if (auction.userId == userId) {
-                throw new Error("You can't bid on your own auction!")
-            }
-
-            if (auction.status != "ACTIVE") {
-                throw new Error("Auction isn't active,you can't bid!")
-            }
-
             const lastBid = await tx.bid.findFirst({
                 where: { auctionId: auctionId },
                 orderBy: { bidTime: "desc" }
             })
 
-            if (lastBid && lastBid.userId === userId) {
-                throw new Error("You're bid is already the highest!")
-            }
+            if (auction.auctionType === "JAPANESE") {
+                if (data.bidAmount !== auction.currentPrice) {
+                    throw new Error("In a Japanese auction, you must bid exactly the current round price!");
+                }
 
-            try {
-                await tx.auction.update({
-                    where: {
-                        id: auctionId,
-                        currentPrice: auction.currentPrice
-                    },
-                    data: {
-                        currentPrice: data.bidAmount
-                    },
-                });
-            } catch (error) {
-                throw new Error("Someone else just placed a higher bid. Please try again!");
+                if (lastBid && lastBid.userId === userId && lastBid.bidAmount === auction.currentPrice) {
+                    throw new Error("You already accepted the price for this round!");
+                }
+            } 
+            else if (auction.auctionType === "FPSB" || auction.auctionType === "VICKREY") {
+                if (data.bidAmount < auction.startingPrice) {
+                    throw new Error("Your secret bid must be at least the starting price!");
+                }
+
+                const alreadyBid = await tx.bid.findFirst({ where: { auctionId, userId } });
+                if (alreadyBid) {
+                    throw new Error("You have already submitted your secret bid for this auction!");
+                }
+            } 
+            else {
+                if (lastBid && lastBid.userId === userId) {
+                    throw new Error("You're bid is already the highest!")
+                }
+
+                if (data.bidAmount < auction.currentPrice + (auction.minBidIncrement || 0)) {
+                    throw new Error("The given amount must be higher than the current price + minimum increment!");
+                }
+
+                try {
+                    await tx.auction.update({
+                        where: { id: auctionId, currentPrice: auction.currentPrice },
+                        data: { currentPrice: data.bidAmount },
+                    });
+                } catch (error) {
+                    throw new Error("Someone else just placed a higher bid. Please try again!");
+                }
             }
 
             const newBid = await tx.bid.create({
@@ -150,7 +177,9 @@ export const bidService = {
             });
         }
 
-        await this.processAutoBids(auctionId, userId);
+        if (auction?.auctionType === "ENGLISH") {
+            await this.processAutoBids(auctionId, userId);
+        }
 
         return newBid;
     },
@@ -217,6 +246,17 @@ export const bidService = {
 
     async placeAutoBid(data: AutoBidDTO, userId: number, auctionId: number) {
         const autoBidEntry = await prisma.$transaction(async (tx) => {
+            const auction = await tx.auction.findUnique({
+                where: { id: auctionId }
+            })
+
+            if (!auction) {
+                throw new Error("This auction doesn't exist!")
+            }
+
+            if (auction.auctionType !== "ENGLISH") {
+                throw new Error("Auto-bidding is only available for English auctions!");
+            }
             const user = await tx.user.findUnique({
                 where: { id: userId }
             })
@@ -227,14 +267,6 @@ export const bidService = {
 
             if(user.balance < data.maxAmount){
                 throw new Error("Your don't have enough money to make that bid!")
-            }
-
-            const auction = await tx.auction.findUnique({
-                where: { id: auctionId }
-            })
-
-            if (!auction) {
-                throw new Error("This auction doesn't exist!")
             }
 
             if (data.maxAmount < auction.currentPrice + (auction.minBidIncrement || 0)) {
@@ -428,6 +460,13 @@ export const bidService = {
                         stripeSessionId: `auc-recv-${auction.id}`
                     }
                 });
+
+                const delayedJobs = await auctionTasks.getDelayed();
+                for (const job of delayedJobs) {
+                    if (job.id?.startsWith(`price-drop-${auctionId}`) || job.id?.startsWith(`price-up-${auctionId}`) || job.id?.startsWith(`close-${auctionId}`)) {
+                        await job.remove();
+                    }
+                }
 
                 io.to(`auction-${auctionId}`).emit("AuctionEnded", {
                     auctionId: auctionId,

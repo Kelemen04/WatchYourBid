@@ -2,6 +2,13 @@ import { z } from "zod";
 
 export const AuctionTypes = ["ENGLISH", "DUTCH", "VICKREY", "FPSB", "JAPANESE"] as const;
 export const WatchCategories = ["WRISTWATCH" , "POCKETWATCH" , "SMARTWATCH" , "CLOCK"] as const;
+export const AuctionStatus = [
+  "PENDING",
+  "UPCOMING",
+  "ACTIVE",
+  "ENDED",
+  "CANCELLED"
+] as const;
 
 export const AuctionSchema = z.object({
   title: z.string().min(5, "Title too short").max(200),
@@ -78,6 +85,9 @@ export const AuctionItemSchema = AuctionCardSchema.extend({
 
 export const AuctionFullSchema = AuctionSchema.extend({
   id: z.number(),
+  userId: z.number(),
+  currentPrice: z.number(),
+  status: z.enum(AuctionStatus),
 });
 
 export type AuctionCardData = z.infer<typeof AuctionCardSchema>;

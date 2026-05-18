@@ -19,7 +19,7 @@ export const transactionService = {
                 },
             ],
             mode: 'payment',
-            success_url: `http://localhost:8080/dashboard?status=success`,
+            success_url: `http://localhost:8080/payment-success?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `http://localhost:8080/dashboard?status=cancel`,
             metadata: {
                 userId: userId.toString(),
@@ -47,6 +47,10 @@ export const transactionService = {
                 where: { stripeSessionId: sessionId }
             });
 
+            if (transaction && transaction.status === 'SUCCESS') {
+                return { success: true, message: "This payment was already confirmed!" };
+            }
+
             if (transaction && transaction.status === 'PENDING') {
                 const userId = parseInt(session.metadata?.userId || "0");
 
@@ -60,10 +64,14 @@ export const transactionService = {
                         data: { balance: { increment: transaction.amount } }
                     })
                 ]);
-                return { success: true, amount: transaction.amount };
+                return { 
+                    success: true, 
+                    amount: transaction.amount,
+                    message: `We confirmed your ${transaction.amount} EUR deposit!` 
+                };
             }
         }
-        return { success: false };
+        throw new Error("Confirm payment failed!");
     },
 
     async withdrawMoney(userId: number, data: UploadMoneyDTO) {

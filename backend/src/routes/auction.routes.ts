@@ -14,7 +14,7 @@ const router = express.Router();
 router.post('/',authenticateToken(),validate(CreateAuctionSchema),createAuction);
 router.put('/:id',authenticateToken(),validate(UpdateAuctionSchema),validateId, updateAuction);
 
-router.get('/auctions/me', authenticateToken(), getUserAuctions);
+router.get('/me', authenticateToken(), getUserAuctions);
 
 router.get('/', getAuctionByFilters)
 router.get('/home', getHomeAuctions)

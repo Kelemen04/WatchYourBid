@@ -1,5 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useDeleteMe } from "../hooks/useUser";
+import TransactionForm from "../features/auth/TransactionForm";
+import WithdrawForm from "../features/auth/WithdrawForm";
 
 export default function UserDashboard() {
   const { mutate, isPending } = useDeleteMe();
@@ -29,6 +31,9 @@ export default function UserDashboard() {
       <Link to="/dashboard/register-seller">
         <div>REGISTER SELLER</div>
       </Link>
+      <Link to="/dashboard/auctions/me">
+        <div>OWN AUCTIONS</div>
+      </Link>
       <button
         onClick={handleDeleteAccount}
         disabled={isPending}
@@ -36,6 +41,8 @@ export default function UserDashboard() {
       >
         {isPending ? "Deleting account..." : "Delete account"}
       </button>
+      <TransactionForm />
+      <WithdrawForm />
     </>
   );
 }
