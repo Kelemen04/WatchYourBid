@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
-import type { UploadMoneyDTO } from "../dto/transaction.dto";
+import { TransactionResponseSchema, type UploadMoneyDTO } from "../dto/transaction.dto";
 import { transactionService } from "../services/transaction.service";
+import z from "zod";
 
 export async function createCheckoutSession(req: Request, res: Response) {
   const userId = req.user?.id as number;
@@ -44,7 +45,8 @@ export async function getTransactionHistory(req: Request, res: Response) {
     const userId = req.user?.id as number;
     try {
         const result = await transactionService.getTransactionHistory(userId);
-        return res.status(200).json(result);
+        const cleanResponse = z.array(TransactionResponseSchema).parse(result);
+        return res.status(200).json(cleanResponse);
     } catch (e) {
         return res.status(400).json({ error: e instanceof Error ? e.message : "Unknown error" });
     }

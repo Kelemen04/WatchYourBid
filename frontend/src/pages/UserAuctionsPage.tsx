@@ -16,6 +16,7 @@ export default function UserAuctionsPage() {
       auctionDelete(auctionId);
     }
   };
+
   return (
     <>
       <div className="flex flex-col min-h-screen">

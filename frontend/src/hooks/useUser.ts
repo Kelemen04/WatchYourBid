@@ -1,5 +1,5 @@
 import type { AxiosError } from "axios";
-import type { BuyerRegisterDTO, MeResponse, SellerRegisterDTO } from "../dto/user.dto";
+import type { BuyerRegisterDTO, MeResponse, PublicProfileDTO, SellerRegisterDTO } from "../dto/user.dto";
 import api, { setAccessToken } from "../api/axios";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -136,5 +136,17 @@ export const useDeleteMe = () => {
     onError: (err) => {
       console.error("Account deletion failed:", err.response?.data?.error || "Unknown error!");
     },
+  });
+};
+
+export const usePublicProfile = (userId: number) => {
+  return useQuery<PublicProfileDTO, AxiosError<{ error: string }>>({
+    queryKey: ["publicProfile", userId],
+    queryFn: async () => {
+      const response = await api.get<PublicProfileDTO>(`/user/${userId}`);
+      return response.data;
+    },
+    enabled: !!userId,
+    refetchOnWindowFocus: false,
   });
 };

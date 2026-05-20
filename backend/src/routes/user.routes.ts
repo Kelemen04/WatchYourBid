@@ -5,6 +5,9 @@ import { authenticateToken, validate } from '../middlewares/auth.middleware';
 import { verifyRoles } from '../middlewares/roleAuth.middleware';
 import { validateId } from '../middlewares/auction.middleware';
 import { upload } from '../middlewares/minio.middleware';
+import { getUserReviews } from '../controllers/review.controller';
+import { getMyBidsHistory } from '../controllers/bid.controller';
+import { getTransactionHistory } from '../controllers/transaction.controller';
 
 const router = express.Router();
 
@@ -17,6 +20,10 @@ router.post('/me/register-seller', authenticateToken(), upload.single("image"), 
 
 router.post('/me/avatar', authenticateToken(), upload.single("image"), uploadUserImage)
 
+router.get("/bids/me", authenticateToken(), getMyBidsHistory);
+router.get("/transactions", authenticateToken(), getTransactionHistory);
+
 router.get('/:id',validateId, getUserById)
+router.get("/:id/reviews", getUserReviews);
 
 export default router;

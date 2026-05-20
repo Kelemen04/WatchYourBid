@@ -1,7 +1,8 @@
 import type { Request, Response } from "express";
-import type { AutoBidDTO, PlaceBidDTO, PlacePromotingBidDTO } from "../dto/bids.dto";
+import { GetBidsNumberSchema, MyBidsResponseSchema, type AutoBidDTO, type PlaceBidDTO, type PlacePromotingBidDTO } from "../dto/bids.dto";
 import { bidService } from "../services/bid.service";
 import { io } from "../utils/socket";
+import z from "zod";
 
 export async function placeBid(req: Request, res: Response) {
   const userId = req.user?.id as number;
@@ -53,3 +54,37 @@ export async function buyNow(req: Request, res: Response) {
     return res.status(400).json({ error: e instanceof Error ? e.message : "Unknown error" });
   }
 }
+
+export async function getAuctionBids(req: Request, res: Response) {
+  const auctionId = Number(req.params.id);
+
+  try{
+
+    const validationResult = GetBidsNumberSchema.safeParse(req.query);
+
+    if (!validationResult.success) {
+      return res.status(400).json({ error: validationResult.error.issues[0]?.message || "Invalid input!" });
+    }
+
+    const { take } = validationResult.data;
+
+    
+    const auctionBids = await bidService.getAuctionBids(auctionId,take);
+    res.status(200).json(auctionBids);
+  } catch(e){
+    return res.status(400).json({ error: e instanceof Error ? e.message : "Unknown error" });
+  }
+}
+
+export const getMyBidsHistory = async (req: Request, res: Response) => {
+  const userId = req.user?.id as number;
+
+  try {
+    const bids = await bidService.getMyBids(userId);
+    const cleanResponse = z.array(MyBidsResponseSchema).parse(bids);
+    
+    return res.status(200).json(cleanResponse);
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message || "Failed to fetch your bids!" });
+  }
+};

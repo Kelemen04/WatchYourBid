@@ -431,6 +431,15 @@ export const bidService = {
                     data: { status: "ENDED" }
                 });
 
+                await tx.bid.create({
+                    data: {
+                        bidAmount: auction.buyingPrice,
+                        userId: userId,
+                        auctionId: auctionId,
+                        isWinner: true
+                    }
+                });
+
                 await tx.user.update({
                     where: { id: userId },
                     data: { balance: { decrement: auction.buyingPrice } }
@@ -482,5 +491,53 @@ export const bidService = {
         });
 
         return buyNow;
+    },
+
+    async getAuctionBids(auctionId: number, takeNumber: number) {
+        const safeAuctionId = Number(auctionId);
+
+        if(!safeAuctionId){
+            throw new Error("Auction ID was not given!")
+        }
+
+        const result = await prisma.bid.findMany({
+            where: { auctionId: safeAuctionId },
+            orderBy: { bidAmount: "desc" },
+            take: takeNumber,
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        firstName: true,
+                        lastName: true,
+                    }
+                }
+            }
+        })
+
+        return result;
+    },
+    async getMyBids(userId: number) {
+    if (!userId) {
+        throw new Error("User ID was not given!");
     }
+
+    const myBids = await prisma.bid.findMany({
+        where: { userId: userId },
+        orderBy: { bidTime: "desc" },
+        include: {
+            auction: {
+                select: {
+                    id: true,
+                    title: true,
+                    currentPrice: true,
+                    status: true,
+                    endTime: true
+                }
+            }
+        }
+    });
+
+    return myBids;
+}
 }

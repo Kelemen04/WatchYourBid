@@ -661,6 +661,19 @@ export const auctionService = {
         const result = await prisma.auction.findUnique({
             where: { id: auctionId },
             include: { 
+                user: {
+                    select: {
+                        lastName: true,
+                        firstName: true,
+                        profilePicture: true,
+                    }
+                },
+                bids: {
+                    where: {isWinner: true},
+                    select: {
+                        userId: true
+                    }
+                },
                 watchItem: {
                     include: {
                         smartwatch: true,

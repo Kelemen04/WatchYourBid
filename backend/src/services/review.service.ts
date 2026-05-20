@@ -13,7 +13,7 @@ export const reviewService = {
             throw new Error("Auction ID not given!")
         }
 
-        const auction = await prisma.auction.findFirst({
+        const auctionWonByUser = await prisma.auction.findFirst({
             where: { id: auctionId },
             include: {
                 user: {
@@ -24,19 +24,27 @@ export const reviewService = {
                 }
             }
         })
-
-        if (!auction) {
+        
+        if (!auctionWonByUser) {
             throw new Error("Auction not found!")
         }
 
-        if (auction.bids.length === 0) {
+        if (auctionWonByUser.bids.length === 0) {
             throw new Error("You cannot review this user, because you didn't win this auction!")
         }
 
-        const sellerId = auction.user?.seller?.id;
+        const sellerId = auctionWonByUser.user?.seller?.id;
 
         if(!sellerId) {
             throw new Error("The creator of this auction is not registered as a seller!")
+        }
+
+        const existingReview = await prisma.review.findFirst({
+            where: {auctionId: auctionWonByUser.id as number}
+        })
+
+        if(existingReview){
+            throw new Error("You already have a review connected to this auction and seller!")
         }
 
         const created = await prisma.$transaction(async (tx) => {
@@ -91,6 +99,10 @@ export const reviewService = {
                 throw new Error("Review not found!");
             }
 
+            if (review.authorId !== userId) {
+                throw new Error("You can only delete your own reviews!");
+            }
+
             await tx.review.delete({
                 where: { id: reviewId }
             })
@@ -114,5 +126,43 @@ export const reviewService = {
 
             return { message: "Review deleted successfully!"}
         })
+    },
+    async getReviewsByUserId(userId: number) {
+    if (!userId) {
+        throw new Error("User ID not given!");
     }
+
+    const userWithSeller = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { seller: true }
+    });
+
+    if (!userWithSeller || !userWithSeller.seller) {
+        return [];
+    }
+
+    const reviews = await prisma.review.findMany({
+        where: { sellerId: userWithSeller.seller.id },
+        include: {
+            author: {
+                select: {
+                    username: true
+                }
+            }
+        },
+        orderBy: {
+            createdAt: 'desc'
+        }
+    });
+
+    return reviews.map(r => ({
+        id: r.id,
+        rating: r.rating,
+        comment: r.comment,
+        createdAt: r.createdAt,
+        reviewer: {
+            username: r.author.username
+        }
+    }));
+}
 }

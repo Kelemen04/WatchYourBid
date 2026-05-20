@@ -5,15 +5,15 @@ export const ReviewSchema = z.object({
     comment: z.string().min(1).max(200),
 });
 
-export const UserReviewResponseSchema = z.object({
+export const UserReviewSchema = z.object({
   id: z.number(),
   rating: z.number(),
   comment: z.string().nullable(),
-  createdAt: z.date(),
+  createdAt: z.union([z.string(), z.date()]),
   reviewer: z.object({
     username: z.string(),
   })
 });
 
 export type ReviewDTO = z.infer<typeof ReviewSchema>
-export type UserReviewDTO = z.infer<typeof UserReviewResponseSchema>
+export type UserReviewDTO = z.infer<typeof UserReviewSchema>

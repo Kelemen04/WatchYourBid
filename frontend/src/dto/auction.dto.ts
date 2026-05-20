@@ -25,6 +25,12 @@ export const AuctionSchema = z.object({
   minBidIncrement: z.number().default(1),
   isAscending: z.boolean().optional(),
 
+  user: z.object({
+    firstName: z.string(),
+    lastName: z.string(),
+    profilePicture: z.string().nullable(),
+  }),
+
   watchItem: z.object({
     brand: z.string().min(1, "Brand is required"),
     model: z.string().min(1, "Model is required"),
@@ -88,11 +94,17 @@ export const AuctionFullSchema = AuctionSchema.extend({
   userId: z.number(),
   currentPrice: z.number(),
   status: z.enum(AuctionStatus),
+
+  bids: z.array(
+    z.object({
+      userId: z.number(),
+    })
+  ).optional(),
 });
 
 export type AuctionCardData = z.infer<typeof AuctionCardSchema>;
 export type AuctionItemData = z.infer<typeof AuctionItemSchema>;
-export type AuctionInformtion = z.infer<typeof AuctionSchema>; 
+export type AuctionInformation = z.infer<typeof AuctionSchema>; 
 export type AuctionFullData = z.infer<typeof AuctionFullSchema>;
 
 export type AuctionInput = z.input<typeof AuctionSchema>;

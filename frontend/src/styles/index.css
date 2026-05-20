@@ -28,3 +28,13 @@
   --font-inter: "Inter", sans-serif;
   --font-playfair: "Playfair", sans-serif;
 }
+
+.simple-star-rating,
+.simple-star-rating * {
+  display: inline-flex !important;
+  flex-direction: row !important;
+}
+
+.simple-star-rating svg {
+  margin: 0 2px !important;
+}

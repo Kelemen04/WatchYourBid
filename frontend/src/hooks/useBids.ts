@@ -1,6 +1,6 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { AxiosError } from "axios";
-import type { AutoBidDTO, PlaceBidDTO } from "../dto/bid.dto";
+import type { AutoBidDTO, BidDataDTO, MyBidsDTO, PlaceBidDTO, PlacePromotingBidDTO } from "../dto/bid.dto";
 import api from "../api/axios"
 
 interface CreateBidResponse {
@@ -16,6 +16,31 @@ interface MessageResponse {
     message: string;
 }
 
+interface PromoteResponse {
+  message: string;
+}
+
+export const useAuctionPromote = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    PromoteResponse,
+    AxiosError<{ error: string }>,
+    { data: PlacePromotingBidDTO; auctionId: number }
+  >({
+    mutationFn: async ({ data, auctionId }) => {
+      const response = await api.post<PromoteResponse>(`/auction/${auctionId}/promote`, data);
+      return response.data;
+    },
+    onSuccess: (data, variables) => {
+      console.log("Success! Auction promoted successfully: ", data.message);
+      queryClient.invalidateQueries({ queryKey: ["auction", variables.auctionId] });
+    },
+    onError: (err) => {
+      console.error(err.response?.data?.error || "Promotion failed!");
+    },
+  });
+};
 
 export const useBidCreate = () => {
   const queryClient = useQueryClient()
@@ -84,3 +109,27 @@ export const useBuyNow = () => {
       },
     });
 }
+
+export const useAuctionBids = ( id: number, take: number) => {
+  return useQuery<BidDataDTO[] , AxiosError<{ error: string }>>({
+    queryKey: ['auctionDetails', id, take], 
+    queryFn: async () => {
+      const response = await api.get<BidDataDTO[]>(`/auction/${id}/bids`,{
+        params: { take }
+      });
+      return response.data;
+    },
+    refetchOnWindowFocus: false, 
+  });
+};
+
+export const useMyBidsHistory = () => {
+  return useQuery<MyBidsDTO[], AxiosError<{ error: string }>>({
+    queryKey: ["myBidsHistory"],
+    queryFn: async () => {
+      const response = await api.get<MyBidsDTO[]>("/user/bids/me");
+      return response.data;
+    },
+    refetchOnWindowFocus: false,
+  });
+};

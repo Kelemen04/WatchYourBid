@@ -6,7 +6,7 @@ import { incrementClick, validateCategory, validateId } from "../middlewares/auc
 import { ReviewSchema } from "../dto/review.dto";
 import { createReview } from "../controllers/review.controller";
 import { PlacePromotingBidSchema } from "../dto/bids.dto";
-import { placePromotingBid } from "../controllers/bid.controller";
+import { getAuctionBids, placePromotingBid } from "../controllers/bid.controller";
 import { upload } from "../middlewares/minio.middleware";
 
 const router = express.Router();
@@ -19,7 +19,6 @@ router.get('/me', authenticateToken(), getUserAuctions);
 router.get('/', getAuctionByFilters)
 router.get('/home', getHomeAuctions)
 router.get('/watchlist', authenticateToken(), getWatchList)
-router.get('/:id',validateId,incrementClick,getAuctionById);
 router.get('/category/:categoryName',validateCategory,getAuctionByCategory);
 router.delete('/watchlist/:id', authenticateToken(), deleteAuctionFromWatchList)
 router.delete('/:id',authenticateToken(),validateId,deleteAuction);
@@ -30,5 +29,7 @@ router.post('/:id/upload', authenticateToken(), upload.array("images"), uploadAu
 router.post('/:id/review/',authenticateToken(), validate(ReviewSchema),createReview);
 
 router.post('/:id/promote',authenticateToken(),validate(PlacePromotingBidSchema),placePromotingBid);
+
+router.get('/:id',validateId,incrementClick,getAuctionById);
 
 export default router;

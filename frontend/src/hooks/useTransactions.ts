@@ -1,6 +1,6 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import type { AxiosError } from "axios";
-import type { UploadMoneyDTO } from "../dto/transaction.dto";
+import type { TransactionDTO, UploadMoneyDTO } from "../dto/transaction.dto";
 import api from "../api/axios";
 
 interface UploadMoneyResponse {
@@ -53,3 +53,14 @@ export const useWithdrawMoney = () => {
       },
     });
 }
+
+export const useMyTransactions = () => {
+  return useQuery<TransactionDTO[], AxiosError<{ error: string }>>({
+    queryKey: ["myTransactions"],
+    queryFn: async () => {
+      const response = await api.get<TransactionDTO[]>("/user/transactions");
+      return response.data;
+    },
+    refetchOnWindowFocus: false,
+  });
+};

@@ -105,6 +105,18 @@ export const NavbarSchema = z.object({
   balance: z.number(),
 });
 
+export const PublicProfileSchema = z.object({
+  username: z.string(),
+  firstName: z.string().nullable(),
+  lastName: z.string().nullable(),
+  profilePicture: z.string().nullable(),
+  seller: z.object({
+    address: BaseAddressSchema,
+    description: z.string().nullable(),
+    rating: z.number(),
+  }).nullable(),
+});
+
 
 export type BuyerRegisterDTO = z.input<typeof BuyerRegisterSchema>;
 export type SellerRegisterDTO = z.input<typeof SellerRegisterSchema>;
@@ -113,3 +125,4 @@ export type UpdateUser = z.infer<typeof UpdateUserSchema>;
 export type UpdateSeller = z.infer<typeof UpdateSellerSchema>;
 export type UpdateBuyer = z.infer<typeof UpdateBuyerSchema>;
 export type NavbarDTO = z.infer<typeof NavbarSchema>;
+export type PublicProfileDTO = z.infer<typeof PublicProfileSchema>;

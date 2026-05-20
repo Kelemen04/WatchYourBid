@@ -10,10 +10,37 @@ export const AutoBidSchema = z.object({
 });
 
 export const PlacePromotingBidSchema = z.object({
-  auctionId: z.number(),
   maxAmount: z.number().positive("Promotion budget must be positive"),
 });
 
+export const BidDataSchema = z.object({
+  id: z.number(),
+  bidAmount: z.number(),
+  bidTime: z.union([z.string(), z.date()]).optional(),
+  user: z.object({
+    id: z.number(),
+    firstName: z.string(),
+    lastName: z.string(),
+  })
+})
+
+export const MyBidsResponseSchema = z.object({
+  id: z.number(),
+  bidAmount: z.number(),
+  bidTime: z.coerce.date(),
+  isWinner: z.boolean(),
+  auctionId: z.number(),
+  auction: z.object({
+    id: z.number(),
+    title: z.string(),
+    currentPrice: z.number(),
+    status: z.string(),
+    endTime: z.coerce.date(),
+  }),
+});
+
+export type MyBidsDTO = z.infer<typeof MyBidsResponseSchema>;
 export type AutoBidDTO = z.infer<typeof AutoBidSchema>;
 export type PlaceBidDTO = z.infer<typeof PlaceBidSchema>;
 export type PlacePromotingBidDTO = z.infer<typeof PlacePromotingBidSchema>;
+export type BidDataDTO = z.infer<typeof BidDataSchema>;

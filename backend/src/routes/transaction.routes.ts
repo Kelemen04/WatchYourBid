@@ -8,6 +8,5 @@ const router = express.Router();
 router.post('/create-checkout-session',authenticateToken(),validate(UploadMoneySchema), createCheckoutSession);
 router.post('/confirm-payment', authenticateToken(), confirmPayment);
 router.post('/withdraw', authenticateToken(), validate(UploadMoneySchema), withdrawMoney);
-router.get('/history', authenticateToken(), getTransactionHistory);
 
 export default router;
