@@ -5,7 +5,7 @@ export const UploadMoneySchema = z.object({
 });
 
 export const TransactionSchema = z.object({
-  id: z.number(),
+  id: z.string(),
   userId: z.number(),
   amount: z.number(),
   type: z.string(),

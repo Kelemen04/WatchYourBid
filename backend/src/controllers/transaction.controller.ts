@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { TransactionResponseSchema, type UploadMoneyDTO } from "../dto/transaction.dto";
+import { GetTransactionsNumberSchema, TransactionResponseSchema, type UploadMoneyDTO } from "../dto/transaction.dto";
 import { transactionService } from "../services/transaction.service";
 import z from "zod";
 
@@ -45,6 +45,24 @@ export async function getTransactionHistory(req: Request, res: Response) {
     const userId = req.user?.id as number;
     try {
         const result = await transactionService.getTransactionHistory(userId);
+        const cleanResponse = z.array(TransactionResponseSchema).parse(result);
+        return res.status(200).json(cleanResponse);
+    } catch (e) {
+        return res.status(400).json({ error: e instanceof Error ? e.message : "Unknown error" });
+    }
+}
+
+export async function getAllTransactionHistory(req: Request, res: Response) {
+    try {
+        const validationResult = GetTransactionsNumberSchema.safeParse(req.query);
+        
+        if (!validationResult.success) {
+          return res.status(400).json({ error: validationResult.error.issues[0]?.message || "Invalid input!" });
+        }
+        
+        const { take,skip } = validationResult.data;
+
+        const result = await transactionService.getAllTransactionHistory(skip,take);
         const cleanResponse = z.array(TransactionResponseSchema).parse(result);
         return res.status(200).json(cleanResponse);
     } catch (e) {

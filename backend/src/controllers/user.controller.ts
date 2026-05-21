@@ -103,3 +103,40 @@ export async function uploadUserImage(req: Request, res: Response) {
     res.status(400).json({ error: err instanceof Error ? err.message : "Unknown error" });
   }
 }
+
+export async function getAllUsers(req: Request, res: Response) {
+    const skip = Number(req.query.skip) || 0;
+    const take = Number(req.query.take) || 20;
+
+    try {
+        const users = await userService.getAllUsers(skip, take);
+        res.status(200).json(users);
+    } catch (e) {
+        res.status(400).json({ error: e instanceof Error ? e.message : "Error" });
+    }
+}
+
+export async function verifyUser(req: Request, res: Response) {
+    const userId = Number(req.params.id);
+    const { status } = req.body; 
+
+    try {
+        const updated = await userService.verifyUser(userId, status);
+        return res.status(200).json({ message: "Status updated", user: updated });
+    } catch (e) {
+        return res.status(400).json({ error: e instanceof Error ? e.message : "Error" });
+    }
+}
+
+export async function updateUserRole(req: Request, res: Response) {
+    const targetUserId = Number(req.params.id);
+    const { newRole } = req.body;
+    const requesterRole = req.user?.role as string;
+
+    try {
+        const user = await userService.updateRole(targetUserId, newRole, requesterRole);
+        return res.status(200).json({ message: "Role updated", user });
+    } catch (e) {
+        return res.status(403).json({ error: e instanceof Error ? e.message : "Forbidden" });
+    }
+}

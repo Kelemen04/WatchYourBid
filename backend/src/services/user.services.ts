@@ -258,5 +258,45 @@ export const userService = {
                 seller: { include: { address: true } }
             }
         });
+    },
+
+    async getAllUsers(skip: number, take: number) {
+        return await prisma.user.findMany({
+            skip,
+            take,
+            orderBy: { username: "asc" },
+            include: { buyer: true, seller: true }
+        });
+    },
+
+    async verifyUser(userId: number, status: 'VERIFIED' | 'REJECTED' | 'BANNED') {
+        return await prisma.user.update({
+            where: { id: userId },
+            data: { status: status }
+        });
+    },
+
+    async updateRole(targetUserId: number, newRole: 'ADMIN' | 'MODERATOR' | 'USER' | 'SUPER_ADMIN', requesterRole: string) {
+        const targetUser = await prisma.user.findUnique({ where: { id: targetUserId } });
+        if (!targetUser) {
+            throw new Error("User not found!");
+        }
+
+        if (requesterRole === "SUPER_ADMIN") {
+            return await prisma.user.update({ where: { id: targetUserId }, data: { role: newRole } });
+        }
+
+        if (requesterRole === "ADMIN") {
+            if (targetUser.role === "ADMIN" || targetUser.role === "SUPER_ADMIN") {
+                throw new Error("You do not have permission to modify this user's role!");
+            }
+            
+            if (newRole === "ADMIN" || newRole === "SUPER_ADMIN") {
+                throw new Error("You do not have permission to assign this role!");
+            }
+            return await prisma.user.update({ where: { id: targetUserId }, data: { role: newRole } });
+        }
+
+        throw new Error("You are not authorized to change roles!");
     }
 };

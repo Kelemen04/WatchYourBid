@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useFormContext } from "react-hook-form";
 import type { AuctionInput } from "../../dto/auction.dto";
 
@@ -10,7 +11,6 @@ const EnglishFields = () => {
     register,
     formState: { errors },
   } = useFormContext<AuctionInput>();
-
   return (
     <>
       <div>
@@ -61,7 +61,6 @@ const EnglishFields = () => {
   );
 };
 
-// --- DUTCH ---
 const DutchFields = () => {
   const {
     register,
@@ -117,7 +116,6 @@ const DutchFields = () => {
   );
 };
 
-// --- JAPANESE ---
 const JapaneseFields = () => {
   const {
     register,
@@ -158,7 +156,6 @@ const JapaneseFields = () => {
           <p style={{ color: "red" }}>{errors.moneyInterval.message}</p>
         )}
       </div>
-      {/* 🔥 HOZZÁADVA: Hiányzott a buyingPrice input */}
       <div>
         <label htmlFor="buyingPrice">Instant Buying Price:</label>
         <input
@@ -174,7 +171,6 @@ const JapaneseFields = () => {
   );
 };
 
-// --- VICKREY (Sealed Bid) ---
 const VickreyFields = () => {
   const {
     register,
@@ -193,7 +189,6 @@ const VickreyFields = () => {
           <p style={{ color: "red" }}>{errors.reservePrice.message}</p>
         )}
       </div>
-      {/* 🔥 HOZZÁADVA: A te hibrid logikád szerinti villámár input */}
       <div>
         <label htmlFor="buyingPrice">Instant Buying Price:</label>
         <input
@@ -209,7 +204,6 @@ const VickreyFields = () => {
   );
 };
 
-// --- FPSB (First Price Sealed Bid) ---
 const FpsbFields = () => {
   const {
     register,
@@ -228,7 +222,6 @@ const FpsbFields = () => {
           <p style={{ color: "red" }}>{errors.reservePrice.message}</p>
         )}
       </div>
-      {/* 🔥 HOZZÁADVA: A te hibrid logikád szerinti villámár input */}
       <div>
         <label htmlFor="buyingPrice">Instant Buying Price:</label>
         <input
@@ -249,10 +242,37 @@ export default function AuctionTypeDataForm({ setStep }: Props) {
     register,
     trigger,
     watch,
+    setValue,
     formState: { errors },
   } = useFormContext<AuctionInput>();
 
   const selectedType = watch("auctionType");
+
+  useEffect(() => {
+    switch (selectedType) {
+      case "VICKREY":
+      case "FPSB":
+        setValue("startingPrice", 0);
+        setValue("tickInterval", undefined);
+        setValue("moneyInterval", undefined);
+        setValue("minBidIncrement", undefined);
+        break;
+      case "ENGLISH":
+        setValue("tickInterval", undefined);
+        setValue("moneyInterval", undefined);
+        setValue("isAscending", undefined);
+        break;
+      case "DUTCH":
+        setValue("minBidIncrement", undefined);
+        setValue("buyingPrice", undefined);
+        setValue("isAscending", undefined);
+        break;
+      case "JAPANESE":
+        setValue("minBidIncrement", undefined);
+        setValue("reservePrice", undefined);
+        break;
+    }
+  }, [selectedType, setValue]);
 
   const handleNext = async () => {
     const fieldsByAuctionType = {
@@ -273,26 +293,16 @@ export default function AuctionTypeDataForm({ setStep }: Props) {
       FPSB: ["reservePrice", "buyingPrice"],
     } as const;
 
-    const currentType = watch("auctionType");
     const specificFields =
-      fieldsByAuctionType[currentType as keyof typeof fieldsByAuctionType] ||
+      fieldsByAuctionType[selectedType as keyof typeof fieldsByAuctionType] ||
       [];
-
     const isValid = await trigger(specificFields);
-
-    if (isValid) {
-      setStep((prev) => prev + 1);
-    }
-  };
-
-  const handlePrevious = async () => {
-    setStep((prev) => prev - 1);
+    if (isValid) setStep((prev) => prev + 1);
   };
 
   return (
     <div className="form-step">
       <h1>Auction Type Data</h1>
-
       <div>
         <label htmlFor="selectType">Select type:</label>
         <select id="selectType" {...register("auctionType")}>
@@ -311,10 +321,9 @@ export default function AuctionTypeDataForm({ setStep }: Props) {
       {selectedType === "FPSB" && <FpsbFields />}
       {selectedType === "JAPANESE" && <JapaneseFields />}
 
-      <button type="button" onClick={handlePrevious}>
+      <button type="button" onClick={() => setStep((prev) => prev - 1)}>
         Previous page
       </button>
-
       <button type="button" onClick={handleNext}>
         Next page
       </button>

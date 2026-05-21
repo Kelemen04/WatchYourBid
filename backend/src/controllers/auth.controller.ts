@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { authService } from "../services/auth.service";
-import { type RegisterDTO , type LoginDTO, type ForgotPasswordDTO, ResetPassword, type ResetPasswordDTO } from "../dto/auth.dto";
+import { type RegisterDTO , type LoginDTO, type ForgotPasswordDTO, type ResetPasswordDTO } from "../dto/auth.dto";
 
 const cookieOptions = {
   httpOnly: true,
@@ -77,7 +77,7 @@ export async function verifyEmail(req: Request, res: Response) {
   const token = req.query.token as string;
 
   try{
-    const result = await authService.verifyEmail(token);
+    await authService.verifyEmail(token);
     res.redirect('http://localhost:8080/login?verified=true')
   }  catch(e) {
     return res.status(400).json({ error: e instanceof Error ? e.message : "Unknown error" });

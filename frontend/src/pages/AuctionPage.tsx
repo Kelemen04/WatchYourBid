@@ -5,12 +5,10 @@ import BidInformation from "../components/layout/BidInformation";
 import { useAuctionData } from "../hooks/useAuctions";
 import AuctionOwnerPanel from "../components/layout/AuctionOwnerPanel";
 import ReviewForm from "../features/review/ReviewForm";
-import { useAuctionBids } from "../hooks/useBids";
 
 export default function AuctionPage() {
   const { id } = useParams();
   const { data: auctionData } = useAuctionData(Number(id));
-  const { data: bidsData } = useAuctionBids(Number(id), 10);
 
   const userId = getUserId();
 
@@ -23,7 +21,7 @@ export default function AuctionPage() {
     <>
       {isUserAuction ? <AuctionOwnerPanel /> : winner && <ReviewForm />}
       <AuctionInformation data={auctionData} />
-      <BidInformation data={bidsData || []} />
+      <BidInformation />
     </>
   );
 }

@@ -4,82 +4,56 @@ import { Link } from "react-router-dom";
 import { BsBookmark } from "react-icons/bs";
 import { useAddToWatchlist } from "../../hooks/useAuctions";
 import { socket } from "../../main";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function AuctionListItem({
   auction,
 }: {
   auction: AuctionItemData;
 }) {
+  const queryClient = useQueryClient();
   const [days, setDays] = useState(0);
   const [hours, setHours] = useState(0);
   const [minutes, setMinutes] = useState(0);
   const [seconds, setSeconds] = useState(0);
-  const [livePrice, setLivePrice] = useState(auction.currentPrice);
-  const [prevPrice, setPrevPrice] = useState(auction.currentPrice);
-
-  if (auction.currentPrice !== prevPrice) {
-    setPrevPrice(auction.currentPrice);
-    setLivePrice(auction.currentPrice);
-  }
 
   useEffect(() => {
-    if (!auction.id) return;
-
-    socket.emit("joinAuction", String(auction.id));
-
-    interface SocketBidUpdate {
-      auctionId: number | string;
+    const handleBidUpdate = (updatedData: {
+      auctionId: string | number;
       newPrice?: number;
-    }
-
-    const handleBidUpdate = (updatedData: SocketBidUpdate) => {
-      const incomingId = Number(updatedData.auctionId);
-      const currentCardId = Number(auction.id);
-
-      if (incomingId === currentCardId && updatedData.newPrice !== undefined) {
-        setLivePrice(updatedData.newPrice);
+    }) => {
+      if (Number(updatedData.auctionId) === Number(auction.id)) {
+        queryClient.invalidateQueries({ queryKey: ["categoryAuctions"] });
       }
     };
 
+    socket.emit("joinAuction", String(auction.id));
     socket.on("BidUpdated", handleBidUpdate);
 
     return () => {
-      socket.emit("leaveAuction", String(auction.id));
       socket.off("BidUpdated", handleBidUpdate);
+      socket.emit("leaveAuction", String(auction.id));
     };
-  }, [auction.id]);
+  }, [auction.id, queryClient]);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      const end = new Date(auction.endTime);
-      const now = new Date();
-
-      const difference = end.getTime() - now.getTime();
-
+      const difference =
+        new Date(auction.endTime).getTime() - new Date().getTime();
       if (difference <= 0) {
         setDays(0);
         setHours(0);
         setMinutes(0);
         setSeconds(0);
-        clearInterval(interval);
         return;
       }
-
-      const d = Math.floor(difference / (1000 * 60 * 60 * 24));
-      setDays(d);
-
-      const h = Math.floor(
-        (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
+      setDays(Math.floor(difference / (1000 * 60 * 60 * 24)));
+      setHours(
+        Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
       );
-      setHours(h);
-
-      const m = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-      setMinutes(m);
-
-      const s = Math.floor((difference % (1000 * 60)) / 1000);
-      setSeconds(s);
+      setMinutes(Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)));
+      setSeconds(Math.floor((difference % (1000 * 60)) / 1000));
     }, 1000);
-
     return () => clearInterval(interval);
   }, [auction.endTime]);
 
@@ -88,16 +62,11 @@ export default function AuctionListItem({
   const handleWatchlistClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-
     mutate(
       { auctionId: auction.id },
       {
-        onSuccess: (data) => {
-          alert(data.message);
-        },
-        onError: (err) => {
-          alert(err.response?.data?.error || "Failed to add to watchlist");
-        },
+        onSuccess: (data) => alert(data.message),
+        onError: (err) => alert(err.response?.data?.error || "Failed"),
       },
     );
   };
@@ -117,7 +86,6 @@ export default function AuctionListItem({
               No Image
             </span>
           )}
-
           <button
             type="button"
             onClick={handleWatchlistClick}
@@ -150,7 +118,7 @@ export default function AuctionListItem({
             <p className="text-[10px] font-bold uppercase text-gray-400">
               Current Price
             </p>
-            <p className="text-2xl font-bold">{livePrice} EUR</p>
+            <p className="text-2xl font-bold">{auction.currentPrice} EUR</p>
           </div>
 
           <div className="w-full space-y-2">
@@ -159,7 +127,7 @@ export default function AuctionListItem({
                 Ends in
               </p>
               <p className="text-sm font-mono font-bold text-red-600 leading-none">
-                {days + " " + hours + " " + minutes + " " + seconds}
+                {`${days} ${hours} ${minutes} ${seconds}`}
               </p>
             </div>
             <button className="w-full bg-black text-white py-2 text-xs font-bold uppercase hover:bg-gray-800 transition-colors">

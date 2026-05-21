@@ -10,40 +10,41 @@ export const AuctionStatus = [
   "CANCELLED"
 ] as const;
 
+const optionalNumber = z.union([
+  z.number(),
+  z.nan().transform(() => undefined),
+]).optional();
+
 export const AuctionSchema = z.object({
   title: z.string().min(5, "Title too short").max(200),
   description: z.string().min(20, "Description should be more detailed"),
   auctionType: z.enum(AuctionTypes),
   startTime: z.coerce.date(),
   endTime: z.coerce.date(),
-  startingPrice: z.number().min(0).default(0),
-  reservePrice: z.number().optional(),
-  buyingPrice: z.number().optional(),
-  
-  tickInterval: z.number().optional(),
-  moneyInterval: z.number().optional(),
-  minBidIncrement: z.number().default(1),
+  startingPrice: z.union([
+    z.number().min(0),
+    z.nan().transform(() => 0),
+  ]).default(0),
+  reservePrice: optionalNumber,
+  buyingPrice: optionalNumber,
+  tickInterval: optionalNumber,
+  moneyInterval: optionalNumber,
+  minBidIncrement: z.union([
+    z.number().min(1),
+    z.nan().transform(() => 1),
+  ]).default(1),
   isAscending: z.boolean().optional(),
-
-  user: z.object({
-    firstName: z.string(),
-    lastName: z.string(),
-    profilePicture: z.string().nullable(),
-  }),
-
   watchItem: z.object({
     brand: z.string().min(1, "Brand is required"),
     model: z.string().min(1, "Model is required"),
-    productionYear: z.number().optional(),
+    productionYear: optionalNumber,
     material: z.string(),
     condition: z.string(),
-    weight: z.number().optional(),
+    weight: optionalNumber,
     hasBox: z.boolean().default(false),
     hasPapers: z.boolean().default(false),
     isOriginal: z.boolean().default(true),
-
     category: z.enum(WatchCategories),
-
     wristwatch: z.object({
       movementType: z.string(),
       caseDiameter: z.number(),
@@ -51,14 +52,12 @@ export const AuctionSchema = z.object({
       strapMaterial: z.string(),
       glassType: z.string(),
     }).optional(),
-
     pocketWatch: z.object({
       caseType: z.string(),
       movementType: z.string(),
       hasChain: z.boolean(),
       complications: z.string().optional(),
     }).optional(),
-
     smartwatch: z.object({
       os: z.string(),
       batteryLife: z.number(),
@@ -66,7 +65,6 @@ export const AuctionSchema = z.object({
       sensors: z.string(),
       compatibility: z.string(),
     }).optional(),
-
     clock: z.object({
       clockType: z.string(),
       powerSource: z.string(),
@@ -102,10 +100,26 @@ export const AuctionFullSchema = AuctionSchema.extend({
   ).optional(),
 });
 
+export const AuctionTableSchema = AuctionItemSchema.extend({
+  status: z.string(),
+  user: z.object({
+    username: z.string()
+  }).optional()
+});
+
+export const AuctionInformationSchema = AuctionSchema.extend({
+  user: z.object({
+    firstName: z.string(),
+    lastName: z.string(),
+    profilePicture: z.string().nullable(),
+  }),
+});
+
 export type AuctionCardData = z.infer<typeof AuctionCardSchema>;
 export type AuctionItemData = z.infer<typeof AuctionItemSchema>;
-export type AuctionInformation = z.infer<typeof AuctionSchema>; 
+export type AuctionInformation = z.infer<typeof AuctionInformationSchema>; 
 export type AuctionFullData = z.infer<typeof AuctionFullSchema>;
 
 export type AuctionInput = z.input<typeof AuctionSchema>;
 export type AuctionOutput = z.infer<typeof AuctionSchema>;
+export type AuctionTableData = z.infer<typeof AuctionTableSchema>;

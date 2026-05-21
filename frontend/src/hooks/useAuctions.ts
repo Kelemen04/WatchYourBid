@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../api/axios';
 import type { AxiosError } from 'axios';
-import type { AuctionCardData, AuctionFullData, AuctionInput, AuctionItemData } from '../dto/auction.dto';
+import type { AuctionCardData, AuctionFullData, AuctionInput, AuctionItemData, AuctionTableData } from '../dto/auction.dto';
 import { useNavigate } from 'react-router-dom';
 
 interface HomeAuctionsResponse {
@@ -231,5 +231,21 @@ export const useAuctionsByUser = () => {
       return response.data;
     },
     refetchOnWindowFocus: false, 
+  });
+};
+
+export const useGetStaffAuctions = (skip: number = 0, take: number = 20) => {
+  return useQuery<
+    AuctionTableData[],
+    AxiosError<{ error: string }>
+  >({
+    queryKey: ["staff-auctions", skip, take],
+    queryFn: async () => {
+      const response = await api.get<AuctionTableData[]>(`/auction/all`,{
+        params: { skip, take }
+      });
+      return response.data;
+    },
+    refetchOnWindowFocus: false,
   });
 };

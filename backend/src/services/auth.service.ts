@@ -233,9 +233,9 @@ export const authService = {
     }
   },
   async resetPassword(data: ResetPasswordDTO) {
-    const decoded = jwt.verify(data.token, process.env.RESET_PASSWORD_TOKEN_SECRET as string) as { userId : number };
-  
     try{
+      const decoded = jwt.verify(data.token, process.env.RESET_PASSWORD_TOKEN_SECRET as string) as { userId : number };
+      
       const existing = await prisma.user.findUnique({
         where: { id: decoded.userId }
       });

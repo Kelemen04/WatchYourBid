@@ -2,12 +2,17 @@ import { Link, Outlet, useNavigate } from "react-router-dom";
 import { useDeleteMe } from "../hooks/useUser";
 import TransactionForm from "../features/auth/TransactionForm";
 import WithdrawForm from "../features/auth/WithdrawForm";
-import { getUserId } from "../api/axios";
+import { getUserId, getUserRole } from "../api/axios";
 
 export default function UserDashboard() {
   const { mutate, isPending } = useDeleteMe();
   const navigate = useNavigate();
   const myId = getUserId();
+  const myRole = getUserRole();
+
+  const isSuperAdmin = myRole === "SUPER_ADMIN";
+  const isAdmin = myRole === "ADMIN" || isSuperAdmin;
+  const isMod = myRole === "MODERATOR";
 
   const handleDeleteAccount = () => {
     const confirmDelete = window.confirm(
@@ -44,6 +49,45 @@ export default function UserDashboard() {
         >
           Dashboard
         </h3>
+
+        {isAdmin && (
+          <div style={{ marginTop: "20px", borderBottom: "1px solid #333" }}>
+            <h4 style={{ color: "#047857", marginBottom: "5px" }}>ADMIN</h4>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "5px",
+                marginBottom: "15px",
+              }}
+            >
+              <Link to="/dashboard/admin/manage-users">Manage Users</Link>
+              <Link to="/dashboard/admin/manage-auctions">Manage Auctions</Link>
+              <Link to="/dashboard/admin/pending-auctions">
+                Approve Auctions
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {isMod && (
+          <div style={{ marginTop: "20px", borderBottom: "1px solid #333" }}>
+            <h4 style={{ color: "#047857", marginBottom: "5px" }}>MODERATOR</h4>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "5px",
+                marginBottom: "15px",
+              }}
+            >
+              <Link to="/dashboard/admin/manage-auctions">Manage Auctions</Link>
+              <Link to="/dashboard/admin/pending-auctions">
+                Approve Auctions
+              </Link>
+            </div>
+          </div>
+        )}
 
         <Link to="/auction">
           <div>Create Auction</div>

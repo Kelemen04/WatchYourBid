@@ -18,6 +18,9 @@ import UserAuctionsPage from "../pages/UserAuctionsPage";
 import UserProfilePage from "../pages/UserProfilePage";
 import UserTransactionsPage from "../pages/UserTransactionsPage";
 import UserBidsPage from "../pages/UserBidsPage";
+import AllAuctionsList from "../pages/AllAuctionsList";
+import PendingAuctionsList from "../pages/PendingAuctionList";
+import AllUsersList from "../pages/AllUsersList";
 
 export default function AppRouter() {
   return (
@@ -31,6 +34,12 @@ export default function AppRouter() {
 
             <Route path="register-buyer" element={<RegisterBuyerPage />} />
             <Route path="register-seller" element={<RegisterSellerPage />} />
+            <Route path="admin/manage-auctions" element={<AllAuctionsList />} />
+            <Route path="admin/manage-users" element={<AllUsersList />} />
+            <Route
+              path="admin/pending-auctions"
+              element={<PendingAuctionsList />}
+            />
           </Route>
 
           <Route path="/home" element={<Home />} />

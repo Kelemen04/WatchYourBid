@@ -152,3 +152,44 @@ export async function uploadAuctionImages(req: Request, res: Response) {
         res.status(400).json({ error: err instanceof Error ? err.message : "Unknown error" });
     }
 }
+
+export async function approveAuction(req: Request, res: Response) {
+    const auctionId = Number(req.params.id);
+    try {
+        const result = await auctionService.approveAuction(auctionId);
+        return res.status(200).json(result);
+    } catch (err) {
+        return res.status(400).json({ error: err instanceof Error ? err.message : "Unknown error" });
+    }
+}
+
+export async function cancelAuctionByStaff(req: Request, res: Response) {
+    const auctionId = Number(req.params.id);
+    try {
+        const result = await auctionService.cancelAuctionByStaff(auctionId);
+        return res.status(200).json(result);
+    } catch (err) {
+        return res.status(400).json({ error: err instanceof Error ? err.message : "Unknown error" });
+    }
+}
+
+export async function getPendingAuctions(req: Request, res: Response) {
+    try {
+        const auctions = await auctionService.getPendingAuctions();
+        res.status(200).json(auctions);
+    } catch (e) {
+        res.status(400).json({ error: "Failed to fetch pending auctions" });
+    }
+}
+
+export async function getAllAuctions(req: Request, res: Response) {
+    const skip = Number(req.query.skip) || 0;
+    const take = Number(req.query.take) || 20;
+
+    try {
+        const auctions = await auctionService.getAllAuctions(skip, take);
+        res.status(200).json(auctions);
+    } catch (err) {
+        res.status(400).json({ error: err instanceof Error ? err.message : "Error fetching all auctions" });
+    }
+}

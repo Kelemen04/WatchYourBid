@@ -117,6 +117,31 @@ export const PublicProfileSchema = z.object({
   }).nullable(),
 });
 
+export const AdminUserItemSchema = z.object({
+  id: z.number(),
+  username: z.string(),
+  email: z.string().email(),
+  firstName: z.string().nullable(),
+  lastName: z.string().nullable(),
+  role: z.enum(["USER", "MODERATOR", "ADMIN", "SUPER_ADMIN"]),
+  status: z.enum(["PENDING", "VERIFIED", "REJECTED", "BANNED"]),
+  seller: z.object({ id: z.number() }).nullable().optional(),
+});
+
+export const UpdateRoleSchema = z.object({
+    userId: z.number(),
+    newRole: z.enum(["USER", "MODERATOR", "ADMIN", "SUPER_ADMIN"])
+})
+
+export const VerifyUserSchema = z.object({
+    userId: z.number(),
+    status: z.enum(['VERIFIED', 'REJECTED', 'BANNED', 'PENDING'])
+})
+
+export type VerifyUserDTO = z.infer<typeof VerifyUserSchema>;
+export type AdminUserItemData = z.infer<typeof AdminUserItemSchema>;
+export type UpdateRoleDTO = z.infer<typeof UpdateRoleSchema>;
+
 
 export type BuyerRegisterDTO = z.input<typeof BuyerRegisterSchema>;
 export type SellerRegisterDTO = z.input<typeof SellerRegisterSchema>;

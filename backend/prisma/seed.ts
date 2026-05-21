@@ -1,6 +1,6 @@
 // prisma/seed.ts
 import "dotenv/config"; // EZ LEGYEN AZ ELSŐ SOR
-import { prisma } from "../src/db/client"; // <--- ÍRD ÁT A PONTOS ELÉRÉSI ÚTRA!
+import { prisma } from "../src/db/client"; // <--- ÍRD ÁT A PONTOS ELÉRÉSI ÚTRA HA MÁSHOL VAN!
 import * as argon2 from "argon2";
 
 async function main() {
@@ -15,7 +15,6 @@ async function main() {
     process.exit(1);
   }
 
-  // Törlés (sorrend fontos)
   await prisma.trendings.deleteMany({});
   await prisma.wristwatch.deleteMany({});
   await prisma.pocketWatch.deleteMany({});
@@ -23,33 +22,71 @@ async function main() {
   await prisma.clock.deleteMany({});
   await prisma.watchItem.deleteMany({});
   await prisma.auction.deleteMany({});
-  await prisma.user.deleteMany({});
+  await prisma.user.deleteMany({}); // Címek (Address) automatikusan törlődnek, ha jól van beállítva a cascade
 
   const adminPassword = await argon2.hash('Admin123!');
   const userPassword = await argon2.hash('User123!');
 
-  await prisma.user.create({
+  // --- 1. SUPER ADMIN LÉTREHOZÁSA (Eladó is egyben, hogy lehessenek aukciói) ---
+  const adminUser = await prisma.user.create({
     data: {
       username: 'admin',
       email: 'admin@watchyourbid.com',
       password: adminPassword,
       role: 'SUPER_ADMIN',
+      status: 'VERIFIED',
+      emailVerified: true, // 🔥 Emiatt azonnal be tudsz lépni!
+      seller: {
+        create: {
+          description: "Premium watch seller (Admin)",
+          rating: 5,
+          address: {
+            create: {
+              country: "HU",
+              region: "Pest",
+              city: "Budapest",
+              street: "Fő utca",
+              number: "1",
+              zipCode: "1011"
+            }
+          }
+        }
+      }
     },
   });
 
+  // --- 2. SIMA USER LÉTREHOZÁSA (Ő csak vásárló) ---
   await prisma.user.create({
     data: {
       username: 'user1',
       email: 'user1@example.com',
       password: userPassword,
       role: 'USER',
+      status: 'VERIFIED',
+      emailVerified: true, // 🔥 Emiatt azonnal be tudsz lépni!
+      buyer: {
+        create: {
+          shippingAddress: {
+            create: {
+              country: "HU",
+              region: "Pest",
+              city: "Budapest",
+              street: "Vásárló utca",
+              number: "10",
+              zipCode: "1022"
+            }
+          }
+        }
+      }
     },
   });
 
   const now = new Date();
   const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-  // --- 1. Wristwatch ---
+  // --- 3. AUKCIÓK LÉTREHOZÁSA (Mind az adminhoz van kötve) ---
+
+  // 1. Wristwatch
   await prisma.auction.create({
     data: {
       title: 'Patek Philippe Nautilus 5711',
@@ -60,6 +97,7 @@ async function main() {
       startingPrice: 85000,
       currentPrice: 85000,
       status: 'ACTIVE',
+      userId: adminUser.id, // 🔥 Hozzárendelve az adminhoz
       watchItem: {
         create: {
           category: 'WRISTWATCH',
@@ -82,7 +120,7 @@ async function main() {
     }
   });
 
-  // --- 2. Pocketwatch ---
+  // 2. Pocketwatch
   await prisma.auction.create({
     data: {
       title: 'Vacheron Constantin Antique',
@@ -93,6 +131,7 @@ async function main() {
       startingPrice: 12000,
       currentPrice: 12000,
       status: 'ACTIVE',
+      userId: adminUser.id, // 🔥 Hozzárendelve az adminhoz
       watchItem: {
         create: {
           category: 'POCKETWATCH',
@@ -113,7 +152,7 @@ async function main() {
     }
   });
 
-  // --- 3. Smartwatch ---
+  // 3. Smartwatch
   await prisma.auction.create({
     data: {
       title: 'TAG Heuer Connected E4',
@@ -124,6 +163,7 @@ async function main() {
       startingPrice: 2100,
       currentPrice: 2100,
       status: 'ACTIVE',
+      userId: adminUser.id, // 🔥 Hozzárendelve az adminhoz
       watchItem: {
         create: {
           category: 'SMARTWATCH',
@@ -146,7 +186,7 @@ async function main() {
     }
   });
 
-  // --- 4. Clock ---
+  // 4. Clock
   await prisma.auction.create({
     data: {
       title: 'Antique Atmos Clock',
@@ -157,6 +197,7 @@ async function main() {
       startingPrice: 6500,
       currentPrice: 6500,
       status: 'ACTIVE',
+      userId: adminUser.id, // 🔥 Hozzárendelve az adminhoz
       watchItem: {
         create: {
           category: 'CLOCK',

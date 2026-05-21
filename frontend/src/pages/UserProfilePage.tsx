@@ -1,14 +1,22 @@
 import { useParams } from "react-router-dom";
 import { usePublicProfile } from "../hooks/useUser";
 import { useUserReviews } from "../hooks/useReview";
+import { useDeleteReview } from "../hooks/useModerator";
+import { getUserId, getUserRole } from "../api/axios";
 
 export default function UserProfilePage() {
   const { id } = useParams();
   const userId = Number(id);
+  const myRole = getUserRole();
+  const myId = getUserId();
 
   const { data: profile, isLoading: isProfileLoading } =
     usePublicProfile(userId);
   const { data: reviews, isLoading: isReviewsLoading } = useUserReviews(userId);
+  const { mutate: deleteReview } = useDeleteReview();
+
+  const isStaff =
+    myRole === "ADMIN" || myRole === "SUPER_ADMIN" || myRole === "MODERATOR";
 
   if (isProfileLoading || isReviewsLoading) {
     return <div>Loading user profile...</div>;
@@ -98,33 +106,49 @@ export default function UserProfilePage() {
               overflowY: "auto",
             }}
           >
-            {reviews.map((review) => (
-              <div
-                key={review.id}
-                style={{
-                  borderBottom: "1px dashed silver",
-                  paddingBottom: "8px",
-                }}
-              >
+            {reviews.map((review) => {
+              const canDelete =
+                isStaff ||
+                (myId !== null && myId === Number(review.reviewer.id));
+              return (
                 <div
+                  key={review.id}
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    fontSize: "14px",
+                    borderBottom: "1px dashed silver",
+                    paddingBottom: "8px",
                   }}
                 >
-                  <span style={{ fontWeight: "bold" }}>
-                    @{review.reviewer.username}
-                  </span>
-                  <span style={{ color: "orange" }}>
-                    {"⭐".repeat(review.rating)}
-                  </span>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      fontSize: "14px",
+                    }}
+                  >
+                    <span style={{ fontWeight: "bold" }}>
+                      @{review.reviewer.username}
+                    </span>
+                    <span style={{ color: "orange" }}>
+                      {"⭐".repeat(review.rating)}
+                    </span>
+                  </div>
+                  <p style={{ margin: "5px 0 0 0", fontSize: "13px" }}>
+                    {review.comment || "No comment left."}
+                  </p>
+                  {canDelete && (
+                    <button
+                      onClick={() => deleteReview(review.id)}
+                      style={{
+                        backgroundColor: isStaff ? "red" : "orange",
+                        color: "white",
+                      }}
+                    >
+                      {isStaff ? "Delete (Moderator)" : "Delete (Own)"}
+                    </button>
+                  )}
                 </div>
-                <p style={{ margin: "5px 0 0 0", fontSize: "13px" }}>
-                  {review.comment || "No comment left."}
-                </p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <p style={{ fontSize: "13px", color: "gray", fontStyle: "italic" }}>

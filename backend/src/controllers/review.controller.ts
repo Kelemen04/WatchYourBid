@@ -20,9 +20,10 @@ export async function createReview(req: Request,res: Response) {
 export async function deleteReview(req: Request,res: Response) {
     const userId = req.user?.id as number;
     const reviewId = Number(req.params.id);
+    const userRole = req.user?.role as string;
 
     try{
-        const review = await reviewService.deleteReview(reviewId,userId);
+        const review = await reviewService.deleteReview(reviewId,userId,userRole);
         return res.status(200).json(review);
     } catch (err) {
         res.status(400).json({error: err instanceof Error ? err.message: "Unknown error!"})

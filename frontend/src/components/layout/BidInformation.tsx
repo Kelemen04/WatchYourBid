@@ -1,42 +1,68 @@
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import type { AxiosError } from "axios";
+import { useBidCreate, useBuyNow, useAutoBidCreate } from "../../hooks/useBids";
 import {
   PlaceBidSchema,
-  type BidDataDTO,
+  AutoBidSchema,
   type PlaceBidDTO,
+  type AutoBidDTO,
 } from "../../dto/bid.dto";
-import { useBidCreate, useBuyNow } from "../../hooks/useBids";
-import type { AxiosError } from "axios";
 import { Link, useParams } from "react-router-dom";
 import { useAuctionData } from "../../hooks/useAuctions";
+import { useAuctionBids } from "../../hooks/useBids";
 
-export default function BidInformation({ data }: { data: BidDataDTO[] }) {
+export default function BidInformation() {
   const { id } = useParams();
   const auctionId = Number(id);
+  const [showAutoBid, setShowAutoBid] = useState(false);
+
   const { mutate: placeBid, isPending: isBidPending } = useBidCreate();
+  const { mutate: autoBid, isPending: isAutoBidPending } = useAutoBidCreate();
   const { mutate: buyNow, isPending: isBuyNowPending } = useBuyNow();
+  const { data: bids } = useAuctionBids(auctionId, 10);
 
   const { data: auction } = useAuctionData(auctionId);
 
   const {
-    register,
-    handleSubmit,
-    setError,
-    formState: { errors },
-  } = useForm<PlaceBidDTO>({
-    resolver: zodResolver(PlaceBidSchema),
-    mode: "onTouched",
-  });
+    register: registerBid,
+    handleSubmit: handleSubmitBid,
+    setError: setBidError,
+    formState: { errors: bidErrors },
+  } = useForm<PlaceBidDTO>({ resolver: zodResolver(PlaceBidSchema) });
 
-  const onSubmit = (data: PlaceBidDTO) => {
+  const {
+    register: registerAuto,
+    handleSubmit: handleSubmitAuto,
+    setError: setAutoError,
+    formState: { errors: autoErrors },
+  } = useForm<AutoBidDTO>({ resolver: zodResolver(AutoBidSchema) });
+
+  const onSubmitBid = (data: PlaceBidDTO) => {
     placeBid(
       { data, auctionId },
       {
-        onError: (err) => {
-          const serverError = err as AxiosError<{ error: string }>;
-          const msg = serverError?.response?.data?.error;
-          setError("root", { type: "server", message: msg });
-        },
+        onError: (err) =>
+          setBidError("root", {
+            type: "server",
+            message: (err as AxiosError<{ error: string }>).response?.data
+              ?.error,
+          }),
+      },
+    );
+  };
+
+  const onSubmitAutoBid = (data: AutoBidDTO) => {
+    autoBid(
+      { data, auctionId },
+      {
+        onError: (err) =>
+          setAutoError("root", {
+            type: "server",
+            message: (err as AxiosError<{ error: string }>).response?.data
+              ?.error,
+          }),
       },
     );
   };
@@ -54,6 +80,7 @@ export default function BidInformation({ data }: { data: BidDataDTO[] }) {
     minBidIncrement,
     startingPrice,
     buyingPrice,
+    status,
   } = auction;
 
   return (
@@ -65,7 +92,17 @@ export default function BidInformation({ data }: { data: BidDataDTO[] }) {
         width: "400px",
       }}
     >
-      {buyingPrice && auction.status === "ACTIVE" && (
+      <div style={{ marginBottom: "15px", fontSize: "14px" }}>
+        <p>
+          Kikiáltási ár: <strong>{startingPrice} EUR</strong>
+        </p>
+        <p>
+          Jelenlegi ár:{" "}
+          <strong style={{ color: "blue" }}>{currentPrice} EUR</strong>
+        </p>
+      </div>
+
+      {buyingPrice && status === "ACTIVE" && (
         <div
           style={{
             borderBottom: "1px dashed silver",
@@ -73,7 +110,6 @@ export default function BidInformation({ data }: { data: BidDataDTO[] }) {
             marginBottom: "15px",
           }}
         >
-          <p>Ez a termék azonnal is megvásárolható!</p>
           <button
             type="button"
             onClick={handleBuyNow}
@@ -85,166 +121,145 @@ export default function BidInformation({ data }: { data: BidDataDTO[] }) {
               cursor: "pointer",
             }}
           >
-            Azonnali vétel (Buy Now): {buyingPrice} EUR
+            Azonnali vétel: {buyingPrice} EUR
           </button>
         </div>
       )}
 
       {status === "ACTIVE" ? (
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          style={{ display: "flex", flexDirection: "column", gap: "10px" }}
-        >
-          {auctionType === "ENGLISH" && (
-            <>
-              <label style={{ fontWeight: "bold" }}>
-                Angol aukció - Licitálás
-              </label>
-              <input
-                {...register("bidAmount", { valueAsNumber: true })}
-                type="number"
-                placeholder={`Minimum: ${(currentPrice || 0) + (minBidIncrement || 0)} EUR`}
-                style={{ border: "1px solid black", padding: "5px" }}
-              />
-              <button
-                type="submit"
-                disabled={isBidPending}
-                style={{ padding: "5px", cursor: "pointer" }}
-              >
-                {isBidPending ? "Küldés..." : "Licit elküldése"}
-              </button>
-            </>
-          )}
-
-          {auctionType === "DUTCH" && (
-            <>
-              <label style={{ fontWeight: "bold" }}>
-                Holland aukció - Kivásárlás
-              </label>
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+          {auctionType === "DUTCH" || auctionType === "JAPANESE" ? (
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "10px" }}
+            >
               <p>
-                Jelenlegi ketyegő ár, amin elviheted:{" "}
-                <span style={{ color: "blue", fontWeight: "bold" }}>
-                  {currentPrice} EUR
-                </span>
+                Aukció típusa:{" "}
+                <strong>{auctionType === "DUTCH" ? "Holland" : "Japán"}</strong>
               </p>
-              <input
-                type="number"
-                readOnly
-                value={currentPrice}
-                {...register("bidAmount", { valueAsNumber: true })}
-                style={{ display: "none" }}
-              />
               <button
-                type="submit"
+                type="button"
                 disabled={isBidPending}
+                onClick={() =>
+                  placeBid({ data: { bidAmount: currentPrice }, auctionId })
+                }
                 style={{
-                  backgroundColor: "blue",
+                  backgroundColor: auctionType === "DUTCH" ? "blue" : "purple",
                   color: "white",
-                  padding: "8px",
+                  padding: "10px",
                   cursor: "pointer",
+                  fontWeight: "bold",
                 }}
               >
                 {isBidPending
                   ? "Feldolgozás..."
-                  : `Megveszem ${currentPrice} EUR-ért`}
+                  : auctionType === "DUTCH"
+                    ? `Vásárlás most: ${currentPrice} EUR`
+                    : `Ár elfogadása: ${currentPrice} EUR`}
               </button>
-            </>
-          )}
-
-          {auctionType === "JAPANESE" && (
-            <>
-              <label style={{ fontWeight: "bold" }}>
-                Japán aukció - Ár elfogadása
-              </label>
-              <p>
-                Aktuális kör ára:{" "}
-                <span style={{ fontWeight: "bold" }}>{currentPrice} EUR</span>
-              </p>
-              <input
-                type="number"
-                readOnly
-                value={currentPrice}
-                {...register("bidAmount", { valueAsNumber: true })}
-                style={{ display: "none" }}
-              />
-              <button
-                type="submit"
-                disabled={isBidPending}
-                style={{
-                  backgroundColor: "purple",
-                  color: "white",
-                  padding: "8px",
-                  cursor: "pointer",
-                }}
+            </div>
+          ) : auctionType === "ENGLISH" ? (
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "5px" }}
+            >
+              <form
+                onSubmit={handleSubmitBid(onSubmitBid)}
+                style={{ display: "flex", flexDirection: "column", gap: "5px" }}
               >
-                {isBidPending
-                  ? "Mentés..."
-                  : "Elfogadom az árat (Bent maradok)"}
-              </button>
-            </>
-          )}
+                <label style={{ fontWeight: "bold" }}>Licitálás</label>
+                <input
+                  {...registerBid("bidAmount", { valueAsNumber: true })}
+                  type="number"
+                  placeholder={`Min: ${(currentPrice || 0) + (minBidIncrement || 0)} EUR`}
+                  style={{ border: "1px solid black", padding: "5px" }}
+                />
+                {bidErrors.bidAmount && (
+                  <p style={{ color: "red", fontSize: "12px" }}>
+                    {bidErrors.bidAmount.message}
+                  </p>
+                )}
+                <button type="submit" disabled={isBidPending}>
+                  {isBidPending ? "Küldés..." : "Licit elküldése"}
+                </button>
+              </form>
 
-          {(auctionType === "FPSB" || auctionType === "VICKREY") && (
-            <>
+              <button
+                type="button"
+                onClick={() => setShowAutoBid(!showAutoBid)}
+                style={{ fontSize: "12px", marginTop: "5px" }}
+              >
+                {showAutoBid ? "Auto-bid elrejtése" : "Auto-bid beállítása"}
+              </button>
+
+              {showAutoBid && (
+                <form
+                  onSubmit={handleSubmitAuto(onSubmitAutoBid)}
+                  style={{
+                    marginTop: "10px",
+                    padding: "10px",
+                    background: "#f9f9f9",
+                    border: "1px solid #ccc",
+                  }}
+                >
+                  <input
+                    {...registerAuto("maxAmount", { valueAsNumber: true })}
+                    type="number"
+                    placeholder="Max összeg"
+                    style={{ width: "100%", marginBottom: "5px" }}
+                  />
+                  {autoErrors.maxAmount && (
+                    <p style={{ color: "red", fontSize: "12px" }}>
+                      {autoErrors.maxAmount.message}
+                    </p>
+                  )}
+                  <input
+                    {...registerAuto("increment", { valueAsNumber: true })}
+                    type="number"
+                    placeholder="Licitlépcső (opcionális)"
+                    style={{ width: "100%", marginBottom: "5px" }}
+                  />
+                  <button
+                    type="submit"
+                    disabled={isAutoBidPending}
+                    style={{ width: "100%" }}
+                  >
+                    {isAutoBidPending ? "Feldolgozás..." : "Auto-bid indítása"}
+                  </button>
+                </form>
+              )}
+            </div>
+          ) : (
+            <form
+              onSubmit={handleSubmitBid(onSubmitBid)}
+              style={{ display: "flex", flexDirection: "column", gap: "5px" }}
+            >
               <label style={{ fontWeight: "bold" }}>
-                {auctionType === "FPSB" ? "Vak licit (FPSB)" : "Vickrey aukció"}{" "}
-                - Zárt boríték
+                Licit beküldése (titkos)
               </label>
-              <p style={{ fontSize: "12px", color: "gray" }}>
-                Az árak rejtettek. Az ajánlat leadása után már nem módosítható.
-              </p>
               <input
-                {...register("bidAmount", { valueAsNumber: true })}
+                {...registerBid("bidAmount", { valueAsNumber: true })}
                 type="number"
-                placeholder={`Minimum kikiáltási ár: ${startingPrice} EUR`}
+                placeholder="Add meg a licited összegét"
                 style={{ border: "1px solid black", padding: "5px" }}
               />
-              <button
-                type="submit"
-                disabled={isBidPending}
-                style={{
-                  backgroundColor: "black",
-                  color: "white",
-                  padding: "5px",
-                  cursor: "pointer",
-                }}
-              >
-                {isBidPending ? "Titkosítás..." : "Titkos ajánlat leadása"}
+              <button type="submit" disabled={isBidPending}>
+                {isBidPending ? "Küldés..." : "Titkos licit beküldése"}
               </button>
-            </>
+            </form>
           )}
-
-          {errors.bidAmount && (
-            <p style={{ color: "red", fontSize: "12px", margin: 0 }}>
-              Hiba: Érvénytelen összeg!
-            </p>
-          )}
-          {errors.root && (
-            <p
-              style={{
-                color: "darkred",
-                fontWeight: "bold",
-                fontSize: "13px",
-                margin: 0,
-              }}
-            >
-              {errors.root.message}
-            </p>
-          )}
-        </form>
+        </div>
       ) : (
         <div
           style={{
             padding: "10px",
             backgroundColor: "#f0f0f0",
             textAlign: "center",
-            fontWeight: "bold",
             color: "red",
           }}
         >
-          Az aukció lezárult, további licit leadása nem lehetséges!
+          Aukció lezárult!
         </div>
       )}
+
       <div
         style={{
           marginTop: "20px",
@@ -252,52 +267,36 @@ export default function BidInformation({ data }: { data: BidDataDTO[] }) {
           paddingTop: "15px",
         }}
       >
-        <h4 style={{ margin: "0 0 10px 0" }}>
-          Korábbi licitek ({data?.length || 0})
-        </h4>
-        {data && data.length > 0 ? (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "5px",
-              maxHeight: "200px",
-              overflowY: "auto",
-            }}
-          >
-            {data.map((bid) => (
+        {(auctionType === "VICKREY" || auctionType === "FPSB") &&
+        status === "ACTIVE" ? (
+          <p style={{ fontStyle: "italic", color: "gray" }}>
+            A licitek titkosak az aukció lezárásáig.
+          </p>
+        ) : (
+          <>
+            <h4>Korábbi licitek ({bids?.length || 0})</h4>
+            {bids?.map((bid) => (
               <div
                 key={bid.id}
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
                   padding: "5px",
-                  backgroundColor: "#fdfdfd",
-                  border: "1px solid #eee",
-                  fontSize: "14px",
+                  borderBottom: "1px solid #eee",
                 }}
               >
-                <Link
-                  to={`/user/${bid.user.id}`}
-                  style={{
-                    textDecoration: "underline",
-                    color: "blue",
-                    fontWeight: "bold",
-                    cursor: "pointer",
-                  }}
-                >
+                <Link to={`/user/${bid.user.id}`}>
                   {bid.user.firstName} {bid.user.lastName}
                 </Link>
-                <span style={{ fontWeight: "bold", color: "green" }}>
-                  {bid.bidAmount} EUR
+                <span>
+                  {bid.bidAmount} EUR -{" "}
+                  {bid.bidTime
+                    ? new Date(bid.bidTime).toLocaleTimeString()
+                    : ""}
                 </span>
               </div>
             ))}
-          </div>
-        ) : (
-          <p style={{ fontSize: "13px", color: "gray" }}>
-            Még nem érkezett licit erre a termékre.
-          </p>
+          </>
         )}
       </div>
     </div>

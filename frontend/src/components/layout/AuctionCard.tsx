@@ -4,78 +4,52 @@ import { Link } from "react-router-dom";
 import { BsBookmark } from "react-icons/bs";
 import { useAddToWatchlist } from "../../hooks/useAuctions";
 import { socket } from "../../main";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function AuctionCard({ auction }: { auction: AuctionCardData }) {
+  const queryClient = useQueryClient();
   const [days, setDays] = useState(0);
   const [hours, setHours] = useState(0);
   const [minutes, setMinutes] = useState(0);
   const [seconds, setSeconds] = useState(0);
-  const [livePrice, setLivePrice] = useState(auction.currentPrice);
-  const [prevPrice, setPrevPrice] = useState(auction.currentPrice);
-
-  if (auction.currentPrice !== prevPrice) {
-    setPrevPrice(auction.currentPrice);
-    setLivePrice(auction.currentPrice);
-  }
 
   useEffect(() => {
-    if (!auction.id) return;
-
-    socket.emit("joinAuction", String(auction.id));
-
-    interface SocketBidUpdate {
-      auctionId: number | string;
-      newPrice?: number;
-    }
-
-    const handleBidUpdate = (updatedData: SocketBidUpdate) => {
-      const incomingId = Number(updatedData.auctionId);
-      const currentCardId = Number(auction.id);
-
-      if (incomingId === currentCardId && updatedData.newPrice !== undefined) {
-        setLivePrice(updatedData.newPrice);
+    const handleBidUpdate = (updatedData: {
+      auctionId: string | number;
+      newPrice: number;
+    }) => {
+      if (Number(updatedData.auctionId) === Number(auction.id)) {
+        queryClient.invalidateQueries({ queryKey: ["homeAuctions"] });
       }
     };
 
+    socket.emit("joinAuction", String(auction.id));
     socket.on("BidUpdated", handleBidUpdate);
 
     return () => {
-      socket.emit("leaveAuction", String(auction.id));
       socket.off("BidUpdated", handleBidUpdate);
+      socket.emit("leaveAuction", String(auction.id));
     };
-  }, [auction.id]);
+  }, [auction.id, queryClient]);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      const end = new Date(auction.endTime);
-      const now = new Date();
-
-      const difference = end.getTime() - now.getTime();
-
+      const difference =
+        new Date(auction.endTime).getTime() - new Date().getTime();
       if (difference <= 0) {
         setDays(0);
         setHours(0);
         setMinutes(0);
         setSeconds(0);
-        clearInterval(interval);
         return;
       }
-
-      const d = Math.floor(difference / (1000 * 60 * 60 * 24));
-      setDays(d);
-
-      const h = Math.floor(
-        (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
+      setDays(Math.floor(difference / (1000 * 60 * 60 * 24)));
+      setHours(
+        Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
       );
-      setHours(h);
-
-      const m = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-      setMinutes(m);
-
-      const s = Math.floor((difference % (1000 * 60)) / 1000);
-      setSeconds(s);
+      setMinutes(Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)));
+      setSeconds(Math.floor((difference % (1000 * 60)) / 1000));
     }, 1000);
-
     return () => clearInterval(interval);
   }, [auction.endTime]);
 
@@ -100,7 +74,7 @@ export default function AuctionCard({ auction }: { auction: AuctionCardData }) {
 
   return (
     <Link to={`/auction/${auction.id}`}>
-      <div className="w-full border-2 border-gray-400 bg-white p-3 flex flex-col gap-2 hover:shadow-md transition-shadow">
+      <div className="w-full h-full border-2 border-gray-400 bg-white p-3 flex flex-col gap-2 hover:shadow-md transition-shadow">
         <div className="aspect-square bg-gray-100 border border-gray-200 flex items-center justify-center relative">
           {auction.images && auction.images.length > 0 ? (
             <img
@@ -123,7 +97,6 @@ export default function AuctionCard({ auction }: { auction: AuctionCardData }) {
             <BsBookmark className="w-4 h-4" />
           </button>
         </div>
-
         <div>
           <p className="text-[10px] text-gray-500 uppercase font-bold">
             {auction.brand}
@@ -132,20 +105,18 @@ export default function AuctionCard({ auction }: { auction: AuctionCardData }) {
             {auction.title}
           </h3>
         </div>
-
         <div className="mt-auto border-t border-gray-200 pt-2 flex flex-col gap-1">
           <div className="flex justify-between items-end">
             <span className="text-[10px] uppercase font-bold text-gray-400">
               Current Price
             </span>
             <span className="text-sm font-bold leading-none">
-              {livePrice} EUR
+              {auction.currentPrice} EUR
             </span>
           </div>
-
           <div className="bg-gray-100 p-1 text-center border border-gray-300">
             <span className="text-[10px] font-mono font-bold text-red-600">
-              {days + " " + hours + " " + minutes + " " + seconds}
+              {`${days}d ${hours}h ${minutes}m ${seconds}s`}
             </span>
           </div>
         </div>

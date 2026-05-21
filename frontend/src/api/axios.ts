@@ -10,8 +10,6 @@ export const getAccessToken = () => {
   return accessToken;
 };
 
-// api.ts -> Egészítsd ki a getUserId függvényt:
-
 export const getUserId = (): number | null => {
   const token = getAccessToken();
   if (!token) return null;
@@ -24,7 +22,30 @@ export const getUserId = (): number | null => {
     return payload.id ? Number(payload.id) : null; 
     
   } catch (error) {
-    console.error("Nem sikerült kiszedni a userId-t az access tokenből:", error);
+    console.error("We couldn't get the user ID from token:", error);
+    return null;
+  }
+};
+
+export const getUserRole = (): string | null => {
+  const token = getAccessToken();
+  if (!token) return null;
+
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      window.atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+
+    const payload = JSON.parse(jsonPayload);
+    return payload.role || null;
+    
+  } catch (error) {
+    console.error("We couldn't get the user role from token:", error);
     return null;
   }
 };

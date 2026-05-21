@@ -5,13 +5,22 @@ import { auctionTasks } from "../jobs/auction.queues";
 
 export const bidService = {
     async placeBid(data: PlaceBidDTO, userId: number, auctionId: number) {
+        let dutchAuctionEndedData: any = null;
+
         const newBid = await prisma.$transaction(async (tx) => {
             const user = await tx.user.findUnique({
-                where: { id: userId }
+                where: { id: userId },
+                include: {
+                    buyer: true,
+                }
             })
 
             if (!user) {
                 throw new Error("This user doesn't exist!")
+            }
+
+            if (!user || user.buyer === null) {
+                throw new Error("You need a buyer account to make bids!");
             }
 
             if(user.balance < data.bidAmount){
@@ -87,18 +96,12 @@ export const bidService = {
                     }
                 });
 
-                const delayedJobs = await auctionTasks.getDelayed();
-                for (const job of delayedJobs) {
-                    if (job.id?.startsWith(`price-drop-${auctionId}`) || job.id?.startsWith(`close-${auctionId}`)) {
-                        await job.remove();
-                    }
-                }
-
-                io.to(`auction-${auctionId}`).emit("AuctionEnded", {
+                dutchAuctionEndedData = {
+                    winningBid: winningBid,
                     auctionId: auctionId,
                     winnerId: userId,
                     finalPrice: data.bidAmount
-                });
+                };
 
                 return winningBid;
             }
@@ -157,6 +160,23 @@ export const bidService = {
             return newBid;
         });
 
+        if (dutchAuctionEndedData) {
+            const delayedJobs = await auctionTasks.getDelayed();
+            for (const job of delayedJobs) {
+                if (job.id?.startsWith(`price-drop-${auctionId}`) || job.id?.startsWith(`close-${auctionId}`)) {
+                    await job.remove();
+                }
+            }
+
+            io.to(`auction-${auctionId}`).emit("AuctionEnded", {
+                auctionId: dutchAuctionEndedData.auctionId,
+                winnerId: dutchAuctionEndedData.winnerId,
+                finalPrice: dutchAuctionEndedData.finalPrice
+            });
+
+            return dutchAuctionEndedData.winningBid;
+        }
+
         const auction = await prisma.auction.findFirst({
             where: { id: newBid.auctionId }
         })
@@ -190,11 +210,18 @@ export const bidService = {
 
         const newBid = await prisma.$transaction(async (tx) => {
             const user = await tx.user.findUnique({
-                where: { id: userId }
+                where: { id: userId },
+                include: {
+                    seller: true
+                }
             })
 
             if (!user) {
                 throw new Error("This user doesn't exist!")
+            }
+
+            if(user.seller === null){
+                throw new Error("You need a seller account to promote!")
             }
 
             if(user.balance < data.maxAmount){
@@ -250,6 +277,9 @@ export const bidService = {
                 where: { id: auctionId }
             })
 
+            const incrementValue = (data.increment && data.increment > 0) 
+                ? data.increment : (auction?.minBidIncrement || 1);
+
             if (!auction) {
                 throw new Error("This auction doesn't exist!")
             }
@@ -258,11 +288,18 @@ export const bidService = {
                 throw new Error("Auto-bidding is only available for English auctions!");
             }
             const user = await tx.user.findUnique({
-                where: { id: userId }
+                where: { id: userId },
+                include: {
+                    buyer: true,
+                }
             })
 
             if (!user) {
                 throw new Error("This user doesn't exist!")
+            }
+
+            if(user.buyer === null){
+                throw new Error("You need a buyer acount to make bids!")
             }
 
             if(user.balance < data.maxAmount){
@@ -294,20 +331,20 @@ export const bidService = {
                 throw new Error("You're bid is already the highest!")
             }
 
-            if ((data.increment as number) < (auction.minBidIncrement as number)) {
-                throw new Error("The given increment is lower than the given minimum increment!")
+            if (incrementValue < (auction.minBidIncrement || 0)) {
+                throw new Error("The given increment is lower than the given minimum increment!");
             }
 
             await tx.auction.update({
                 where: { id: auctionId, currentPrice: auction.currentPrice },
-                data: { currentPrice: auction.currentPrice + (data.increment as number || auction.minBidIncrement as number) }
+                data: { currentPrice: auction.currentPrice + incrementValue }
             });
 
             const entry = await tx.autoBid.upsert({
                 where: { userId_auctionId: { userId, auctionId } },
-                update: { maxAmount: data.maxAmount, increment: data.increment },
+                update: { maxAmount: data.maxAmount, increment: incrementValue },
                 create: {
-                    increment: data.increment as number,
+                    increment: incrementValue,
                     maxAmount: data.maxAmount as number,
                     userId,
                     auctionId
@@ -316,7 +353,7 @@ export const bidService = {
 
             await tx.bid.create({
                 data: {
-                    bidAmount: auction.currentPrice + (data.increment as number || auction.minBidIncrement as number),
+                    bidAmount: auction.currentPrice + incrementValue,
                     userId: userId,
                     auctionId: auctionId,
                     autoBidId: entry.id 
@@ -395,8 +432,8 @@ export const bidService = {
         }
     },
 
-    async buyNow(userId: number,auctionId: number){
-        const buyNow = await prisma.$transaction(async (tx) => {
+    async buyNow(userId: number, auctionId: number){
+        const transactionData = await prisma.$transaction(async (tx) => {
             const auction = await tx.auction.findUnique({
                 where: { id: auctionId }
             })
@@ -407,11 +444,18 @@ export const bidService = {
 
             if(auction.buyingPrice){
                 const user = await tx.user.findUnique({
-                    where: { id: userId }
+                    where: { id: userId },
+                    include: {
+                        buyer: true
+                    }
                 })
 
                 if (!user) {
                     throw new Error("This user doesn't exist!")
+                }
+
+                if(user.buyer === null){
+                    throw new Error("You need a buyer account to make bids!")
                 }
 
                 if(user.balance < auction.buyingPrice){
@@ -431,7 +475,7 @@ export const bidService = {
                     data: { status: "ENDED" }
                 });
 
-                await tx.bid.create({
+                const winningBid = await tx.bid.create({
                     data: {
                         bidAmount: auction.buyingPrice,
                         userId: userId,
@@ -470,27 +514,30 @@ export const bidService = {
                     }
                 });
 
-                const delayedJobs = await auctionTasks.getDelayed();
-                for (const job of delayedJobs) {
-                    if (job.id?.startsWith(`price-drop-${auctionId}`) || job.id?.startsWith(`price-up-${auctionId}`) || job.id?.startsWith(`close-${auctionId}`)) {
-                        await job.remove();
-                    }
-                }
-
-                io.to(`auction-${auctionId}`).emit("AuctionEnded", {
-                    auctionId: auctionId,
-                    winnerId: userId,
-                    finalPrice: auction.buyingPrice
-                });
-
-
-                return { message: "Auction won by paying buying price!"};
-            } else{
-                return { message: "Auction doesn't have a buying price!"};
+                return { isSuccess: true, buyingPrice: auction.buyingPrice };
+            } else {
+                return { isSuccess: false };
             }
         });
 
-        return buyNow;
+        if (transactionData.isSuccess) {
+            const delayedJobs = await auctionTasks.getDelayed();
+            for (const job of delayedJobs) {
+                if (job.id?.startsWith(`price-drop-${auctionId}`) || job.id?.startsWith(`price-up-${auctionId}`) || job.id?.startsWith(`close-${auctionId}`)) {
+                    await job.remove();
+                }
+            }
+
+            io.to(`auction-${auctionId}`).emit("AuctionEnded", {
+                auctionId: auctionId,
+                winnerId: userId,
+                finalPrice: transactionData.buyingPrice
+            });
+
+            return { message: "Auction won by paying buying price!"};
+        } else {
+            return { message: "Auction doesn't have a buying price!"};
+        }
     },
 
     async getAuctionBids(auctionId: number, takeNumber: number) {
@@ -498,6 +545,16 @@ export const bidService = {
 
         if(!safeAuctionId){
             throw new Error("Auction ID was not given!")
+        }
+
+        const auction = await prisma.auction.findUnique({
+            where: { id: safeAuctionId }
+        });
+
+        if (!auction) throw new Error("Auction not found!");
+
+        if ((auction.auctionType === "FPSB" || auction.auctionType === "VICKREY") && auction.status === "ACTIVE") {
+            return [];
         }
 
         const result = await prisma.bid.findMany({

@@ -1,6 +1,6 @@
 import express from 'express';
 import { register, login, refresh, logout, verifyEmail, resendEmailVerification, forgotPassword, resetPassword } from '../controllers/auth.controller'
-import { RegisterSchema , LoginSchema } from '../dto/auth.dto';
+import { RegisterSchema , LoginSchema, ForgotPassword, ResetPassword } from '../dto/auth.dto';
 import { validate } from '../middlewares/auth.middleware';
 import { rateLimiter } from '../middlewares/rateLimiter.middleware';
 
@@ -12,7 +12,7 @@ router.post('/refresh', refresh)
 router.post('/logout',logout)
 router.get('/verify-email',verifyEmail)
 router.post('/resend-email-verification',resendEmailVerification)
-router.post('/forgot-password',forgotPassword)
-router.post('/reset-password',resetPassword)
+router.post('/forgot-password',validate(ForgotPassword), forgotPassword)
+router.post('/reset-password',validate(ResetPassword), resetPassword)
 
 export default router;

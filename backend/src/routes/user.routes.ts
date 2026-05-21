@@ -1,5 +1,5 @@
 import express from 'express';
-import { getMe, updateMe, registerBuyer, registerSeller, deleteMe, getUserById, uploadUserImage } from '../controllers/user.controller'
+import { getMe, updateMe, registerBuyer, registerSeller, deleteMe, getUserById, uploadUserImage, getAllUsers, verifyUser, updateUserRole } from '../controllers/user.controller'
 import { BuyerRegisterSchema , SellerRegisterSchema } from '../dto/user.dto';
 import { authenticateToken, validate } from '../middlewares/auth.middleware';
 import { verifyRoles } from '../middlewares/roleAuth.middleware';
@@ -11,6 +11,8 @@ import { getTransactionHistory } from '../controllers/transaction.controller';
 
 const router = express.Router();
 
+
+router.get('/all', authenticateToken(), verifyRoles("ADMIN"), getAllUsers);
 router.get('/me', authenticateToken(), verifyRoles("USER"), getMe)
 router.patch('/me', authenticateToken(), verifyRoles("USER"), updateMe)
 router.delete('/me', authenticateToken(), deleteMe)
@@ -25,5 +27,8 @@ router.get("/transactions", authenticateToken(), getTransactionHistory);
 
 router.get('/:id',validateId, getUserById)
 router.get("/:id/reviews", getUserReviews);
+
+router.patch('/:id/verify', authenticateToken(), verifyRoles("ADMIN"), verifyUser);
+router.patch('/:id/role', authenticateToken(), verifyRoles("ADMIN"), updateUserRole);
 
 export default router;

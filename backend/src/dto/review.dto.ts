@@ -11,6 +11,7 @@ export const UserReviewResponseSchema = z.object({
   comment: z.string().nullable(),
   createdAt: z.date(),
   reviewer: z.object({
+    id: z.number(),
     username: z.string(),
   })
 });

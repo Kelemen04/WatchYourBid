@@ -123,5 +123,13 @@ export const transactionService = {
             where: { userId: userId },
             orderBy: { createdAt: 'desc' }
         });
+    },
+
+    async getAllTransactionHistory(skip: number, take: number) {
+        return await prisma.transaction.findMany({
+            orderBy: { createdAt: 'desc' },
+            skip: skip,
+            take: take,
+        });
     }
 }

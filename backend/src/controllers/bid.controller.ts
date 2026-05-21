@@ -48,8 +48,8 @@ export async function buyNow(req: Request, res: Response) {
   const auctionId = Number(req.params.id);
 
   try{
-    const placeAutoBid = await bidService.buyNow(userId,auctionId);
-    res.status(200).json(placeAutoBid);
+    const buyNowResult = await bidService.buyNow(userId,auctionId);
+    res.status(200).json(buyNowResult);
   } catch(e){
     return res.status(400).json({ error: e instanceof Error ? e.message : "Unknown error" });
   }
@@ -82,7 +82,7 @@ export const getMyBidsHistory = async (req: Request, res: Response) => {
   try {
     const bids = await bidService.getMyBids(userId);
     const cleanResponse = z.array(MyBidsResponseSchema).parse(bids);
-    
+
     return res.status(200).json(cleanResponse);
   } catch (error: any) {
     return res.status(500).json({ error: error.message || "Failed to fetch your bids!" });

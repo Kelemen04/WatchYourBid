@@ -81,7 +81,7 @@ export const reviewService = {
         })
         return created;
     },
-    async deleteReview(reviewId: number,userId: number) {
+    async deleteReview(reviewId: number,userId: number, userRole: string) {
         if(!userId) {
             throw new Error("User ID not given!")
         }
@@ -99,8 +99,10 @@ export const reviewService = {
                 throw new Error("Review not found!");
             }
 
-            if (review.authorId !== userId) {
-                throw new Error("You can only delete your own reviews!");
+            const isStaff = userRole === "ADMIN" || userRole === "MODERATOR";
+
+            if (review.authorId !== userId && !isStaff) {
+                throw new Error("You can delete your own reviews or you need to be an ADMIN/MODERATOR!");
             }
 
             await tx.review.delete({
@@ -128,41 +130,44 @@ export const reviewService = {
         })
     },
     async getReviewsByUserId(userId: number) {
-    if (!userId) {
-        throw new Error("User ID not given!");
-    }
+        if (!userId) {
+            throw new Error("User ID not given!");
+        }
 
-    const userWithSeller = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { seller: true }
-    });
+        const userWithSeller = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { seller: true }
+        });
 
-    if (!userWithSeller || !userWithSeller.seller) {
-        return [];
-    }
+        if (!userWithSeller || !userWithSeller.seller) {
+            return [];
+        }
 
-    const reviews = await prisma.review.findMany({
-        where: { sellerId: userWithSeller.seller.id },
-        include: {
-            author: {
-                select: {
-                    username: true
+        const reviews = await prisma.review.findMany({
+            where: { sellerId: userWithSeller.seller.id },
+            include: {
+                author: {
+                    select: {
+                        id: true,
+                        username: true
+                    }
                 }
+            },
+            orderBy: {
+                createdAt: 'desc'
             }
-        },
-        orderBy: {
-            createdAt: 'desc'
-        }
-    });
+        });
 
-    return reviews.map(r => ({
-        id: r.id,
-        rating: r.rating,
-        comment: r.comment,
-        createdAt: r.createdAt,
-        reviewer: {
-            username: r.author.username
-        }
-    }));
-}
+        return reviews.map(r => ({
+                id: r.id,
+                rating: r.rating,
+                comment: r.comment,
+                createdAt: r.createdAt,
+                reviewer: {
+                    id: r.author.id,
+                    username: r.author.username
+                }
+            })
+        );
+    }
 }

@@ -1,5 +1,5 @@
 import type { AxiosError } from "axios";
-import type { BuyerRegisterDTO, MeResponse, PublicProfileDTO, SellerRegisterDTO } from "../dto/user.dto";
+import type { AdminUserItemData, BuyerRegisterDTO, MeResponse, PublicProfileDTO, SellerRegisterDTO, UpdateRoleDTO, VerifyUserDTO } from "../dto/user.dto";
 import api, { setAccessToken } from "../api/axios";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -15,6 +15,10 @@ interface SellerRegisterResponse {
 }
 
 interface DeleteResponse {
+  message: string;
+}
+
+interface MessageResponse {
   message: string;
 }
 
@@ -148,5 +152,52 @@ export const usePublicProfile = (userId: number) => {
     },
     enabled: !!userId,
     refetchOnWindowFocus: false,
+  });
+};
+
+export const useGetAllUsers = (skip: number = 0, take: number = 20) => {
+  return useQuery<AdminUserItemData[], AxiosError<{ error: string }>>({
+    queryKey: ["admin-users", skip, take],
+    queryFn: async () => {
+      const response = await api.get<AdminUserItemData[]>(`/user/all`, {
+        params: { skip, take },
+      });
+      return response.data;
+    },
+    refetchOnWindowFocus: false,
+  });
+};
+
+export const useVerifyUser = () => {
+  const queryClient = useQueryClient();
+  return useMutation<MessageResponse, AxiosError<{ error: string }>, VerifyUserDTO>({
+    mutationFn: async ({ userId, status }) => {
+      const response = await api.patch<MessageResponse>(`/user/${userId}/verify`, { status });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      console.log("Success:", data.message);
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+    },
+    onError: (err) => {
+      alert(err.response?.data?.error || "Status update failed!");
+    },
+  });
+};
+
+export const useUpdateUserRole = () => {
+  const queryClient = useQueryClient();
+  return useMutation<MessageResponse, AxiosError<{ error: string }>, UpdateRoleDTO>({
+    mutationFn: async ({ userId, newRole }) => {
+      const response = await api.patch<MessageResponse>(`/user/${userId}/role`, { newRole });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      console.log("Success:", data.message);
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+    },
+    onError: (err) => {
+      alert(err.response?.data?.error || "Role update failed!");
+    },
   });
 };
