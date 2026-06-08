@@ -21,6 +21,7 @@ import UserBidsPage from "../pages/UserBidsPage";
 import AllAuctionsList from "../pages/AllAuctionsList";
 import PendingAuctionsList from "../pages/PendingAuctionList";
 import AllUsersList from "../pages/AllUsersList";
+import FilteredAuctionsList from "../pages/FilteredAuctionsList";
 
 export default function AppRouter() {
   return (
@@ -43,6 +44,7 @@ export default function AppRouter() {
           </Route>
 
           <Route path="/home" element={<Home />} />
+          <Route path="/auctions" element={<FilteredAuctionsList />} />
           <Route
             path="/auction/category/:category"
             element={<WatchCategoryPage />}

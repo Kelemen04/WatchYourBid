@@ -72,6 +72,7 @@ export const MeResponseSchema = z.object({
   lastName: z.string().nullable(),
   phoneNumber: z.string().nullable(),
   profilePicture: z.string().nullable(),
+  balance: z.number(),
 
   buyer: z.object({
     shippingAddressName: z.string(),

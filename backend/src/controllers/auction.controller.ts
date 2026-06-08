@@ -1,7 +1,8 @@
 import type { Request, Response } from "express";
 import { auctionService } from "../services/auction.service";
-import type { AuctionFilterDTO, CreateAuctionDTO } from "../dto/auction.dto";
+import { AuctionFilterSchema, type AuctionFilterDTO, type CreateAuctionDTO } from "../dto/auction.dto";
 import type { WatchCategory } from "../../generated/prisma";
+import { ZodError } from "zod";
 
 export async function createAuction(req: Request, res: Response) {
     console.log("BODY:", req.body);
@@ -53,8 +54,9 @@ export async function getUserAuctions(req: Request, res: Response) {
 }
 
 export async function getHomeAuctions(req: Request, res: Response) {
+    const userId = req.user?.id as number;
     try {
-        const result = await auctionService.getHomeAuctions();
+        const result = await auctionService.getHomeAuctions(userId);
         res.status(200).json(result);
     } catch (err) {
         return res.status(400).json({ error: err instanceof Error ? err.message : "Unknown error" });
@@ -73,10 +75,15 @@ export async function getAuctionById(req: Request, res: Response) {
 }
 
 export async function getAuctionByCategory(req: Request, res: Response) {
-    const category = req.validatedCategory as WatchCategory;
-    console.log(category)
+    const category = (req as any).validatedCategory as WatchCategory;
+    const userId = req.user?.id as number;
+
+    if (!category) {
+        return res.status(400).json({ error: "Category not found in request!" });
+    }
+
     try {
-        const result = await auctionService.getAuctionByCategory(category);
+        const result = await auctionService.getAuctionByCategory(category,userId);
         res.status(200).json(result);
     } catch (err) {
         return res.status(400).json({ error: err instanceof Error ? err.message : "Unknown error" });
@@ -126,9 +133,14 @@ export async function deleteAuctionFromWatchList(req: Request, res: Response) {
 }
 
 export async function getAuctionByFilters(req: Request, res: Response) {
-    const filters = req.filters as AuctionFilterDTO;
     try {
-        const result = await auctionService.getAuctionByFilters(filters);
+        const filters = AuctionFilterSchema.safeParse(req.query);
+        if (!filters.success) {
+          return res.status(400).json({ error: filters.error.issues[0]?.message || "Invalid input!" });
+        }
+        console.log("FILTERS: ", filters.data)
+    
+        const result = await auctionService.getAuctionByFilters(filters.data);
         res.status(200).json(result);
     } catch (err) {
         return res.status(400).json({ error: err instanceof Error ? err.message : "Unknown error" });

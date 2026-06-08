@@ -443,12 +443,15 @@ export const auctionService = {
 
         return { message: "Auction updated successfully!"}
     },
-    async getHomeAuctions(){
+    async getHomeAuctions(userId?: number){
         const trendingDate = new Date(Date.now() - (1000 * 60 * 60 * 24));
+
+        const watchListInclude = userId ? { where: { userId } } : false;
+
         const [promoted, trending, latest, smartwatches, clocks, wristwatches, pocketWatches ] = await Promise.all([
             prisma.auction.findMany({ 
                 where: { promotedHomeRank: { not: null}, status: "ACTIVE"},
-                include: { watchItem: true },
+                include: { watchItem: true, watchList: watchListInclude },
                 orderBy: { promotedHomeRank: "asc"},
                 take: 10,
             }),
@@ -456,47 +459,61 @@ export const auctionService = {
                 where: { updatedAt: { gte: trendingDate }, auction: { status: "ACTIVE"}},
                 orderBy: { clicks: "desc"},
                 take: 20,
-                include: { auction: { include: { watchItem: true } } }
+                include: { auction: { include: { watchItem: true, watchList: watchListInclude } } }
             }),
             prisma.auction.findMany({ 
                 where: { status: "ACTIVE" },
                 orderBy: { startTime: "desc"},
-                include: { watchItem: true },
+                include: { watchItem: true, watchList: watchListInclude },
                 take: 20,
             }),
             prisma.auction.findMany({ 
                 where: { watchItem: { category: "SMARTWATCH" }, status: "ACTIVE" },
-                include: { watchItem: true },
+                include: { watchItem: true, watchList: watchListInclude },
                 orderBy: {startTime: "desc"},
                 take: 20,
             }),
             prisma.auction.findMany({ 
                 where: { watchItem: { category: "CLOCK" }, status: "ACTIVE" },
-                include: { watchItem: true },
+                include: { watchItem: true, watchList: watchListInclude },
                 orderBy: {startTime: "desc"},
                 take: 20,
             }),
             prisma.auction.findMany({ 
                 where: { watchItem: { category: "WRISTWATCH" }, status: "ACTIVE" },
-                include: { watchItem: true },
+                include: { watchItem: true, watchList: watchListInclude },
                 orderBy: {startTime: "desc"},
                 take: 20,
             }),
             prisma.auction.findMany({ 
                 where: { watchItem: { category: "POCKETWATCH" }, status: "ACTIVE" },
-                include: { watchItem: true },
+                include: { watchItem: true, watchList: watchListInclude },
                 orderBy: {startTime: "desc"},
                 take: 20,
             }),
         ])
 
-        const newPromoted = promoted.map(hideFields);
-        const newTrending = trending.map(a => ({...a, auction: hideFields(a.auction)}));
-        const newLatest = latest.map(hideFields);
-        const newSmartwatches = smartwatches.map(hideFields);
-        const newClocks = clocks.map(hideFields);
-        const newWristwatches = wristwatches.map(hideFields);
-        const newPocketWatches = pocketWatches.map(hideFields);
+        const mapAuctionWithWatchlist = (auction: any) => {
+            const isWatchlisted = userId ? auction.watchList?.length > 0 : false;
+            
+            const { watchList, ...rest } = auction;
+            
+            return {
+                ...hideFields(rest),
+                isWatchlisted
+            };
+        };
+
+        const newPromoted = promoted.map(mapAuctionWithWatchlist);
+        const newTrending = trending.map(a => ({
+            ...a, 
+            auction: mapAuctionWithWatchlist(a.auction)
+        }));
+        const newLatest = latest.map(mapAuctionWithWatchlist);
+        const newSmartwatches = smartwatches.map(mapAuctionWithWatchlist);
+        const newClocks = clocks.map(mapAuctionWithWatchlist);
+        const newWristwatches = wristwatches.map(mapAuctionWithWatchlist);
+        const newPocketWatches = pocketWatches.map(mapAuctionWithWatchlist);
 
         return { 
             promoted: newPromoted,
@@ -554,7 +571,8 @@ export const auctionService = {
             throw new Error("Item not found on watchlist or already deleted.");
         }
     },
-    async getAuctionByCategory(type: WatchCategory){
+    async getAuctionByCategory(type: WatchCategory, userId: number){
+        const watchListInclude = userId ? { where: { userId } } : false;
         const [ promoted, others ] = await Promise.all([
             prisma.auction.findMany({
                 where: {
@@ -573,7 +591,8 @@ export const auctionService = {
                             pocketWatch: true,
                             clock: true
                         }
-                    }
+                    },
+                    watchList: watchListInclude,
                 }
             }),
             prisma.auction.findMany({
@@ -593,19 +612,42 @@ export const auctionService = {
                             pocketWatch: true,
                             clock: true
                         }
-                    }
+                    },
+                    watchList: watchListInclude,
                 }
             })
         ]);
 
-        const newPromoted = promoted.map(hideFields);
-        const newOthers = others.map(hideFields);
+        const mapAuctionWithWatchlist = (auction: any) => {
+            const isWatchlisted = userId ? auction.watchList?.length > 0 : false;
+            
+            const { watchList, ...rest } = auction;
+            
+            return {
+                ...hideFields(rest),
+                isWatchlisted
+            };
+        };
+
+        const newPromoted = promoted.map(mapAuctionWithWatchlist);
+        const newOthers = others.map(mapAuctionWithWatchlist);
         return {
             promoted: newPromoted,
             others: newOthers
         };
     },
     async getAuctionByFilters(filters: AuctionFilterDTO) {
+        console.log("SERV")
+        console.log(filters.searchTerm)
+        const skipNum = filters.skip !== undefined ? Number(filters.skip) : 0;
+        const takeNum = filters.take !== undefined ? Number(filters.take) : 20;
+        const minPriceNum = filters.minPrice !== undefined ? Number(filters.minPrice) : undefined;
+        const maxPriceNum = filters.maxPrice !== undefined ? Number(filters.maxPrice) : undefined;
+        const minYearNum = filters.minYear !== undefined ? Number(filters.minYear) : undefined;
+        const maxYearNum = filters.maxYear !== undefined ? Number(filters.maxYear) : undefined;
+
+        console.log("ITTTTT")
+
         const result = await prisma.auction.findMany({
             where: {
                 status: "ACTIVE",
@@ -618,8 +660,8 @@ export const auctionService = {
                     ],
                 } : {}),
                 currentPrice: {
-                    gte: filters.minPrice,
-                    lte: filters.maxPrice,
+                    gte: minPriceNum,
+                    lte: maxPriceNum,
                 },
                 auctionType: filters.auctionType,
                 watchItem: {
@@ -627,10 +669,10 @@ export const auctionService = {
                     brand: filters.brand,
                     condition: filters.condition,
                     material: filters.material,
-                    ...(filters.minYear !== undefined || filters.maxYear !== undefined ? {
+                    ...(minYearNum !== undefined || maxYearNum !== undefined ? {
                         productionYear: {
-                            gte: filters.minYear,
-                            lte: filters.maxYear,
+                            gte: minYearNum,
+                            lte: maxYearNum,
                         }
                     } : {}),
                 }
@@ -646,11 +688,13 @@ export const auctionService = {
                 }
             },
             orderBy: parseSortBy(filters.sortBy),
-            skip: filters.skip,
-            take: filters.take,
+            skip: skipNum,
+            take: takeNum,
         });
 
         const newResult = result.map(hideFields);
+
+        console.log("ITT@")
 
         return newResult;
     },

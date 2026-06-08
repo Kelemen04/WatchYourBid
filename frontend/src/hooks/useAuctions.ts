@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../api/axios';
 import type { AxiosError } from 'axios';
-import type { AuctionCardData, AuctionFullData, AuctionInput, AuctionItemData, AuctionTableData } from '../dto/auction.dto';
+import type { AuctionCardData, AuctionFullData, AuctionInput, AuctionItemData, AuctionTableData, AuctionFilterDTO } from '../dto/auction.dto';
 import { useNavigate } from 'react-router-dom';
 
 interface HomeAuctionsResponse {
@@ -15,7 +15,7 @@ interface HomeAuctionsResponse {
 }
 
 interface AuctionCategoryResponse {
-  promoted: AuctionItemData[];
+  promoted: AuctionCardData[];
   others: AuctionItemData[]
 }
 
@@ -28,6 +28,33 @@ interface CreateAuctionResponse {
 interface MessageResponse {
   message: string;
 }
+
+export const useAuctionsByFilters = (filters: AuctionFilterDTO) => {
+  return useQuery<AuctionItemData[], AxiosError<{ error: string }>>({
+    queryKey: ['auctionsByFilters', filters],
+    
+    queryFn: async () => {
+      const cleanedFilters: Record<string, string | number> = {};
+
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== "") {
+          cleanedFilters[key] = value as string | number;
+        }
+      });
+
+      if (cleanedFilters.skip === undefined) cleanedFilters.skip = 0;
+      if (cleanedFilters.take === undefined) cleanedFilters.take = 20;
+
+      console.log("WTF")
+      const response = await api.get<AuctionItemData[]>("/auction", {
+        params: cleanedFilters,
+      });
+      
+      return response.data;
+    },
+    refetchOnWindowFocus: false,
+  });
+};
 
 export const useHomeData = () => {
   return useQuery<HomeAuctionsResponse, AxiosError<{ error: string }>>({
@@ -97,8 +124,8 @@ export const useCategoryData = (categoryName: string) => {
   return useQuery<AuctionCategoryResponse, AxiosError<{ error: string }>>({
     queryKey: ['categoryAuctions', categoryName], 
     queryFn: async () => {
-        console.log(categoryName);
       const formattedCategory = categoryName.toUpperCase();
+      console.log(formattedCategory)
       const response = await api.get<AuctionCategoryResponse>(`/auction/category/${formattedCategory}`);
       console.log("RESP" ,response.data);
       return response.data;

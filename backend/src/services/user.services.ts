@@ -17,6 +17,7 @@ export const userService = {
                 lastName: true,
                 phoneNumber: true,
                 profilePicture: true,
+                balance: true,
                 buyer: {
                     select: {
                         id: true,

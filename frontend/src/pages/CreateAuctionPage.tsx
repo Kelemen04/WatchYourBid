@@ -44,6 +44,7 @@ export default function CreateAuctionPage() {
             console.log("❌ SÉMA HIBÁK:", validationErrors),
           )}
           noValidate
+          className="bg-white"
         >
           {currentPage === 1 && (
             <CommonAuctionDataForm setStep={setCurrentPage} />

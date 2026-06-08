@@ -19,10 +19,10 @@ router.put('/:id',authenticateToken(),validate(UpdateAuctionSchema),validateId, 
 router.get('/me', authenticateToken(), getUserAuctions);
 
 router.get('/', getAuctionByFilters)
-router.get('/home', getHomeAuctions)
+router.get('/home',authenticateToken(), getHomeAuctions)
 router.get('/watchlist', authenticateToken(), getWatchList)
 router.get('/all', authenticateToken(), verifyRoles("MODERATOR"), getAllAuctions);
-router.get('/category/:categoryName',validateCategory,getAuctionByCategory);
+router.get('/category/:categoryName',authenticateToken(), validateCategory,getAuctionByCategory);
 router.delete('/watchlist/:id', authenticateToken(), deleteAuctionFromWatchList)
 router.delete('/:id',authenticateToken(),validateId,deleteAuction);
 router.post('/watchlist', authenticateToken(), addToWatchList)

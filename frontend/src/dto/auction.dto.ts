@@ -77,13 +77,14 @@ export const AuctionSchema = z.object({
 export const AuctionCardSchema = z.object({
   id: z.number(),
   title: z.string(),
-  brand: z.string().optional(),
   currentPrice: z.number().optional(), 
   endTime: z.coerce.date(),
-  images: z.array(z.string()).optional()
+  images: z.array(z.string()).optional(),
+  isWatchlisted: z.boolean().default(false),
 });
 
 export const AuctionItemSchema = AuctionCardSchema.extend({
+  brand: z.string(),
   description: z.string(),
 });
 
@@ -115,6 +116,22 @@ export const AuctionInformationSchema = AuctionSchema.extend({
   }),
 });
 
+export const AuctionFilterSchema = z.object({
+  searchTerm: z.string().optional(),
+  category: z.enum(WatchCategories).optional(),
+  minPrice: z.coerce.number().min(0).optional(),
+  maxPrice: z.coerce.number().min(0).optional(),
+  auctionType: z.enum(AuctionTypes).optional(),
+  brand: z.string().optional(),
+  condition: z.string().optional(),
+  material: z.string().optional(),
+  minYear: z.coerce.number().min(0).optional(),
+  maxYear: z.coerce.number().min(0).optional(),
+  sortBy: z.string().optional().default("newest"),
+  skip: z.coerce.number().min(0).optional().default(0),
+  take: z.coerce.number().min(1).optional().default(20),
+});
+
 export type AuctionCardData = z.infer<typeof AuctionCardSchema>;
 export type AuctionItemData = z.infer<typeof AuctionItemSchema>;
 export type AuctionInformation = z.infer<typeof AuctionInformationSchema>; 
@@ -123,3 +140,5 @@ export type AuctionFullData = z.infer<typeof AuctionFullSchema>;
 export type AuctionInput = z.input<typeof AuctionSchema>;
 export type AuctionOutput = z.infer<typeof AuctionSchema>;
 export type AuctionTableData = z.infer<typeof AuctionTableSchema>;
+
+export type AuctionFilterDTO = z.infer<typeof AuctionFilterSchema>;

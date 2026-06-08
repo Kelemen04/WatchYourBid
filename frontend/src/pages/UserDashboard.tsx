@@ -3,9 +3,11 @@ import { useDeleteMe } from "../hooks/useUser";
 import TransactionForm from "../features/auth/TransactionForm";
 import WithdrawForm from "../features/auth/WithdrawForm";
 import { getUserId, getUserRole } from "../api/axios";
+import { useNavbar } from "../hooks/useNavbar";
 
 export default function UserDashboard() {
   const { mutate, isPending } = useDeleteMe();
+  const { data: userData } = useNavbar();
   const navigate = useNavigate();
   const myId = getUserId();
   const myRole = getUserRole();
@@ -28,129 +30,120 @@ export default function UserDashboard() {
     }
   };
   return (
-    <div style={{ display: "flex", gap: "30px", padding: "20px" }}>
-      <div
-        style={{
-          border: "2px solid black",
-          padding: "15px",
-          width: "250px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "12px",
-          height: "fit-content",
-        }}
-      >
-        <h3
-          style={{
-            margin: "0 0 10px 0",
-            borderBottom: "1px solid black",
-            paddingBottom: "5px",
-          }}
-        >
+    <div className="flex gap-5 p-10">
+      <div className="w-[280px] shrink-0 bg-white p-8 border border-border rounded-2xl h-fit">
+        <h3 className="font-playfair text-[26px] font-bold text-background mb-6 border-b border-border">
           Dashboard
         </h3>
 
-        {isAdmin && (
-          <div style={{ marginTop: "20px", borderBottom: "1px solid #333" }}>
-            <h4 style={{ color: "#047857", marginBottom: "5px" }}>ADMIN</h4>
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "5px",
-                marginBottom: "15px",
-              }}
-            >
-              <Link to="/dashboard/admin/manage-users">Manage Users</Link>
-              <Link to="/dashboard/admin/manage-auctions">Manage Auctions</Link>
-              <Link to="/dashboard/admin/pending-auctions">
-                Approve Auctions
-              </Link>
-            </div>
+        {/* Balance */}
+        <div className="">
+          <p className="text-[10px] uppercase tracking-[0.2em] text-background mb-1">
+            Available Balance
+          </p>
+          <p className="font-[var(--font-playfair)] text-3xl font-bold text-[var(--color-primary)] mb-6">
+            €{userData?.balance?.toLocaleString() || 0}
+          </p>
+
+          {/* Transactions */}
+          <div className="flex flex-col gap-2">
+            <TransactionForm />
+            <div className="border-b-1 border-text-muted/30"></div>
+            <WithdrawForm />
           </div>
-        )}
-
-        {isMod && (
-          <div style={{ marginTop: "20px", borderBottom: "1px solid #333" }}>
-            <h4 style={{ color: "#047857", marginBottom: "5px" }}>MODERATOR</h4>
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "5px",
-                marginBottom: "15px",
-              }}
-            >
-              <Link to="/dashboard/admin/manage-auctions">Manage Auctions</Link>
-              <Link to="/dashboard/admin/pending-auctions">
-                Approve Auctions
-              </Link>
-            </div>
-          </div>
-        )}
-
-        <Link to="/auction">
-          <div>Create Auction</div>
-        </Link>
-        <Link to="/dashboard/auctions/me">
-          <div>Own Auctions</div>
-        </Link>
-        <Link to="/dashboard/bids/me">
-          <div>My Bids & Wins</div>
-        </Link>
-        <Link to="/dashboard/transactions">
-          <div>Transaction History</div>
-        </Link>
-
-        {myId && (
-          <Link to={`/user/${myId}`}>
-            <div style={{ color: "blue" }}>Public Profile</div>
-          </Link>
-        )}
-
-        <Link to="/dashboard/register-buyer">
-          <div>Register Buyer</div>
-        </Link>
-        <Link to="/dashboard/register-seller">
-          <div>Register Seller</div>
-        </Link>
-
-        <div
-          style={{
-            borderTop: "1px dashed gray",
-            paddingTop: "10px",
-            marginTop: "10px",
-          }}
-        >
-          <TransactionForm />
-          <div style={{ margin: "10px 0" }} />
-          <WithdrawForm />
         </div>
 
-        <button
-          onClick={handleDeleteAccount}
-          disabled={isPending}
-          style={{
-            backgroundColor: "red",
-            color: "white",
-            fontWeight: "bold",
-            padding: "5px",
-            cursor: "pointer",
-            marginTop: "15px",
-          }}
-        >
-          {isPending ? "Deleting..." : "Delete Account"}
-        </button>
+        {/* Navigációs linkek */}
+        <div className="flex flex-col gap-4 text-sm font-medium text-text">
+          {(isAdmin || isMod) && (
+            <div className="border-t border-border pt-4 mt-2">
+              <h4 className="text-[18px] font-bold text-background uppercase tracking-widest mb-3">
+                {isAdmin ? "ADMIN" : "MODERATOR"}
+              </h4>
+              <div className="flex flex-col gap-4 text-text-muted text-[16px]">
+                <Link
+                  to="/dashboard/admin/manage-users"
+                  className="hover:text-primary transition-colors"
+                >
+                  Manage Users
+                </Link>
+                <Link
+                  to="/dashboard/admin/manage-auctions"
+                  className="hover:text-primary transition-colors"
+                >
+                  Manage Auctions
+                </Link>
+                <Link
+                  to="/dashboard/admin/pending-auctions"
+                  className="hover:text-primary transition-colors"
+                >
+                  Approve Auctions
+                </Link>
+              </div>
+            </div>
+          )}
+
+          <div className="border-t border-border pt-4 mt-2 flex flex-col gap-3 text-text-muted text-[16px]">
+            <Link
+              to="/auction"
+              className="hover:text-primary transition-colors"
+            >
+              Create Auction
+            </Link>
+            <Link
+              to="/dashboard/auctions/me"
+              className="hover:text-primary transition-colors"
+            >
+              Own Auctions
+            </Link>
+            <Link
+              to="/dashboard/bids/me"
+              className="hover:text-primary transition-colors"
+            >
+              My Bids & Wins
+            </Link>
+            <Link
+              to="/dashboard/transactions"
+              className="hover:text-primary transition-colors"
+            >
+              Transaction History
+            </Link>
+            {myId && (
+              <Link
+                to={`/user/${myId}`}
+                className="hover:text-primary transition-colors"
+              >
+                Public Profile
+              </Link>
+            )}
+            <Link
+              to="/dashboard/register-buyer"
+              className="hover:text-primary transition-colors"
+            >
+              Register Buyer
+            </Link>
+            <Link
+              to="/dashboard/register-seller"
+              className="hover:text-primary transition-colors"
+            >
+              Register Seller
+            </Link>
+          </div>
+        </div>
+
+        {/* Törlés gomb */}
+        <div className="pt-8 mt-4 border-t border-border">
+          <button
+            onClick={handleDeleteAccount}
+            disabled={isPending}
+            className="w-full py-2.5 text-[10px] font-bold uppercase tracking-widest text-red-500/70 border border-red-900/30 rounded-lg hover:bg-red-950/20 transition-colors"
+          >
+            {isPending ? "Deleting..." : "Delete Account"}
+          </button>
+        </div>
       </div>
 
-      <div
-        style={{
-          flex: 1,
-          border: "1px solid silver",
-          padding: "20px",
-          minHeight: "400px",
-        }}
-      >
+      <div className="flex-1 p-5 min-h-[400px]">
         <Outlet />
       </div>
     </div>

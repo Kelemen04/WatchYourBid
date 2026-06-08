@@ -9,7 +9,6 @@ import {
 
 export default function WithdrawForm() {
   const { mutate, isPending } = useWithdrawMoney();
-
   const {
     register,
     handleSubmit,
@@ -33,27 +32,30 @@ export default function WithdrawForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex items-center gap-2">
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="flex flex-col gap-2 w-full"
+    >
       <input
         type="number"
-        className="border border-gray-300 rounded px-2 py-1 text-sm"
+        className="w-full bg-white border border-border rounded-lg px-3 py-2 text-sm text-background focus:border-primary outline-none"
         placeholder="Amount"
         {...register("amount", { valueAsNumber: true })}
       />
-
       <button
         type="submit"
         disabled={isPending}
-        className="bg-black text-white px-4 py-1 rounded text-sm hover:bg-gray-800 disabled:opacity-50"
+        className="w-full bg-transparent border border-primary text-primary font-bold uppercase tracking-widest text-[10px] py-2 rounded-lg hover:bg-primary hover:text-black transition-colors disabled:opacity-50"
       >
         {isPending ? "Withdrawing..." : "Withdraw"}
       </button>
-
       {errors.amount && (
-        <span className="text-red-500 text-xs">{errors.amount.message}</span>
+        <span className="text-red-500 text-[10px]">
+          {errors.amount.message}
+        </span>
       )}
       {errors.root && (
-        <span className="text-red-500 text-xs">{errors.root.message}</span>
+        <span className="text-red-500 text-[10px]">{errors.root.message}</span>
       )}
     </form>
   );

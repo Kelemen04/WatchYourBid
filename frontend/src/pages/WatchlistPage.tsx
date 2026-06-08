@@ -25,7 +25,7 @@ export default function WatchlistPage() {
           <h1 className="font-playfair text-4xl text-surface mx-20">
             Watchlist
           </h1>
-          <div className="flex flew-row gap-10 mx-25">
+          <div className="flex flex-col gap-10 mx-25">
             {data?.map((auction) => (
               <div key={auction.id} className="flex flex-col gap-2">
                 <AuctionListItem auction={auction} />

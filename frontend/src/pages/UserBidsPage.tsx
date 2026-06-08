@@ -8,58 +8,32 @@ export default function UserBidsPage() {
 
   return (
     <div>
-      <h2 style={{ margin: "0 0 15px 0" }}>My Bids & Wins</h2>
+      <h2 className="mb-[15px]">My Bids & Wins</h2>
       {bids && bids.length > 0 ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+        <div className="flex flex-col gap-[10px]">
           {bids.map((b) => (
             <div
               key={b.id}
-              style={{
-                border: b.isWinner ? "2px solid green" : "1px solid #ccc",
-                padding: "10px",
-                backgroundColor: b.isWinner ? "#f0fff0" : "#fff",
-              }}
+              className={`p-[10px] ${
+                b.isWinner
+                  ? "border-2 rounded-2xl border-green-600 bg-[#f0fff0]"
+                  : "border rounded-2xl border-text-muted bg-white"
+              }`}
             >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
+              <div className="flex justify-between items-center">
                 <Link
                   to={`/auction/${b.auctionId}`}
-                  style={{
-                    fontWeight: "bold",
-                    fontSize: "16px",
-                    color: "black",
-                  }}
+                  className="font-bold text-[16px] text-black"
                 >
                   {b.auction.title}
                 </Link>
                 {b.isWinner && (
-                  <span
-                    style={{
-                      backgroundColor: "green",
-                      color: "white",
-                      padding: "2px 6px",
-                      fontSize: "12px",
-                      fontWeight: "bold",
-                    }}
-                  >
+                  <span className="bg-green-600 text-white px-[6px] py-[2px] text-[12px] font-bold">
                     WINNER
                   </span>
                 )}
               </div>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  marginTop: "8px",
-                  fontSize: "14px",
-                  color: "gray",
-                }}
-              >
+              <div className="flex justify-between mt-[8px] text-[14px] text-gray-500">
                 <span>
                   Your Bid: <strong>{b.bidAmount} EUR</strong>
                 </span>
