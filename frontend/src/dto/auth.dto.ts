@@ -22,7 +22,8 @@ export const RegisterFormSchema = RegisterSchema.extend({
 export const ForgotPasswordSchema = z.object({
   email: z.string().email("Invalid email!").toLowerCase().trim(),
 });
-export const PasswordResetSchema = z.object({
+
+export const PasswordResetFormSchema = z.object({
   newPassword: z.string()
     .min(8, "Minimum 8 characters")
     .max(100, "Must contain atmost 100 characters!")
@@ -30,12 +31,13 @@ export const PasswordResetSchema = z.object({
     .regex(/[A-Z]/, "Must contain an uppercase letter!")
     .regex(/[0-9]/, "Must contain a number!")
     .regex(/[!@#$%^&*.?_-]/, "Must contain special characters!"),
-  token: z.string(),
+  confirmNewPassword: z.string(),
 });
 
-export const PasswordResetFormSchema = PasswordResetSchema.extend({
-  confirmNewPassword: z.string(),
-})
+export const PasswordResetSchema = z.object({
+  newPassword: z.string(),
+  token: z.string(),
+});
 
 export const LoginSchema = z.object({
   username: z.string().min(1, "Username is mandatory!"),

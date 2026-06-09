@@ -50,11 +50,21 @@ export default function Home() {
 
   const current = heroSections[currentIndex];
 
-  const { data } = useHomeData();
+  const { data, isLoading } = useHomeData();
+
+  if (isLoading) {
+    return (
+      <div className="w-full min-h-screen flex items-center justify-center bg-text-muted/10">
+        <span className="font-playfair text-2xl text-primary animate-pulse">
+          Loading Collections...
+        </span>
+      </div>
+    );
+  }
 
   return (
-    <main className="w-full bg-slate-50 min-h-screen pb-24">
-      {/* --- HERO SZEKCIÓ --- */}
+    <main className="w-full bg-text-muted/10 min-h-screen pb-24">
+      {/* Hero section */}
       <div className="max-w-[1400px] mx-auto px-4 md:px-10 pt-6 md:pt-10">
         <div
           className="relative w-full h-[600px] rounded-3xl overflow-hidden bg-cover bg-center shadow-2xl transition-all duration-1000 ease-in-out border border-white/10"
@@ -83,7 +93,7 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Carousel indikátorok */}
+            {/* Carousel indicators */}
             <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-3">
               {heroSections.map((_, index) => (
                 <button
@@ -101,8 +111,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* --- KATEGÓRIÁK SZEKCIÓ --- */}
-      {/* Közös konténer, ugyanazokkal a margókkal, mint a Hero. A gap-16 adja a szekciók közti távolságot */}
+      {/* Categories */}
       <div className="max-w-[1400px] mx-auto px-4 md:px-10 flex flex-col gap-16 mt-16">
         {/* Promoted */}
         <section>
@@ -110,12 +119,6 @@ export default function Home() {
             <h2 className="font-playfair text-3xl md:text-4xl font-bold text-slate-900 border-l-4 border-primary pl-4 leading-none">
               Promoted
             </h2>
-            <Link
-              to="/promoted"
-              className="text-sm font-inter font-bold text-gray-500 hover:text-primary transition-colors uppercase tracking-wider hidden sm:block"
-            >
-              View All &rarr;
-            </Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
             {data?.promoted.map((auction) => (
@@ -130,12 +133,6 @@ export default function Home() {
             <h2 className="font-playfair text-3xl md:text-4xl font-bold text-slate-900 border-l-4 border-primary pl-4 leading-none">
               Most Popular
             </h2>
-            <Link
-              to="/popular"
-              className="text-sm font-inter font-bold text-gray-500 hover:text-primary transition-colors uppercase tracking-wider hidden sm:block"
-            >
-              View All &rarr;
-            </Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
             {data?.trending.map((item, index) => (
@@ -147,7 +144,7 @@ export default function Home() {
         {/* Ending Soon */}
         <section>
           <div className="flex items-end justify-between mb-6">
-            <h2 className="font-playfair text-3xl md:text-4xl font-bold text-slate-900 border-l-4 border-red-500 pl-4 leading-none">
+            <h2 className="font-playfair text-3xl md:text-4xl font-bold text-slate-900 border-l-4 border-primary pl-4 leading-none">
               Ending Soon
             </h2>
           </div>

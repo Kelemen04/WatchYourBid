@@ -1,11 +1,7 @@
 import { Routes, Route } from "react-router";
 import Home from "../pages/Home";
-import LoginPage from "../pages/LoginPage";
 import Navbar from "../components/layout/Navbar";
-import RegisterPage from "../pages/RegisterPage";
 import UserDashboard from "../pages/UserDashboard";
-import ForgotPassword from "../pages/ForgotPassword";
-import ResetPasswordPage from "../pages/ResetPasswordPage";
 import WatchCategoryPage from "../pages/WatchCategoryPage";
 import AuctionPage from "../pages/AuctionPage";
 import CreateAuctionPage from "../pages/CreateAuctionPage";
@@ -22,6 +18,11 @@ import AllAuctionsList from "../pages/AllAuctionsList";
 import PendingAuctionsList from "../pages/PendingAuctionList";
 import AllUsersList from "../pages/AllUsersList";
 import FilteredAuctionsList from "../pages/FilteredAuctionsList";
+import AuthLayout from "../pages/AuthLayout";
+import LoginForm from "../features/auth/LoginForm";
+import RegisterForm from "../features/auth/RegisterForm";
+import EmailForm from "../features/auth/EmailForm";
+import ResetPassword from "../features/auth/ResetPasswordForm";
 
 export default function AppRouter() {
   return (
@@ -29,6 +30,8 @@ export default function AppRouter() {
       <Routes>
         <Route element={<Navbar />}>
           <Route path="/dashboard" element={<UserDashboard />}>
+            <Route index element={<UserAuctionsPage />} />
+
             <Route path="transactions" element={<UserTransactionsPage />} />
             <Route path="bids/me" element={<UserBidsPage />} />
             <Route path="auctions/me" element={<UserAuctionsPage />} />
@@ -58,10 +61,12 @@ export default function AppRouter() {
           <Route path="/user/:id" element={<UserProfilePage />} />
         </Route>
 
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route element={<AuthLayout />}>
+          <Route path="/login" element={<LoginForm />} />
+          <Route path="/register" element={<RegisterForm />} />
+          <Route path="/forgot-password" element={<EmailForm />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+        </Route>
       </Routes>
     </>
   );

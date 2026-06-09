@@ -1,5 +1,5 @@
 import express from "express";
-import { authenticateToken,validate } from "../middlewares/auth.middleware";
+import { authenticateToken,optionalAuthenticateToken,validate } from "../middlewares/auth.middleware";
 import { CreateAuctionSchema, UpdateAuctionSchema } from "../dto/auction.dto";
 import { addToWatchList, approveAuction, cancelAuctionByStaff, createAuction, deleteAuction, deleteAuctionFromWatchList, getAllAuctions, getAuctionByCategory, getAuctionByFilters, getAuctionById, getHomeAuctions, getPendingAuctions, getUserAuctions, getWatchList, updateAuction, uploadAuctionImages } from "../controllers/auction.controller";
 import { incrementClick, validateCategory, validateId } from "../middlewares/auction.middleware";
@@ -18,11 +18,11 @@ router.put('/:id',authenticateToken(),validate(UpdateAuctionSchema),validateId, 
 
 router.get('/me', authenticateToken(), getUserAuctions);
 
-router.get('/', getAuctionByFilters)
-router.get('/home',authenticateToken(), getHomeAuctions)
+router.get('/',optionalAuthenticateToken(), getAuctionByFilters)
+router.get('/home',optionalAuthenticateToken(), getHomeAuctions)
 router.get('/watchlist', authenticateToken(), getWatchList)
 router.get('/all', authenticateToken(), verifyRoles("MODERATOR"), getAllAuctions);
-router.get('/category/:categoryName',authenticateToken(), validateCategory,getAuctionByCategory);
+router.get('/category/:categoryName',optionalAuthenticateToken(), validateCategory,getAuctionByCategory);
 router.delete('/watchlist/:id', authenticateToken(), deleteAuctionFromWatchList)
 router.delete('/:id',authenticateToken(),validateId,deleteAuction);
 router.post('/watchlist', authenticateToken(), addToWatchList)
@@ -35,6 +35,6 @@ router.post('/:id/review/',authenticateToken(), validate(ReviewSchema),createRev
 
 router.post('/:id/promote',authenticateToken(),validate(PlacePromotingBidSchema),placePromotingBid);
 
-router.get('/:id',validateId,incrementClick,getAuctionById);
+router.get('/:id',optionalAuthenticateToken(),validateId,incrementClick,getAuctionById);
 
 export default router;

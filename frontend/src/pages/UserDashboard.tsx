@@ -29,8 +29,9 @@ export default function UserDashboard() {
       });
     }
   };
+
   return (
-    <div className="flex gap-5 p-10">
+    <div className="flex gap-5 p-10 bg-text-muted/10">
       <div className="w-[280px] shrink-0 bg-white p-8 border border-border rounded-2xl h-fit">
         <h3 className="font-playfair text-[26px] font-bold text-background mb-6 border-b border-border">
           Dashboard
@@ -53,7 +54,7 @@ export default function UserDashboard() {
           </div>
         </div>
 
-        {/* Navigációs linkek */}
+        {/* Navigation links */}
         <div className="flex flex-col gap-4 text-sm font-medium text-text">
           {(isAdmin || isMod) && (
             <div className="border-t border-border pt-4 mt-2">
@@ -131,12 +132,12 @@ export default function UserDashboard() {
           </div>
         </div>
 
-        {/* Törlés gomb */}
+        {/* Delete user */}
         <div className="pt-8 mt-4 border-t border-border">
           <button
             onClick={handleDeleteAccount}
             disabled={isPending}
-            className="w-full py-2.5 text-[10px] font-bold uppercase tracking-widest text-red-500/70 border border-red-900/30 rounded-lg hover:bg-red-950/20 transition-colors"
+            className="w-full py-2.5 text-[10px] bg-red-600 font-bold uppercase tracking-widest text-white border border-red-800 rounded-lg hover:bg-red-800 transition-colors"
           >
             {isPending ? "Deleting..." : "Delete Account"}
           </button>

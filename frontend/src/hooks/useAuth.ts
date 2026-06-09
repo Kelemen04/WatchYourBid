@@ -129,6 +129,7 @@ export const useResetPassword = () => {
         console.log("Success! Password reset successful: ", data.message);
       },
       onError: (err) => {
+        console.error("MUTATION ERROR:", err.response?.status, err.response?.data);
         console.error(err.response?.data?.error || "Password reset failed!");
       },
     });

@@ -45,7 +45,6 @@ export const useAuctionsByFilters = (filters: AuctionFilterDTO) => {
       if (cleanedFilters.skip === undefined) cleanedFilters.skip = 0;
       if (cleanedFilters.take === undefined) cleanedFilters.take = 20;
 
-      console.log("WTF")
       const response = await api.get<AuctionItemData[]>("/auction", {
         params: cleanedFilters,
       });
@@ -53,6 +52,7 @@ export const useAuctionsByFilters = (filters: AuctionFilterDTO) => {
       return response.data;
     },
     refetchOnWindowFocus: false,
+    refetchInterval: 30000,
   });
 };
 
@@ -64,6 +64,7 @@ export const useHomeData = () => {
       return response.data;
     },
     refetchOnWindowFocus: false, 
+    refetchInterval: 30000,
   });
 };
 
@@ -74,7 +75,8 @@ export const useWatchlist = () => {
       const response = await api.get<AuctionItemData[]>("/auction/watchlist");
       return response.data;
     },
-    refetchOnWindowFocus: false, 
+    refetchOnWindowFocus: false,
+    refetchInterval: 30000,
   });
 };
 
@@ -127,10 +129,10 @@ export const useCategoryData = (categoryName: string) => {
       const formattedCategory = categoryName.toUpperCase();
       console.log(formattedCategory)
       const response = await api.get<AuctionCategoryResponse>(`/auction/category/${formattedCategory}`);
-      console.log("RESP" ,response.data);
       return response.data;
     },
     refetchOnWindowFocus: false, 
+    refetchInterval: 30000,
   });
 };
 
@@ -257,7 +259,8 @@ export const useAuctionsByUser = () => {
       const response = await api.get<AuctionItemData[]>("/auction/me");
       return response.data;
     },
-    refetchOnWindowFocus: false, 
+    refetchOnWindowFocus: false,
+    refetchInterval: 30000,
   });
 };
 

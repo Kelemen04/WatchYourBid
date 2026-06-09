@@ -7,6 +7,7 @@ import { useRegister } from "../../hooks/useAuth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { AxiosError } from "axios";
 import { useForm } from "react-hook-form";
+import { Link } from "react-router-dom"; // Fontos az átirányításhoz!
 
 export default function RegisterForm() {
   const {
@@ -38,90 +39,159 @@ export default function RegisterForm() {
 
   if (isSuccess) {
     return (
-      <div className="text-center p-10 bg-primary rounded-2xl border-2 border-green-500">
-        <h2 className="text-2xl font-bold text-green-500 italic uppercase">
+      <div className="text-center p-10 bg-primary/10 rounded-2xl border-2 border-green-500 max-w-sm mx-auto mt-8">
+        <h2 className="text-2xl font-bold text-green-600 italic uppercase">
           Welcome on board!
         </h2>
-        <a href="/login" className="inline-block mt-6 underline font-bold">
+        <Link
+          to="/login"
+          className="inline-block mt-6 underline font-bold text-background hover:text-primary transition-colors"
+        >
           Go to login
-        </a>
+        </Link>
       </div>
     );
   }
 
   return (
-    <>
+    <div className="my-8">
+      {/* Logó */}
+      <div className="flex justify-center items-center w-full">
+        <img
+          src="./public/images/WatchYourBid.png"
+          alt="Logo"
+          className="w-48"
+        />
+      </div>
+
+      {/* Címsorok, ahogy a Login-nél */}
+      <h1 className="text-center font-playfair text-text-muted text-4xl mt-3">
+        Join WatchYourBid community!
+      </h1>
+      <h2 className="text-center m-4 font-playfair text-text-muted text-xl">
+        Create an account to start bidding!
+      </h2>
+
+      {/* Form, pontosan a Login beállításaival */}
       <form
         onSubmit={handleSubmit(onSubmit)}
+        className="flex flex-col w-full max-w-sm mx-auto bg-white px-8 rounded-2xl gap-3"
         noValidate
-        className="flex flex-col bg-pimary text-center px-20"
       >
-        <label
-          htmlFor="username-input"
-          className="text-left ml-30 py-2 font-inter text-text-muted text-xl"
-        >
-          Username:
-        </label>
-        <input
-          id="username-input"
-          type="text"
-          {...register("username")}
-          className={`w-xs border rounded-2xl border-gray-300`}
-        />
-        {errors.username && <span>{errors.username?.message}</span>}
+        {/* Username Group */}
+        <div className="flex flex-col w-full">
+          <label
+            htmlFor="username-input"
+            className="text-left font-inter text-text-muted text-sm font-bold tracking-wide uppercase mb-1.5"
+          >
+            Username
+          </label>
+          <input
+            id="username-input"
+            type="text"
+            className={`w-full border rounded-2xl p-2 text-black focus:outline-none focus:border-primary transition-colors ${
+              errors.username ? "border-red-500" : "border-gray-300"
+            }`}
+            {...register("username")}
+          />
+          {errors.username && (
+            <span className="text-red-500 text-xs mt-1.5 font-bold">
+              {errors.username.message}
+            </span>
+          )}
+        </div>
 
-        <label
-          htmlFor="email-input"
-          className="text-left ml-30 py-2 font-inter text-text-muted text-xl"
-        >
-          Email:
-        </label>
-        <input
-          id="email-input"
-          type="text"
-          {...register("email")}
-          className={`w-xs border rounded-2xl border-gray-300`}
-        />
-        {errors.email && <span>{errors.email?.message}</span>}
+        {/* Email Group */}
+        <div className="flex flex-col w-full">
+          <label
+            htmlFor="email-input"
+            className="text-left font-inter text-text-muted text-sm font-bold tracking-wide uppercase mb-1.5"
+          >
+            Email
+          </label>
+          <input
+            id="email-input"
+            type="email"
+            className={`w-full border rounded-2xl p-2 text-black focus:outline-none focus:border-primary transition-colors ${
+              errors.email ? "border-red-500" : "border-gray-300"
+            }`}
+            {...register("email")}
+          />
+          {errors.email && (
+            <span className="text-red-500 text-xs mt-1.5 font-bold">
+              {errors.email.message}
+            </span>
+          )}
+        </div>
 
-        <label
-          htmlFor="password-input"
-          className="text-left ml-30 py-2 font-inter text-text-muted text-xl"
-        >
-          Password:
-        </label>
-        <input
-          id="password-input"
-          type="password"
-          {...register("password")}
-          className={`w-xs border rounded-2xl border-gray-300`}
-        />
-        {errors.password && <span>{errors.password?.message}</span>}
+        {/* Password Group */}
+        <div className="flex flex-col w-full">
+          <label
+            htmlFor="password-input"
+            className="text-left font-inter text-text-muted text-sm font-bold tracking-wide uppercase mb-1.5"
+          >
+            Password
+          </label>
+          <input
+            id="password-input"
+            type="password"
+            className={`w-full border rounded-2xl p-2 text-black focus:outline-none focus:border-primary transition-colors ${
+              errors.password ? "border-red-500" : "border-gray-300"
+            }`}
+            {...register("password")}
+          />
+          {errors.password && (
+            <span className="text-red-500 text-xs mt-1.5 font-bold">
+              {errors.password.message}
+            </span>
+          )}
+        </div>
 
-        <label
-          htmlFor="confirm-input"
-          className="text-left ml-30 py-2 font-inter text-text-muted text-xl"
-        >
-          Confirm password:<br></br>
-        </label>
-        <input
-          id="confirm-input"
-          type="password"
-          {...register("confirmPassword")}
-          className={`w-xs border rounded-2xl border-gray-300`}
-        />
-        {errors.confirmPassword && (
-          <span>{errors.confirmPassword?.message}</span>
-        )}
+        {/* Confirm Password Group */}
+        <div className="flex flex-col w-full">
+          <label
+            htmlFor="confirm-input"
+            className="text-left font-inter text-text-muted text-sm font-bold tracking-wide uppercase mb-1.5"
+          >
+            Confirm Password
+          </label>
+          <input
+            id="confirm-input"
+            type="password"
+            className={`w-full border rounded-2xl p-2 text-black focus:outline-none focus:border-primary transition-colors ${
+              errors.confirmPassword ? "border-red-500" : "border-gray-300"
+            }`}
+            {...register("confirmPassword")}
+          />
+          {errors.confirmPassword && (
+            <span className="text-red-500 text-xs mt-1.5 font-bold">
+              {errors.confirmPassword.message}
+            </span>
+          )}
+        </div>
 
+        {/* Submit Button */}
         <button
           type="submit"
           disabled={isPending}
-          className="text-white mx-30 my-5 bg-gradient-to-r from-background to-primary-hover hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-2xl text-sm px-4 py-2.5 text-center leading-5 disabled:opacity-50"
+          className="w-full text-white mt-2 bg-gradient-to-r from-background to-primary-hover hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-primary/50 font-bold tracking-widest uppercase rounded-2xl text-sm px-4 py-2.5 text-center transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isPending ? "Registering..." : "Register"}
         </button>
+
+        {/* Vissza a Loginhez Link */}
+        <div className="text-center mt-2 mb-4">
+          <span className="text-sm text-text-muted font-inter">
+            Already have an account?{" "}
+          </span>
+          <Link
+            to="/login"
+            className="text-sm font-bold text-background hover:text-primary transition-colors"
+          >
+            Log in
+          </Link>
+        </div>
       </form>
-    </>
+    </div>
   );
 }

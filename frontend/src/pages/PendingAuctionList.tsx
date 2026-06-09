@@ -28,35 +28,55 @@ export default function PendingAuctionsList() {
 
   if (!isStaff) return null;
 
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <span className="font-playfair text-2xl text-primary animate-pulse">
+          Loading pending auctions...
+        </span>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold mb-6">Auctions to be approved</h2>
+    <div className="max-w-[1400px]">
+      <h2 className="font-playfair text-4xl font-bold text-background mb-8 border-b border-text-muted/20 pb-4">
+        Auctions to be approved
+      </h2>
 
       {auctions && auctions.length > 0 ? (
-        auctions.map((auc: AuctionItemData) => (
-          <div key={auc.id} className="mb-8">
-            <AuctionListItem auction={auc} />
+        <div className="flex flex-col flex-wrap gap-10">
+          {auctions.map((auc: AuctionItemData) => (
+            <div key={auc.id} className="flex flex-col gap-2">
+              <AuctionListItem auction={auc} />
 
-            <div className="flex gap-4 mt-4 p-4 border-b border-x border-gray-400 bg-gray-50">
-              <button
-                onClick={() => approve(auc.id)}
-                className="bg-green-600 text-white px-6 py-2 font-bold uppercase text-sm hover:bg-green-700 transition"
-              >
-                Approve
-              </button>
-              <button
-                onClick={() => cancel(auc.id)}
-                className="bg-red-600 text-white px-6 py-2 font-bold uppercase text-sm hover:bg-red-700 transition"
-              >
-                Cancel
-              </button>
+              <div className="grid grid-cols-2 gap-3 w-full">
+                <button
+                  onClick={() =>
+                    window.confirm("Approve this auction?") && approve(auc.id)
+                  }
+                  className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold uppercase tracking-widest rounded-lg transition-colors"
+                >
+                  Approve
+                </button>
+                <button
+                  onClick={() =>
+                    window.confirm("Cancel this auction?") && cancel(auc.id)
+                  }
+                  className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold uppercase tracking-widest rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
-          </div>
-        ))
+          ))}
+        </div>
       ) : (
-        <p>No pending auctions found.</p>
+        <div className="text-center py-20 bg-white border border-text-muted/20 rounded-2xl shadow-sm">
+          <p className="text-text-muted text-lg uppercase tracking-widest">
+            No pending auctions found.
+          </p>
+        </div>
       )}
     </div>
   );

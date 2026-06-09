@@ -5,15 +5,17 @@ export default function UserTransactionsPage() {
 
   if (isLoading) {
     return (
-      <div className="text-text-muted font-bold tracking-widest uppercase text-sm">
-        Loading transactions...
+      <div className="flex justify-center items-center h-64">
+        <span className="font-playfair text-2xl text-primary animate-pulse">
+          Loading transactions...
+        </span>
       </div>
     );
   }
 
   return (
-    <div>
-      <h2 className="font-playfair text-4xl font-bold text-background mb-6 border-b border-border pb-2">
+    <div className="max-w-[1400px]">
+      <h2 className="font-playfair text-4xl font-bold text-background mb-6 border-b border-text-muted/20 pb-2">
         Transaction History
       </h2>
 
@@ -43,14 +45,8 @@ export default function UserTransactionsPage() {
 
                 <div className="flex flex-col items-end gap-1">
                   <span className="font-inter text-xl font-bold text-background">
-                    <span
-                      className={
-                        isReceive ? "text-emerald-500" : "text-red-500"
-                      }
-                    >
-                      {isReceive ? "+" : "-"}
-                    </span>
-                    €{t.amount.toLocaleString()}
+                    <span>{isReceive ? "+" : "-"}</span>€
+                    {t.amount.toLocaleString()}
                   </span>
                   <span className="text-[9px] uppercase tracking-widest text-background">
                     Status: <span className="text-primary">{t.status}</span>
@@ -61,9 +57,11 @@ export default function UserTransactionsPage() {
           })}
         </div>
       ) : (
-        <p className="text-[var(--color-text-muted)] text-sm uppercase tracking-widest">
-          No transactions found.
-        </p>
+        <div className="text-center py-20 bg-white border border-text-muted/20 rounded-2xl shadow-sm">
+          <p className="text-text-muted text-lg uppercase tracking-widest">
+            No transactions found.
+          </p>
+        </div>
       )}
     </div>
   );

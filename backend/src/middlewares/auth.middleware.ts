@@ -48,6 +48,29 @@ export function authenticateToken(){
     }
 }
 
+export function optionalAuthenticateToken(){
+    return (req : Request, res : Response, next: NextFunction) => {
+        const authHeader = req.headers['authorization'];
+        let token = authHeader && authHeader.split(' ')[1];
+
+        if (!token && req.cookies) {
+            token = req.cookies.accessToken || req.cookies.refreshToken; 
+        }
+
+        if(token == null){
+            return next();
+        }
+
+        jwt.verify(token, process.env.ACCESS_TOKEN_SECRET as string, (err, user) => {
+            if(!err){
+                req.user = user as UserPayload;
+            }
+            
+            next();
+        });
+    }
+}
+
 export function generateAccessToken(user: UserPayload){
     return jwt.sign(user, `${process.env.ACCESS_TOKEN_SECRET}`, { expiresIn: '15m' })
 }

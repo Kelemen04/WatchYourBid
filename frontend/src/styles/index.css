@@ -5,7 +5,7 @@
   font-style: normal;
   font-weight: 100 900;
   font-display: swap;
-  src: url("../public/fonts/Inter/Inter-VariableFont_opsz,wght.ttf") format("truetype");
+  src: url("/fonts/Inter/Inter-VariableFont_opsz,wght.ttf") format("truetype");
 }
 
 @font-face {
@@ -13,7 +13,7 @@
   font-style: normal;
   font-weight: 100 900;
   font-display: swap;
-  src: url("../public/fonts/Playfair_Display/PlayfairDisplay-VariableFont_wght.ttf") format("truetype");
+  src: url("/fonts/Playfair_Display/PlayfairDisplay-VariableFont_wght.ttf") format("truetype");
 }
 
 @theme {
@@ -26,7 +26,7 @@
   --color-border: #2a2a2a;
 
   --font-inter: "Inter", sans-serif;
-  --font-playfair: "Playfair", sans-serif;
+  --font-playfair: "Playfair", serif;
 }
 
 .simple-star-rating,

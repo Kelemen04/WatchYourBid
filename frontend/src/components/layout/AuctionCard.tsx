@@ -3,53 +3,36 @@ import type { AuctionCardData } from "../../dto/auction.dto";
 import { Link } from "react-router-dom";
 import { BsBookmark, BsBookmarkFill } from "react-icons/bs";
 import { useAddToWatchlist } from "../../hooks/useAuctions";
-import { socket } from "../../main";
 import { useQueryClient } from "@tanstack/react-query";
 
 export default function AuctionCard({ auction }: { auction: AuctionCardData }) {
   const queryClient = useQueryClient();
-  const [days, setDays] = useState(0);
-  const [hours, setHours] = useState(0);
-  const [minutes, setMinutes] = useState(0);
-  const [seconds, setSeconds] = useState(0);
+  const [timeLeft, setTimeLeft] = useState("");
+  const [isEnded, setIsEnded] = useState(false);
 
   useEffect(() => {
-    const handleBidUpdate = (updatedData: {
-      auctionId: string | number;
-      newPrice: number;
-    }) => {
-      if (Number(updatedData.auctionId) === Number(auction.id)) {
-        queryClient.invalidateQueries({ queryKey: ["homeAuctions"] });
-      }
-    };
-
-    socket.emit("joinAuction", String(auction.id));
-    socket.on("BidUpdated", handleBidUpdate);
-
-    return () => {
-      socket.off("BidUpdated", handleBidUpdate);
-      socket.emit("leaveAuction", String(auction.id));
-    };
-  }, [auction.id, queryClient]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
+    const calculateTime = () => {
       const difference =
         new Date(auction.endTime).getTime() - new Date().getTime();
       if (difference <= 0) {
-        setDays(0);
-        setHours(0);
-        setMinutes(0);
-        setSeconds(0);
+        setTimeLeft("0D 0H 0M 0S");
+        setIsEnded(true);
         return;
       }
-      setDays(Math.floor(difference / (1000 * 60 * 60 * 24)));
-      setHours(
-        Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+
+      setIsEnded(false);
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+      const hours = Math.floor(
+        (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
       );
-      setMinutes(Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)));
-      setSeconds(Math.floor((difference % (1000 * 60)) / 1000));
-    }, 1000);
+      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+      setTimeLeft(`${days}D ${hours}H ${minutes}M ${seconds}S`);
+    };
+    calculateTime();
+    const interval = setInterval(calculateTime, 1000);
+
     return () => clearInterval(interval);
   }, [auction.endTime]);
 
@@ -133,9 +116,15 @@ export default function AuctionCard({ auction }: { auction: AuctionCardData }) {
           </div>
 
           <div className="bg-surface py-1 px-2 text-center rounded-lg shadow-sm">
-            <span className="font-mono text-[14px] font-bold text-primary tracking-widest">
-              {`${days}D ${hours}H ${minutes}M ${seconds}S`}
-            </span>
+            {isEnded ? (
+              <span className="font-mono text-[14px] font-bold text-primary tracking-widest">
+                ENDED
+              </span>
+            ) : (
+              <span className="font-mono text-[14px] font-bold text-primary tracking-widest">
+                {timeLeft}
+              </span>
+            )}
           </div>
         </div>
       </div>
