@@ -1,10 +1,15 @@
 import { Link } from "react-router-dom";
 import { useMyBidsHistory } from "../hooks/useBids";
+import { useState } from "react";
 
 export default function UserBidsPage() {
-  const { data: bids, isLoading } = useMyBidsHistory();
+  const [page, setPage] = useState(0);
+  const take = 10;
+  const skip = page * take;
 
-  if (isLoading) {
+  const { data: bids, isLoading } = useMyBidsHistory(skip, take);
+
+  if (isLoading && page === 0) {
     return (
       <div className="flex justify-center items-center h-64">
         <span className="font-playfair text-2xl text-primary animate-pulse">
@@ -57,6 +62,39 @@ export default function UserBidsPage() {
           <p className="text-text-muted text-lg uppercase tracking-widest">
             You haven't placed any bids yet.
           </p>
+        </div>
+      )}
+
+      {!isLoading && (
+        <div className="mt-8 flex justify-center items-center gap-8">
+          <button
+            onClick={() => setPage((old) => Math.max(old - 1, 0))}
+            disabled={page === 0}
+            className={`w-36 flex justify-center items-center py-2.5 font-bold uppercase tracking-wider text-xs border rounded-lg transition-colors ${
+              page === 0
+                ? "border-text-muted/20 text-text-muted/50 cursor-not-allowed bg-gray-50"
+                : "border-text-muted/40 text-background hover:border-primary hover:bg-primary hover:text-white"
+            }`}
+          >
+            &larr; Previous
+          </button>
+
+          {/* AKTUÁLIS OLDALSZÁM */}
+          <span className="font-inter font-bold text-background text-sm uppercase tracking-widest w-20 text-center shrink-0">
+            Page {page + 1}
+          </span>
+
+          <button
+            onClick={() => setPage((old) => old + 1)}
+            disabled={!bids || bids.length < take}
+            className={`w-36 flex justify-center items-center py-2.5 font-bold uppercase tracking-wider text-xs border rounded-lg transition-colors ${
+              !bids || bids.length < take
+                ? "border-text-muted/20 text-text-muted/50 cursor-not-allowed bg-gray-50"
+                : "border-text-muted/40 text-background hover:border-primary hover:bg-primary hover:text-white"
+            }`}
+          >
+            Next &rarr;
+          </button>
         </div>
       )}
     </div>

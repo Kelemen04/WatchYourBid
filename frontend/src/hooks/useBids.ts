@@ -108,11 +108,11 @@ export const useAuctionBids = (id: number, take: number) => {
   });
 };
 
-export const useMyBidsHistory = () => {
+export const useMyBidsHistory = (skip: number, take: number) => {
   return useQuery<MyBidsDTO[], AxiosError<{ error: string }>>({
-    queryKey: ["myBidsHistory"],
+    queryKey: ["myBidsHistory", skip, take],
     queryFn: async () => {
-      const response = await api.get<MyBidsDTO[]>("/user/bids/me");
+      const response = await api.get<MyBidsDTO[]>(`/user/bids/me?skip=${skip}&take=${take}`);
       return response.data;
     },
     refetchOnWindowFocus: false,

@@ -1,122 +1,291 @@
 import { useParams } from "react-router-dom";
 import { socket } from "../../main";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { AuctionFullData } from "../../dto/auction.dto";
 
 interface AuctionInformationProps {
   data: AuctionFullData | undefined;
 }
 
+// Segédkomponens egy adatmező kiírására
+const InfoRow = ({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number | undefined;
+}) => (
+  <div className="flex flex-col py-3 border-b border-stone-100">
+    <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-stone-500 mb-1">
+      {label}
+    </span>
+    <span className="text-sm font-medium text-[var(--color-surface)]">
+      {value || "N/A"}
+    </span>
+  </div>
+);
+
 export default function AuctionInformation({ data }: AuctionInformationProps) {
   const { id } = useParams();
+
+  const images = data?.images?.length
+    ? data.images
+    : ["/placeholder-watch.png"];
+  const [activeImage, setActiveImage] = useState(images[0]);
+
+  useEffect(() => {
+    if (images.length > 0) {
+      const timeoutId = setTimeout(() => {
+        setActiveImage(images[0]);
+      }, 0);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [data]);
 
   useEffect(() => {
     if (!id) return;
     socket.emit("joinAuction", id);
 
-    socket.on("BidUpdated", (updatedData) => {
+    // Any helyett unknown a linter hiba elkerülésére
+    const handleBidUpdate = (updatedData: unknown) => {
       console.log("New bid: ", updatedData);
-    });
+    };
+
+    socket.on("BidUpdated", handleBidUpdate);
 
     return () => {
       socket.emit("leaveAuction", id);
-      socket.off("BidUpdated");
+      socket.off("BidUpdated", handleBidUpdate);
     };
   }, [id]);
 
+  if (!data) return null;
+
   return (
-    <>
-      <div
-        style={{ border: "1px solid black", margin: "10px", padding: "10px" }}
-      >
-        <h2>Basic Auction Info</h2>
-        <p>Title: {data?.title}</p>
-        <p>Description: {data?.description}</p>
-        <p>Auction Type: {data?.auctionType}</p>
-        <p>Start Time: {data?.startTime?.toLocaleString()}</p>
-        <p>End Time: {data?.endTime?.toLocaleString()}</p>
-        <p>Starting Price: {data?.startingPrice}</p>
-        <p>Reserve Price: {data?.reservePrice ?? "None"}</p>
-        <p>Buying Price: {data?.buyingPrice ?? "None"}</p>
-        <p>Tick Interval (Dutch): {data?.tickInterval}</p>
-        <p>Money Interval (Dutch): {data?.moneyInterval}</p>
-        <p>Min Bid Increment: {data?.minBidIncrement}</p>
-        <p>Is Ascending: {data?.isAscending ? "Yes" : "No"}</p>
+    // EGYETLEN NAGY FEHÉR DOBOZ AZ EGÉSZNEK
+    <div className="flex flex-col gap-10 bg-white border border-stone-200 rounded-3xl p-6 sm:p-10 shadow-sm">
+      {/* ── KÉPGALÉRIA ── */}
+      <div className="flex flex-col gap-4">
+        {/* Fő nagy kép */}
+        <div className="w-full aspect-[4/3] bg-stone-50 rounded-2xl overflow-hidden border border-stone-200 shadow-inner relative group cursor-crosshair">
+          <img
+            src={activeImage}
+            alt={data.title}
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+          />
+        </div>
+
+        {/* Kis indexképek (Thumbnails) */}
+        {images.length > 1 && (
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-stone-300">
+            {images.map((img, index) => (
+              <button
+                key={index}
+                onClick={() => setActiveImage(img)}
+                className={`shrink-0 w-24 h-24 rounded-xl overflow-hidden border-2 transition-all ${
+                  activeImage === img
+                    ? "border-[var(--color-primary)] opacity-100"
+                    : "border-transparent opacity-60 hover:opacity-100"
+                }`}
+              >
+                <img
+                  src={img}
+                  alt={`Thumbnail ${index + 1}`}
+                  className="w-full h-full object-cover"
+                />
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
-      <div
-        style={{ border: "1px solid blue", margin: "10px", padding: "10px" }}
-      >
-        <h2>General Watch Info</h2>
-        <p>Brand: {data?.watchItem?.brand}</p>
-        <p>Model: {data?.watchItem?.model}</p>
-        <p>Production Year: {data?.watchItem?.productionYear}</p>
-        <p>Material: {data?.watchItem?.material}</p>
-        <p>Condition: {data?.watchItem?.condition}</p>
-        <p>Weight: {data?.watchItem?.weight}</p>
-        <p>Has Box: {data?.watchItem?.hasBox ? "Yes" : "No"}</p>
-        <p>Has Papers: {data?.watchItem?.hasPapers ? "Yes" : "No"}</p>
-        <p>Is Original: {data?.watchItem?.isOriginal ? "Yes" : "No"}</p>
-        <p>Category: {data?.watchItem?.category}</p>
+      {/* ── CÍM ÉS LEÍRÁS ── */}
+      <div className="border-b border-stone-100 pb-8">
+        <h1 className="font-[var(--font-playfair)] text-4xl md:text-5xl font-bold text-background tracking-tight mb-4">
+          {data.title}
+        </h1>
+        <p className="font-inter text-stone-600 leading-relaxed whitespace-pre-line text-[15px]">
+          {data.description}
+        </p>
       </div>
 
-      {data?.watchItem?.wristwatch && (
-        <div
-          style={{ border: "1px solid green", margin: "10px", padding: "10px" }}
-        >
-          <h3>Wristwatch Details</h3>
-          <p>Movement: {data.watchItem.wristwatch.movementType}</p>
-          <p>Diameter: {data.watchItem.wristwatch.caseDiameter} mm</p>
-          <p>Water Resistance: {data.watchItem.wristwatch.waterResistance}</p>
-          <p>Strap Material: {data.watchItem.wristwatch.strapMaterial}</p>
-          <p>Glass Type: {data.watchItem.wristwatch.glassType}</p>
-        </div>
-      )}
+      {/* ── SPECIFIKÁCIÓK ── */}
+      <div>
+        <h3 className="font-[var(--font-playfair)] text-2xl font-bold text-background mb-6 pb-2 border-b-2 border-[var(--color-primary)] inline-block">
+          Watch Specifications
+        </h3>
 
-      {data?.watchItem?.pocketWatch && (
-        <div
-          style={{
-            border: "1px solid orange",
-            margin: "10px",
-            padding: "10px",
-          }}
-        >
-          <h3>Pocket Watch Details</h3>
-          <p>Case Type: {data.watchItem.pocketWatch.caseType}</p>
-          <p>Movement: {data.watchItem.pocketWatch.movementType}</p>
-          <p>Has Chain: {data.watchItem.pocketWatch.hasChain ? "Yes" : "No"}</p>
-          <p>Complications: {data.watchItem.pocketWatch.complications}</p>
+        {/* Általános Specifikációk */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-2">
+          <InfoRow label="Brand" value={data.watchItem?.brand} />
+          <InfoRow label="Model" value={data.watchItem?.model} />
+          <InfoRow label="Category" value={data.watchItem?.category} />
+          <InfoRow
+            label="Production Year"
+            value={data.watchItem?.productionYear}
+          />
+          <InfoRow label="Material" value={data.watchItem?.material} />
+          <InfoRow label="Condition" value={data.watchItem?.condition} />
+          <InfoRow
+            label="Weight"
+            value={
+              data.watchItem?.weight ? `${data.watchItem.weight} g` : undefined
+            }
+          />
         </div>
-      )}
 
-      {data?.watchItem?.smartwatch && (
-        <div
-          style={{
-            border: "1px solid purple",
-            margin: "10px",
-            padding: "10px",
-          }}
-        >
-          <h3>Smartwatch Details</h3>
-          <p>OS: {data.watchItem.smartwatch.os}</p>
-          <p>Battery Life: {data.watchItem.smartwatch.batteryLife} hours</p>
-          <p>Screen: {data.watchItem.smartwatch.screenType}</p>
-          <p>Sensors: {data.watchItem.smartwatch.sensors}</p>
-          <p>Compatibility: {data.watchItem.smartwatch.compatibility}</p>
+        {/* Tulajdonságok / Kiegészítők (Címkék) */}
+        <div className="flex flex-wrap gap-4 pt-6 mt-4">
+          <span
+            className={`text-[10px] font-bold uppercase tracking-wider px-4 py-1.5 rounded-full border ${
+              data.watchItem?.isOriginal
+                ? "bg-green-50 border-green-200 text-green-700"
+                : "bg-stone-50 border-stone-200 text-stone-400"
+            }`}
+          >
+            Original
+          </span>
+          <span
+            className={`text-[10px] font-bold uppercase tracking-wider px-4 py-1.5 rounded-full border ${
+              data.watchItem?.hasBox
+                ? "bg-stone-800 border-stone-800 text-white"
+                : "bg-stone-50 border-stone-200 text-stone-400"
+            }`}
+          >
+            Has Box
+          </span>
+          <span
+            className={`text-[10px] font-bold uppercase tracking-wider px-4 py-1.5 rounded-full border ${
+              data.watchItem?.hasPapers
+                ? "bg-[var(--color-primary)] border-[var(--color-primary)] text-white"
+                : "bg-stone-50 border-stone-200 text-stone-400"
+            }`}
+          >
+            Has Papers
+          </span>
         </div>
-      )}
 
-      {data?.watchItem?.clock && (
-        <div
-          style={{ border: "1px solid red", margin: "10px", padding: "10px" }}
-        >
-          <h3>Clock Details</h3>
-          <p>Clock Type: {data.watchItem.clock.clockType}</p>
-          <p>Power Source: {data.watchItem.clock.powerSource}</p>
-          <p>Chime Type: {data.watchItem.clock.chimeType}</p>
-          <p>Dimensions: {data.watchItem.clock.dimensions}</p>
-        </div>
-      )}
-    </>
+        {/* ── KATEGÓRIA SPECIFIKUS ADATOK ── */}
+
+        {/* Wristwatch */}
+        {data.watchItem?.category === "WRISTWATCH" &&
+          data.watchItem.wristwatch && (
+            <div className="mt-12">
+              <h3 className="font-[var(--font-playfair)] text-xl font-bold text-stone-800 mb-6 pb-2 border-b-2 border-stone-200 inline-block">
+                Wristwatch Details
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-2">
+                <InfoRow
+                  label="Movement Type"
+                  value={data.watchItem.wristwatch.movementType}
+                />
+                <InfoRow
+                  label="Case Diameter"
+                  value={`${data.watchItem.wristwatch.caseDiameter} mm`}
+                />
+                <InfoRow
+                  label="Water Resistance"
+                  value={data.watchItem.wristwatch.waterResistance}
+                />
+                <InfoRow
+                  label="Strap Material"
+                  value={data.watchItem.wristwatch.strapMaterial}
+                />
+                <InfoRow
+                  label="Glass Type"
+                  value={data.watchItem.wristwatch.glassType}
+                />
+              </div>
+            </div>
+          )}
+
+        {/* Pocket Watch */}
+        {data.watchItem?.category === "POCKETWATCH" &&
+          data.watchItem.pocketWatch && (
+            <div className="mt-12">
+              <h3 className="font-[var(--font-playfair)] text-xl font-bold text-stone-800 mb-6 pb-2 border-b-2 border-stone-200 inline-block">
+                Pocket Watch Details
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-2">
+                <InfoRow
+                  label="Case Type"
+                  value={data.watchItem.pocketWatch.caseType}
+                />
+                <InfoRow
+                  label="Movement Type"
+                  value={data.watchItem.pocketWatch.movementType}
+                />
+                <InfoRow
+                  label="Has Chain"
+                  value={data.watchItem.pocketWatch.hasChain ? "Yes" : "No"}
+                />
+                <InfoRow
+                  label="Complications"
+                  value={data.watchItem.pocketWatch.complications}
+                />
+              </div>
+            </div>
+          )}
+
+        {/* Smartwatch */}
+        {data.watchItem?.category === "SMARTWATCH" &&
+          data.watchItem.smartwatch && (
+            <div className="mt-12">
+              <h3 className="font-[var(--font-playfair)] text-xl font-bold text-stone-800 mb-6 pb-2 border-b-2 border-stone-200 inline-block">
+                Smartwatch Details
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-2">
+                <InfoRow
+                  label="Operating System"
+                  value={data.watchItem.smartwatch.os}
+                />
+                <InfoRow
+                  label="Battery Life"
+                  value={`${data.watchItem.smartwatch.batteryLife} hours`}
+                />
+                <InfoRow
+                  label="Screen Type"
+                  value={data.watchItem.smartwatch.screenType}
+                />
+                <InfoRow
+                  label="Sensors"
+                  value={data.watchItem.smartwatch.sensors}
+                />
+                <InfoRow
+                  label="Compatibility"
+                  value={data.watchItem.smartwatch.compatibility}
+                />
+              </div>
+            </div>
+          )}
+
+        {/* Clock */}
+        {data.watchItem?.category === "CLOCK" && data.watchItem.clock && (
+          <div className="mt-12">
+            <h3 className="font-[var(--font-playfair)] text-xl font-bold text-stone-800 mb-6 pb-2 border-b-2 border-stone-200 inline-block">
+              Clock Details
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-2">
+              <InfoRow
+                label="Clock Type"
+                value={data.watchItem.clock.clockType}
+              />
+              <InfoRow
+                label="Power Source"
+                value={data.watchItem.clock.powerSource}
+              />
+              <InfoRow
+                label="Chime Type"
+                value={data.watchItem.clock.chimeType}
+              />
+              <InfoRow
+                label="Dimensions"
+                value={data.watchItem.clock.dimensions}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

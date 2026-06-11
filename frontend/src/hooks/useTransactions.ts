@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type { AxiosError } from "axios";
-import type { TransactionDTO, UploadMoneyDTO } from "../dto/transaction.dto";
+import type { AllTransactionDTO, TransactionDTO, UploadMoneyDTO } from "../dto/transaction.dto";
 import api from "../api/axios";
 
 interface UploadMoneyResponse {
@@ -54,11 +54,24 @@ export const useWithdrawMoney = () => {
     });
 }
 
-export const useMyTransactions = () => {
+export const useMyTransactions = (skip: number, take: number) => {
   return useQuery<TransactionDTO[], AxiosError<{ error: string }>>({
-    queryKey: ["myTransactions"],
+    queryKey: ["myTransactions", skip, take],
     queryFn: async () => {
-      const response = await api.get<TransactionDTO[]>("/user/transactions");
+      const response = await api.get<TransactionDTO[]>(`/user/transactions?skip=${skip}&take=${take}`);
+      return response.data;
+    },
+    refetchOnWindowFocus: false,
+  });
+};
+
+export const useAllTransactions = (skip: number, take: number) => {
+  return useQuery<AllTransactionDTO[], AxiosError<{ error: string }>>({
+    queryKey: ["allTransactions", skip, take],
+    queryFn: async () => {
+      const response = await api.get<AllTransactionDTO[]>(
+        `/transaction/all?skip=${skip}&take=${take}`
+      );
       return response.data;
     },
     refetchOnWindowFocus: false,

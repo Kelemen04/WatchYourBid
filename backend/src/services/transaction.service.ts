@@ -118,18 +118,28 @@ export const transactionService = {
         return { message: "Withdraw successful!" };
     },
 
-    async getTransactionHistory(userId: number) {
+    async getTransactionHistory(userId: number, skip: number, take: number) {
         return await prisma.transaction.findMany({
             where: { userId: userId },
+            skip: skip,
+            take: take,
             orderBy: { createdAt: 'desc' }
         });
     },
 
     async getAllTransactionHistory(skip: number, take: number) {
-        return await prisma.transaction.findMany({
-            orderBy: { createdAt: 'desc' },
-            skip: skip,
-            take: take,
-        });
-    }
+    return await prisma.transaction.findMany({
+        orderBy: { createdAt: 'desc' },
+        skip: skip,
+        take: take,
+        include: {
+            user: {
+                select: {
+                    username: true,
+                    email: true
+                }
+            }
+        }
+    });
+}
 }

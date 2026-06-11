@@ -14,44 +14,65 @@ const WristwatchFields = () => {
   } = useFormContext<AuctionInput>();
 
   return (
-    <>
-      <div>
-        <label>Movement Type:</label>
-        <input type="text" {...register("watchItem.wristwatch.movementType")} />
+    <div className="grid grid-cols-2 gap-5 mt-4 bg-gray-50 p-6 rounded-2xl border border-gray-100">
+      <div className="flex flex-col w-full">
+        <label className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5">
+          Movement Type:
+        </label>
+        <input
+          type="text"
+          {...register("watchItem.wristwatch.movementType")}
+          className="w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors border-gray-200"
+        />
       </div>
-      <div>
-        <label>Case Diameter (mm):</label>
+      <div className="flex flex-col w-full">
+        <label className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5">
+          Case Diameter (mm):
+        </label>
         <input
           type="number"
           {...register("watchItem.wristwatch.caseDiameter", {
             valueAsNumber: true,
           })}
+          className={`w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors ${errors.watchItem?.wristwatch?.caseDiameter ? "border-red-500" : "border-gray-200"}`}
         />
         {errors.watchItem?.wristwatch?.caseDiameter && (
-          <p style={{ color: "red" }}>
+          <p className="text-red-500 text-xs mt-1.5 font-bold">
             {errors.watchItem.wristwatch.caseDiameter.message}
           </p>
         )}
       </div>
-      <div>
-        <label>Water Resistance:</label>
+      <div className="flex flex-col w-full">
+        <label className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5">
+          Water Resistance:
+        </label>
         <input
           type="text"
           {...register("watchItem.wristwatch.waterResistance")}
+          className="w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors border-gray-200"
         />
       </div>
-      <div>
-        <label>Strap Material:</label>
+      <div className="flex flex-col w-full">
+        <label className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5">
+          Strap Material:
+        </label>
         <input
           type="text"
           {...register("watchItem.wristwatch.strapMaterial")}
+          className="w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors border-gray-200"
         />
       </div>
-      <div>
-        <label>Glass Type:</label>
-        <input type="text" {...register("watchItem.wristwatch.glassType")} />
+      <div className="flex flex-col w-full col-span-2">
+        <label className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5">
+          Glass Type:
+        </label>
+        <input
+          type="text"
+          {...register("watchItem.wristwatch.glassType")}
+          className="w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors border-gray-200"
+        />
       </div>
-    </>
+    </div>
   );
 };
 
@@ -59,33 +80,52 @@ const WristwatchFields = () => {
 const PocketWatchFields = () => {
   const { register } = useFormContext<AuctionInput>();
   return (
-    <>
-      <div>
-        <label>Case Type:</label>
-        <input type="text" {...register("watchItem.pocketWatch.caseType")} />
+    <div className="grid grid-cols-2 gap-5 mt-4 bg-gray-50 p-6 rounded-2xl border border-gray-100">
+      <div className="flex flex-col w-full">
+        <label className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5">
+          Case Type:
+        </label>
+        <input
+          type="text"
+          {...register("watchItem.pocketWatch.caseType")}
+          className="w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors border-gray-200"
+        />
       </div>
-      <div>
-        <label>Movement Type:</label>
+      <div className="flex flex-col w-full">
+        <label className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5">
+          Movement Type:
+        </label>
         <input
           type="text"
           {...register("watchItem.pocketWatch.movementType")}
+          className="w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors border-gray-200"
         />
       </div>
-      <div>
-        <label>Has Chain:</label>
-        <input
-          type="checkbox"
-          {...register("watchItem.pocketWatch.hasChain")}
-        />
-      </div>
-      <div>
-        <label>Complications:</label>
+      <div className="flex flex-col w-full col-span-2">
+        <label className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5">
+          Complications:
+        </label>
         <input
           type="text"
           {...register("watchItem.pocketWatch.complications")}
+          className="w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors border-gray-200"
         />
       </div>
-    </>
+      <div className="flex items-center gap-3 mt-2 col-span-2">
+        <input
+          type="checkbox"
+          id="hasChain"
+          {...register("watchItem.pocketWatch.hasChain")}
+          className="w-5 h-5 accent-background rounded cursor-pointer"
+        />
+        <label
+          htmlFor="hasChain"
+          className="font-inter text-sm font-bold text-text-muted cursor-pointer"
+        >
+          Has Chain
+        </label>
+      </div>
+    </div>
   );
 };
 
@@ -96,41 +136,65 @@ const SmartwatchFields = () => {
     formState: { errors },
   } = useFormContext<AuctionInput>();
   return (
-    <>
-      <div>
-        <label>OS:</label>
-        <input type="text" {...register("watchItem.smartwatch.os")} />
+    <div className="grid grid-cols-2 gap-5 mt-4 bg-gray-50 p-6 rounded-2xl border border-gray-100">
+      <div className="flex flex-col w-full">
+        <label className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5">
+          OS:
+        </label>
+        <input
+          type="text"
+          {...register("watchItem.smartwatch.os")}
+          className="w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors border-gray-200"
+        />
       </div>
-      <div>
-        <label>Battery Life (hours):</label>
+      <div className="flex flex-col w-full">
+        <label className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5">
+          Battery Life (hours):
+        </label>
         <input
           type="number"
           {...register("watchItem.smartwatch.batteryLife", {
             valueAsNumber: true,
           })}
+          className={`w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors ${errors.watchItem?.smartwatch?.batteryLife ? "border-red-500" : "border-gray-200"}`}
         />
         {errors.watchItem?.smartwatch?.batteryLife && (
-          <p style={{ color: "red" }}>
+          <p className="text-red-500 text-xs mt-1.5 font-bold">
             {errors.watchItem.smartwatch.batteryLife.message}
           </p>
         )}
       </div>
-      <div>
-        <label>Screen Type:</label>
-        <input type="text" {...register("watchItem.smartwatch.screenType")} />
+      <div className="flex flex-col w-full">
+        <label className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5">
+          Screen Type:
+        </label>
+        <input
+          type="text"
+          {...register("watchItem.smartwatch.screenType")}
+          className="w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors border-gray-200"
+        />
       </div>
-      <div>
-        <label>Sensors:</label>
-        <input type="text" {...register("watchItem.smartwatch.sensors")} />
+      <div className="flex flex-col w-full">
+        <label className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5">
+          Sensors:
+        </label>
+        <input
+          type="text"
+          {...register("watchItem.smartwatch.sensors")}
+          className="w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors border-gray-200"
+        />
       </div>
-      <div>
-        <label>Compatibility:</label>
+      <div className="flex flex-col w-full col-span-2">
+        <label className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5">
+          Compatibility:
+        </label>
         <input
           type="text"
           {...register("watchItem.smartwatch.compatibility")}
+          className="w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors border-gray-200"
         />
       </div>
-    </>
+    </div>
   );
 };
 
@@ -138,24 +202,48 @@ const SmartwatchFields = () => {
 const ClockFields = () => {
   const { register } = useFormContext<AuctionInput>();
   return (
-    <>
-      <div>
-        <label>Clock Type:</label>
-        <input type="text" {...register("watchItem.clock.clockType")} />
+    <div className="grid grid-cols-2 gap-5 mt-4 bg-gray-50 p-6 rounded-2xl border border-gray-100">
+      <div className="flex flex-col w-full">
+        <label className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5">
+          Clock Type:
+        </label>
+        <input
+          type="text"
+          {...register("watchItem.clock.clockType")}
+          className="w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors border-gray-200"
+        />
       </div>
-      <div>
-        <label>Power Source:</label>
-        <input type="text" {...register("watchItem.clock.powerSource")} />
+      <div className="flex flex-col w-full">
+        <label className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5">
+          Power Source:
+        </label>
+        <input
+          type="text"
+          {...register("watchItem.clock.powerSource")}
+          className="w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors border-gray-200"
+        />
       </div>
-      <div>
-        <label>Chime Type:</label>
-        <input type="text" {...register("watchItem.clock.chimeType")} />
+      <div className="flex flex-col w-full">
+        <label className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5">
+          Chime Type:
+        </label>
+        <input
+          type="text"
+          {...register("watchItem.clock.chimeType")}
+          className="w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors border-gray-200"
+        />
       </div>
-      <div>
-        <label>Dimensions:</label>
-        <input type="text" {...register("watchItem.clock.dimensions")} />
+      <div className="flex flex-col w-full">
+        <label className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5">
+          Dimensions:
+        </label>
+        <input
+          type="text"
+          {...register("watchItem.clock.dimensions")}
+          className="w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors border-gray-200"
+        />
       </div>
-    </>
+    </div>
   );
 };
 
@@ -214,10 +302,8 @@ export default function AuctionCategoryDataForm({ setStep }: Props) {
     } as const;
 
     const category = watch("watchItem.category");
-
     const fields =
       fieldsByCategory[category as keyof typeof fieldsByCategory] || [];
-
     const isValid = await trigger(fields);
 
     if (isValid) {
@@ -226,93 +312,195 @@ export default function AuctionCategoryDataForm({ setStep }: Props) {
   };
 
   return (
-    <div className="form-step">
-      <h1>Watch Item Data</h1>
-
-      <div>
-        <label>Brand:</label>
-        <input type="text" {...register("watchItem.brand")} />
-        {errors.watchItem?.brand && (
-          <p style={{ color: "red" }}>{errors.watchItem.brand.message}</p>
-        )}
+    // JAVÍTVA ITT: flex-1 min-h-0 biztosítja, hogy összezsugorodjon a szülőhöz, aktiválva az overflow-t!
+    <div className="flex flex-col flex-1 min-h-0 w-full">
+      {/* Fejléc - FIX */}
+      <div className="mb-6 flex-shrink-0">
+        <h2 className="font-playfair text-background font-bold text-4xl mb-2">
+          Watch Item Data
+        </h2>
+        <p className="font-inter text-text-muted text-sm">
+          Provide specific details about the watch structure and model.
+        </p>
       </div>
 
-      <div>
-        <label>Model:</label>
-        <input type="text" {...register("watchItem.model")} />
-        {errors.watchItem?.model && (
-          <p style={{ color: "red" }}>{errors.watchItem.model.message}</p>
-        )}
+      {/* GÖRGETHETŐ TARTALOM */}
+      <div className="flex-1 overflow-y-auto pr-2">
+        {/* Alapadatok rács */}
+        <div className="grid grid-cols-2 gap-5">
+          <div className="flex flex-col w-full">
+            <label className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5">
+              Brand:
+            </label>
+            <input
+              type="text"
+              {...register("watchItem.brand")}
+              className={`w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors ${errors.watchItem?.brand ? "border-red-500" : "border-gray-200"}`}
+            />
+            {errors.watchItem?.brand && (
+              <p className="text-red-500 text-xs mt-1.5 font-bold">
+                {errors.watchItem.brand.message}
+              </p>
+            )}
+          </div>
+
+          <div className="flex flex-col w-full">
+            <label className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5">
+              Model:
+            </label>
+            <input
+              type="text"
+              {...register("watchItem.model")}
+              className={`w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors ${errors.watchItem?.model ? "border-red-500" : "border-gray-200"}`}
+            />
+            {errors.watchItem?.model && (
+              <p className="text-red-500 text-xs mt-1.5 font-bold">
+                {errors.watchItem.model.message}
+              </p>
+            )}
+          </div>
+
+          <div className="flex flex-col w-full">
+            <label className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5">
+              Production Year:
+            </label>
+            <input
+              type="number"
+              {...register("watchItem.productionYear", { valueAsNumber: true })}
+              className="w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors border-gray-200"
+            />
+          </div>
+
+          <div className="flex flex-col w-full">
+            <label className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5">
+              Material:
+            </label>
+            <input
+              type="text"
+              {...register("watchItem.material")}
+              className={`w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors ${errors.watchItem?.material ? "border-red-500" : "border-gray-200"}`}
+            />
+            {errors.watchItem?.material && (
+              <p className="text-red-500 text-xs mt-1.5 font-bold">
+                {errors.watchItem.material.message}
+              </p>
+            )}
+          </div>
+
+          <div className="flex flex-col w-full">
+            <label className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5">
+              Condition:
+            </label>
+            <input
+              type="text"
+              {...register("watchItem.condition")}
+              className={`w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors ${errors.watchItem?.condition ? "border-red-500" : "border-gray-200"}`}
+            />
+            {errors.watchItem?.condition && (
+              <p className="text-red-500 text-xs mt-1.5 font-bold">
+                {errors.watchItem.condition.message}
+              </p>
+            )}
+          </div>
+
+          <div className="flex flex-col w-full">
+            <label className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5">
+              Weight (OPTIONAL):
+            </label>
+            <input
+              type="number"
+              {...register("watchItem.weight", { valueAsNumber: true })}
+              className="w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors border-gray-200"
+            />
+          </div>
+        </div>
+
+        {/* Kategória választó */}
+        <div className="flex flex-col w-full mt-5">
+          <label className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5">
+            Category:
+          </label>
+          <select
+            {...register("watchItem.category")}
+            className="w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors bg-white border-gray-200"
+          >
+            <option value="WRISTWATCH">Wristwatch</option>
+            <option value="POCKETWATCH">Pocket Watch</option>
+            <option value="SMARTWATCH">Smartwatch</option>
+            <option value="CLOCK">Clock</option>
+          </select>
+        </div>
+
+        {/* Dinamikus alkategória mezők */}
+        {selectedCategory === "WRISTWATCH" && <WristwatchFields />}
+        {selectedCategory === "POCKETWATCH" && <PocketWatchFields />}
+        {selectedCategory === "SMARTWATCH" && <SmartwatchFields />}
+        {selectedCategory === "CLOCK" && <ClockFields />}
+
+        {/* Kiegészítő tulajdonságok doboza */}
+        <div className="flex gap-6 mt-6 p-4 bg-gray-50 rounded-xl border border-gray-100 justify-center mb-4">
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="isOriginal"
+              {...register("watchItem.isOriginal")}
+              className="w-5 h-5 accent-background rounded cursor-pointer"
+            />
+            <label
+              htmlFor="isOriginal"
+              className="font-inter text-sm font-bold text-text-muted cursor-pointer"
+            >
+              Original
+            </label>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="hasBox"
+              {...register("watchItem.hasBox")}
+              className="w-5 h-5 accent-background rounded cursor-pointer"
+            />
+            <label
+              htmlFor="hasBox"
+              className="font-inter text-sm font-bold text-text-muted cursor-pointer"
+            >
+              Has Box
+            </label>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="hasPapers"
+              {...register("watchItem.hasPapers")}
+              className="w-5 h-5 accent-background rounded cursor-pointer"
+            />
+            <label
+              htmlFor="hasPapers"
+              className="font-inter text-sm font-bold text-text-muted cursor-pointer"
+            >
+              Has Papers
+            </label>
+          </div>
+        </div>
       </div>
 
-      <div>
-        <label>Production Year:</label>
-        <input
-          type="number"
-          {...register("watchItem.productionYear", { valueAsNumber: true })}
-        />
+      {/* Navigációs gombok az oldal alján - FIX */}
+      <div className="mt-4 pt-4 flex justify-between items-center flex-shrink-0 bg-white border-t border-gray-100">
+        <button
+          type="button"
+          onClick={() => setStep((p) => p - 1)}
+          className="text-text-muted hover:text-background font-bold tracking-widest uppercase text-sm transition-colors"
+        >
+          Go Back
+        </button>
+        <button
+          type="button"
+          onClick={handleNext}
+          className="text-white bg-background hover:bg-primary-hover font-bold tracking-widest uppercase rounded-xl text-sm px-8 py-3.5 transition-all"
+        >
+          Next Step
+        </button>
       </div>
-
-      <div>
-        <label>Material:</label>
-        <input type="text" {...register("watchItem.material")} />
-        {errors.watchItem?.material && (
-          <p style={{ color: "red" }}>{errors.watchItem.material.message}</p>
-        )}
-      </div>
-
-      <div>
-        <label>Condition:</label>
-        <input type="text" {...register("watchItem.condition")} />
-        {errors.watchItem?.condition && (
-          <p style={{ color: "red" }}>{errors.watchItem.condition.message}</p>
-        )}
-      </div>
-
-      <div>
-        <label>Weight(OPTIONAL):</label>
-        <input
-          type="number"
-          {...register("watchItem.weight", { valueAsNumber: true })}
-        />
-      </div>
-
-      <div>
-        <label>Category:</label>
-        <select {...register("watchItem.category")}>
-          <option value="WRISTWATCH">Wristwatch</option>
-          <option value="POCKETWATCH">Pocket Watch</option>
-          <option value="SMARTWATCH">Smartwatch</option>
-          <option value="CLOCK">Clock</option>
-        </select>
-      </div>
-
-      {selectedCategory === "WRISTWATCH" && <WristwatchFields />}
-      {selectedCategory === "POCKETWATCH" && <PocketWatchFields />}
-      {selectedCategory === "SMARTWATCH" && <SmartwatchFields />}
-      {selectedCategory === "CLOCK" && <ClockFields />}
-
-      <hr />
-
-      <div>
-        <label>Original:</label>
-        <input type="checkbox" {...register("watchItem.isOriginal")} />
-      </div>
-      <div>
-        <label>Has Box:</label>
-        <input type="checkbox" {...register("watchItem.hasBox")} />
-      </div>
-      <div>
-        <label>Has Papers:</label>
-        <input type="checkbox" {...register("watchItem.hasPapers")} />
-      </div>
-
-      <button type="button" onClick={() => setStep((p) => p - 1)}>
-        Previous
-      </button>
-      <button type="button" onClick={handleNext}>
-        Next
-      </button>
     </div>
   );
 }

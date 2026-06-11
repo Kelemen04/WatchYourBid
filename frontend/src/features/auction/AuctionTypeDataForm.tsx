@@ -6,234 +6,367 @@ interface Props {
   setStep: React.Dispatch<React.SetStateAction<number>>;
 }
 
+const useNumberField = (name: keyof AuctionInput) => {
+  const { watch, setValue } = useFormContext<AuctionInput>();
+  const value = watch(name);
+  return {
+    value: (value as number) ?? "",
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+      setValue(name, e.target.valueAsNumber),
+  };
+};
+
 const EnglishFields = () => {
   const {
-    register,
     formState: { errors },
   } = useFormContext<AuctionInput>();
   return (
-    <>
-      <div>
-        <label htmlFor="startingPrice">Starting Price:</label>
+    <div className="grid grid-cols-2 gap-5 mt-4 bg-gray-50 p-6 rounded-2xl border border-gray-100">
+      <div className="flex flex-col w-full">
+        <label
+          htmlFor="startingPrice"
+          className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5"
+        >
+          Starting Price:
+        </label>
         <input
           type="number"
           id="startingPrice"
-          {...register("startingPrice", { valueAsNumber: true })}
+          {...useNumberField("startingPrice")}
+          className={`w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors ${errors.startingPrice ? "border-red-500" : "border-gray-200"}`}
         />
         {errors.startingPrice && (
-          <p style={{ color: "red" }}>{errors.startingPrice.message}</p>
+          <p className="text-red-500 text-xs mt-1.5 font-bold">
+            {errors.startingPrice.message}
+          </p>
         )}
       </div>
-      <div>
-        <label htmlFor="minBidIncrement">Minimum Bid Increment:</label>
+      <div className="flex flex-col w-full">
+        <label
+          htmlFor="minBidIncrement"
+          className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5"
+        >
+          Minimum Bid Increment:
+        </label>
         <input
           type="number"
           id="minBidIncrement"
-          {...register("minBidIncrement", { valueAsNumber: true })}
+          {...useNumberField("minBidIncrement")}
+          className={`w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors ${errors.minBidIncrement ? "border-red-500" : "border-gray-200"}`}
         />
         {errors.minBidIncrement && (
-          <p style={{ color: "red" }}>{errors.minBidIncrement.message}</p>
+          <p className="text-red-500 text-xs mt-1.5 font-bold">
+            {errors.minBidIncrement.message}
+          </p>
         )}
       </div>
-      <div>
-        <label htmlFor="reservePrice">Reserve Price:</label>
+      <div className="flex flex-col w-full">
+        <label
+          htmlFor="reservePrice"
+          className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5"
+        >
+          Reserve Price:
+        </label>
         <input
           type="number"
           id="reservePrice"
-          {...register("reservePrice", { valueAsNumber: true })}
+          {...useNumberField("reservePrice")}
+          className={`w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors ${errors.reservePrice ? "border-red-500" : "border-gray-200"}`}
         />
         {errors.reservePrice && (
-          <p style={{ color: "red" }}>{errors.reservePrice.message}</p>
+          <p className="text-red-500 text-xs mt-1.5 font-bold">
+            {errors.reservePrice.message}
+          </p>
         )}
       </div>
-      <div>
-        <label htmlFor="buyingPrice">Instant Buying Price:</label>
+      <div className="flex flex-col w-full">
+        <label
+          htmlFor="buyingPrice"
+          className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5"
+        >
+          Instant Buying Price:
+        </label>
         <input
           type="number"
           id="buyingPrice"
-          {...register("buyingPrice", { valueAsNumber: true })}
+          {...useNumberField("buyingPrice")}
+          className={`w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors ${errors.buyingPrice ? "border-red-500" : "border-gray-200"}`}
         />
         {errors.buyingPrice && (
-          <p style={{ color: "red" }}>{errors.buyingPrice.message}</p>
+          <p className="text-red-500 text-xs mt-1.5 font-bold">
+            {errors.buyingPrice.message}
+          </p>
         )}
       </div>
-    </>
+    </div>
   );
 };
 
 const DutchFields = () => {
   const {
-    register,
     formState: { errors },
   } = useFormContext<AuctionInput>();
   return (
-    <>
-      <div>
-        <label htmlFor="startingPrice">Starting Price:</label>
+    <div className="grid grid-cols-2 gap-5 mt-4 bg-gray-50 p-6 rounded-2xl border border-gray-100">
+      <div className="flex flex-col w-full">
+        <label
+          htmlFor="startingPrice"
+          className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5"
+        >
+          Starting Price:
+        </label>
         <input
           type="number"
           id="startingPrice"
-          {...register("startingPrice", { valueAsNumber: true })}
+          {...useNumberField("startingPrice")}
+          className={`w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors ${errors.startingPrice ? "border-red-500" : "border-gray-200"}`}
         />
         {errors.startingPrice && (
-          <p style={{ color: "red" }}>{errors.startingPrice.message}</p>
+          <p className="text-red-500 text-xs mt-1.5 font-bold">
+            {errors.startingPrice.message}
+          </p>
         )}
       </div>
-      <div>
-        <label htmlFor="tickInterval">Price Drop Interval (seconds):</label>
+      <div className="flex flex-col w-full">
+        <label
+          htmlFor="tickInterval"
+          className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5"
+        >
+          Price Drop Interval (seconds):
+        </label>
         <input
           type="number"
           id="tickInterval"
-          {...register("tickInterval", { valueAsNumber: true })}
+          {...useNumberField("tickInterval")}
+          className={`w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors ${errors.tickInterval ? "border-red-500" : "border-gray-200"}`}
         />
         {errors.tickInterval && (
-          <p style={{ color: "red" }}>{errors.tickInterval.message}</p>
+          <p className="text-red-500 text-xs mt-1.5 font-bold">
+            {errors.tickInterval.message}
+          </p>
         )}
       </div>
-      <div>
-        <label htmlFor="moneyInterval">Price Drop Amount:</label>
+      <div className="flex flex-col w-full">
+        <label
+          htmlFor="moneyInterval"
+          className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5"
+        >
+          Price Drop Amount:
+        </label>
         <input
           type="number"
           id="moneyInterval"
-          {...register("moneyInterval", { valueAsNumber: true })}
+          {...useNumberField("moneyInterval")}
+          className={`w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors ${errors.moneyInterval ? "border-red-500" : "border-gray-200"}`}
         />
         {errors.moneyInterval && (
-          <p style={{ color: "red" }}>{errors.moneyInterval.message}</p>
+          <p className="text-red-500 text-xs mt-1.5 font-bold">
+            {errors.moneyInterval.message}
+          </p>
         )}
       </div>
-      <div>
-        <label htmlFor="reservePrice">Minimum Price (Reserve):</label>
+      <div className="flex flex-col w-full">
+        <label
+          htmlFor="reservePrice"
+          className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5"
+        >
+          Minimum Price (Reserve):
+        </label>
         <input
           type="number"
           id="reservePrice"
-          {...register("reservePrice", { valueAsNumber: true })}
+          {...useNumberField("reservePrice")}
+          className={`w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors ${errors.reservePrice ? "border-red-500" : "border-gray-200"}`}
         />
         {errors.reservePrice && (
-          <p style={{ color: "red" }}>{errors.reservePrice.message}</p>
+          <p className="text-red-500 text-xs mt-1.5 font-bold">
+            {errors.reservePrice.message}
+          </p>
         )}
       </div>
-    </>
+    </div>
   );
 };
 
 const JapaneseFields = () => {
   const {
-    register,
     formState: { errors },
   } = useFormContext<AuctionInput>();
   return (
-    <>
-      <div>
-        <label htmlFor="startingPrice">Starting Price:</label>
+    <div className="grid grid-cols-2 gap-5 mt-4 bg-gray-50 p-6 rounded-2xl border border-gray-100">
+      <div className="flex flex-col w-full">
+        <label
+          htmlFor="startingPrice"
+          className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5"
+        >
+          Starting Price:
+        </label>
         <input
           type="number"
           id="startingPrice"
-          {...register("startingPrice", { valueAsNumber: true })}
+          {...useNumberField("startingPrice")}
+          className={`w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors ${errors.startingPrice ? "border-red-500" : "border-gray-200"}`}
         />
         {errors.startingPrice && (
-          <p style={{ color: "red" }}>{errors.startingPrice.message}</p>
+          <p className="text-red-500 text-xs mt-1.5 font-bold">
+            {errors.startingPrice.message}
+          </p>
         )}
       </div>
-      <div>
-        <label htmlFor="tickInterval">Price Increase Interval (seconds):</label>
+      <div className="flex flex-col w-full">
+        <label
+          htmlFor="tickInterval"
+          className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5"
+        >
+          Price Increase Interval (seconds):
+        </label>
         <input
           type="number"
           id="tickInterval"
-          {...register("tickInterval", { valueAsNumber: true })}
+          {...useNumberField("tickInterval")}
+          className={`w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors ${errors.tickInterval ? "border-red-500" : "border-gray-200"}`}
         />
         {errors.tickInterval && (
-          <p style={{ color: "red" }}>{errors.tickInterval.message}</p>
+          <p className="text-red-500 text-xs mt-1.5 font-bold">
+            {errors.tickInterval.message}
+          </p>
         )}
       </div>
-      <div>
-        <label htmlFor="moneyInterval">Price Increase Amount:</label>
+      <div className="flex flex-col w-full">
+        <label
+          htmlFor="moneyInterval"
+          className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5"
+        >
+          Price Increase Amount:
+        </label>
         <input
           type="number"
           id="moneyInterval"
-          {...register("moneyInterval", { valueAsNumber: true })}
+          {...useNumberField("moneyInterval")}
+          className={`w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors ${errors.moneyInterval ? "border-red-500" : "border-gray-200"}`}
         />
         {errors.moneyInterval && (
-          <p style={{ color: "red" }}>{errors.moneyInterval.message}</p>
+          <p className="text-red-500 text-xs mt-1.5 font-bold">
+            {errors.moneyInterval.message}
+          </p>
         )}
       </div>
-      <div>
-        <label htmlFor="buyingPrice">Instant Buying Price:</label>
+      <div className="flex flex-col w-full">
+        <label
+          htmlFor="buyingPrice"
+          className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5"
+        >
+          Instant Buying Price:
+        </label>
         <input
           type="number"
           id="buyingPrice"
-          {...register("buyingPrice", { valueAsNumber: true })}
+          {...useNumberField("buyingPrice")}
+          className={`w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors ${errors.buyingPrice ? "border-red-500" : "border-gray-200"}`}
         />
         {errors.buyingPrice && (
-          <p style={{ color: "red" }}>{errors.buyingPrice.message}</p>
+          <p className="text-red-500 text-xs mt-1.5 font-bold">
+            {errors.buyingPrice.message}
+          </p>
         )}
       </div>
-    </>
+    </div>
   );
 };
 
 const VickreyFields = () => {
   const {
-    register,
     formState: { errors },
   } = useFormContext<AuctionInput>();
   return (
-    <>
-      <div>
-        <label htmlFor="reservePrice">Reserve Price:</label>
+    <div className="grid grid-cols-2 gap-5 mt-4 bg-gray-50 p-6 rounded-2xl border border-gray-100">
+      <div className="flex flex-col w-full">
+        <label
+          htmlFor="reservePrice"
+          className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5"
+        >
+          Reserve Price:
+        </label>
         <input
           type="number"
           id="reservePrice"
-          {...register("reservePrice", { valueAsNumber: true })}
+          {...useNumberField("reservePrice")}
+          className={`w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors ${errors.reservePrice ? "border-red-500" : "border-gray-200"}`}
         />
         {errors.reservePrice && (
-          <p style={{ color: "red" }}>{errors.reservePrice.message}</p>
+          <p className="text-red-500 text-xs mt-1.5 font-bold">
+            {errors.reservePrice.message}
+          </p>
         )}
       </div>
-      <div>
-        <label htmlFor="buyingPrice">Instant Buying Price:</label>
+      <div className="flex flex-col w-full">
+        <label
+          htmlFor="buyingPrice"
+          className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5"
+        >
+          Instant Buying Price:
+        </label>
         <input
           type="number"
           id="buyingPrice"
-          {...register("buyingPrice", { valueAsNumber: true })}
+          {...useNumberField("buyingPrice")}
+          className={`w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors ${errors.buyingPrice ? "border-red-500" : "border-gray-200"}`}
         />
         {errors.buyingPrice && (
-          <p style={{ color: "red" }}>{errors.buyingPrice.message}</p>
+          <p className="text-red-500 text-xs mt-1.5 font-bold">
+            {errors.buyingPrice.message}
+          </p>
         )}
       </div>
-    </>
+    </div>
   );
 };
 
 const FpsbFields = () => {
   const {
-    register,
     formState: { errors },
   } = useFormContext<AuctionInput>();
   return (
-    <>
-      <div>
-        <label htmlFor="reservePrice">Reserve Price:</label>
+    <div className="grid grid-cols-2 gap-5 mt-4 bg-gray-50 p-6 rounded-2xl border border-gray-100">
+      <div className="flex flex-col w-full">
+        <label
+          htmlFor="reservePrice"
+          className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5"
+        >
+          Reserve Price:
+        </label>
         <input
           type="number"
           id="reservePrice"
-          {...register("reservePrice", { valueAsNumber: true })}
+          {...useNumberField("reservePrice")}
+          className={`w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors ${errors.reservePrice ? "border-red-500" : "border-gray-200"}`}
         />
         {errors.reservePrice && (
-          <p style={{ color: "red" }}>{errors.reservePrice.message}</p>
+          <p className="text-red-500 text-xs mt-1.5 font-bold">
+            {errors.reservePrice.message}
+          </p>
         )}
       </div>
-      <div>
-        <label htmlFor="buyingPrice">Instant Buying Price:</label>
+      <div className="flex flex-col w-full">
+        <label
+          htmlFor="buyingPrice"
+          className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5"
+        >
+          Instant Buying Price:
+        </label>
         <input
           type="number"
           id="buyingPrice"
-          {...register("buyingPrice", { valueAsNumber: true })}
+          {...useNumberField("buyingPrice")}
+          className={`w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors ${errors.buyingPrice ? "border-red-500" : "border-gray-200"}`}
         />
         {errors.buyingPrice && (
-          <p style={{ color: "red" }}>{errors.buyingPrice.message}</p>
+          <p className="text-red-500 text-xs mt-1.5 font-bold">
+            {errors.buyingPrice.message}
+          </p>
         )}
       </div>
-    </>
+    </div>
   );
 };
 
@@ -301,32 +434,62 @@ export default function AuctionTypeDataForm({ setStep }: Props) {
   };
 
   return (
-    <div className="form-step">
-      <h1>Auction Type Data</h1>
-      <div>
-        <label htmlFor="selectType">Select type:</label>
-        <select id="selectType" {...register("auctionType")}>
-          <option value="ENGLISH">English</option>
-          <option value="DUTCH">Dutch</option>
-          <option value="VICKREY">Vickrey</option>
-          <option value="FPSB">FPSB</option>
-          <option value="JAPANESE">Japanese</option>
-        </select>
-        {errors.auctionType && <p>{errors.auctionType.message}</p>}
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="mb-6 flex-shrink-0">
+        <h2 className="font-playfair text-background font-bold text-4xl mb-2">
+          Auction Settings
+        </h2>
+        <p className="font-inter text-text-muted text-sm">
+          Select the type of auction and configure pricing rules.
+        </p>
       </div>
-
-      {selectedType === "ENGLISH" && <EnglishFields />}
-      {selectedType === "DUTCH" && <DutchFields />}
-      {selectedType === "VICKREY" && <VickreyFields />}
-      {selectedType === "FPSB" && <FpsbFields />}
-      {selectedType === "JAPANESE" && <JapaneseFields />}
-
-      <button type="button" onClick={() => setStep((prev) => prev - 1)}>
-        Previous page
-      </button>
-      <button type="button" onClick={handleNext}>
-        Next page
-      </button>
+      <div className="flex-1 overflow-y-auto pr-2">
+        <div className="flex flex-col w-full mb-2">
+          <label
+            htmlFor="selectType"
+            className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5"
+          >
+            Select type:
+          </label>
+          <select
+            id="selectType"
+            {...register("auctionType")}
+            className={`w-full border-2 rounded-xl p-3 text-black focus:outline-none focus:border-primary transition-colors bg-white ${errors.auctionType ? "border-red-500" : "border-gray-200"}`}
+          >
+            <option value="ENGLISH">English</option>
+            <option value="DUTCH">Dutch</option>
+            <option value="VICKREY">Vickrey</option>
+            <option value="FPSB">FPSB</option>
+            <option value="JAPANESE">Japanese</option>
+          </select>
+          {errors.auctionType && (
+            <p className="text-red-500 text-xs mt-1.5 font-bold">
+              {errors.auctionType.message}
+            </p>
+          )}
+        </div>
+        {selectedType === "ENGLISH" && <EnglishFields />}
+        {selectedType === "DUTCH" && <DutchFields />}
+        {selectedType === "VICKREY" && <VickreyFields />}
+        {selectedType === "FPSB" && <FpsbFields />}
+        {selectedType === "JAPANESE" && <JapaneseFields />}
+      </div>
+      <div className="mt-4 pt-4 flex justify-between items-center flex-shrink-0 bg-white border-t border-gray-100">
+        <button
+          type="button"
+          onClick={() => setStep((prev) => prev - 1)}
+          className="text-text-muted hover:text-background font-bold tracking-widest uppercase text-sm transition-colors"
+        >
+          Previous page
+        </button>
+        <button
+          type="button"
+          onClick={handleNext}
+          className="text-white bg-background hover:bg-primary-hover font-bold tracking-widest uppercase rounded-xl text-sm px-8 py-3.5 transition-all"
+        >
+          Next page
+        </button>
+      </div>
     </div>
   );
 }

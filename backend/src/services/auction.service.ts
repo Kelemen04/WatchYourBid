@@ -284,6 +284,7 @@ export const auctionService = {
                 tickInterval: data.tickInterval ?? null,
                 moneyInterval: data.moneyInterval ?? null,
                 isAscending: data.isAscending ?? null,
+                images: data.existingImages ?? auction.images ?? [],
 
                 watchItem: {
                     update: {
@@ -543,13 +544,15 @@ export const auctionService = {
             throw new Error("Item already in the list!");
         }
     },
-    async getWatchList(userId: number) {
+    async getWatchList(userId: number, skip: number, take: number) {
         if(!userId){
             throw new Error("User ID not given!")
         }
 
         const watchList = await prisma.watchList.findMany({
             where: { userId: userId },
+            skip: skip,
+            take: take,
             include: { auctions: { include: { watchItem: true } } }
         })
 
@@ -571,7 +574,7 @@ export const auctionService = {
             throw new Error("Item not found on watchlist or already deleted.");
         }
     },
-    async getAuctionByCategory(type: WatchCategory, userId: number){
+    async getAuctionByCategory(type: WatchCategory, userId: number, skip: number, take: number){
         const watchListInclude = userId ? { where: { userId } } : false;
         const [ promoted, others ] = await Promise.all([
             prisma.auction.findMany({
@@ -582,6 +585,7 @@ export const auctionService = {
                         category: type,
                     }
                 },
+                take: 10,
                 orderBy: { promotedCategoryRank: "asc"},
                 include: {
                     watchItem: {
@@ -604,6 +608,8 @@ export const auctionService = {
                     promotedCategoryRank: null,
                 },
                 orderBy: { startTime: "desc" },
+                skip: skip,
+                take: take,
                 include: {
                     watchItem: {
                         include: {
@@ -636,17 +642,11 @@ export const auctionService = {
             others: newOthers
         };
     },
-    async getAuctionByFilters(filters: AuctionFilterDTO) {
-        console.log("SERV")
-        console.log(filters.searchTerm)
-        const skipNum = filters.skip !== undefined ? Number(filters.skip) : 0;
-        const takeNum = filters.take !== undefined ? Number(filters.take) : 20;
+    async getAuctionByFilters(filters: AuctionFilterDTO, skip: number, take: number) {
         const minPriceNum = filters.minPrice !== undefined ? Number(filters.minPrice) : undefined;
         const maxPriceNum = filters.maxPrice !== undefined ? Number(filters.maxPrice) : undefined;
         const minYearNum = filters.minYear !== undefined ? Number(filters.minYear) : undefined;
         const maxYearNum = filters.maxYear !== undefined ? Number(filters.maxYear) : undefined;
-
-        console.log("ITTTTT")
 
         const result = await prisma.auction.findMany({
             where: {
@@ -688,19 +688,19 @@ export const auctionService = {
                 }
             },
             orderBy: parseSortBy(filters.sortBy),
-            skip: skipNum,
-            take: takeNum,
+            skip: skip,
+            take: take,
         });
 
         const newResult = result.map(hideFields);
 
-        console.log("ITT@")
-
         return newResult;
     },
-    async getUserAuctions(userId: number){
+    async getUserAuctions(userId: number, skip: number, take: number){
         const result = await prisma.auction.findMany({
             where: { userId: userId },
+            skip: skip,
+            take: take,
             orderBy: { createdAt: "desc"},
             include: { 
                 watchItem: true
@@ -757,17 +757,20 @@ export const auctionService = {
     },
 
     async uploadAuctionFiles(auctionId: number, userId: number, files: Express.Multer.File[]){
+        const currentAuction = await prisma.auction.findUnique({
+            where: { id: auctionId },
+            select: { images: true }
+        });
+
         const uploaded = await minioService.uploadAuctionFiles(auctionId,userId,files);
-        const images = uploaded.map(img => img.url)
+        const newImages = uploaded.map(img => img.url)
+        const allImages = [...(currentAuction?.images ?? []), ...newImages];
 
         return await prisma.auction.update({
-            where: { id: auctionId},
-            data: { images: images},
-            include: {
-                watchItem: true,
-                user: true,
-            }
-        })
+            where: { id: auctionId },
+            data: { images: allImages },
+            include: { watchItem: true, user: true }
+        });
     },
 
     async approveAuction(auctionId: number) {
@@ -860,21 +863,23 @@ export const auctionService = {
 
         return { message: "Auction cancelled by moderation successfully!", auction: updated };
     },
-    async getPendingAuctions(){
+    async getPendingAuctions(skip: number, take: number){
         return await prisma.auction.findMany({
             where: {
                 status: "PENDING",
             },
+            skip: skip,
+            take: take,
             orderBy: { createdAt: "desc" },
             include: {
                 watchItem: true
             }
         })
     },
-    async getAllAuctions(skip: number = 0, take: number = 20) {
+    async getAllAuctions(skip: number, take: number) {
         return await prisma.auction.findMany({
-            skip,
-            take,
+            skip: skip,
+            take: take,
             orderBy: { createdAt: "desc" },
             include: {
                 user: { select: { username: true } },

@@ -574,27 +574,29 @@ export const bidService = {
 
         return result;
     },
-    async getMyBids(userId: number) {
-    if (!userId) {
-        throw new Error("User ID was not given!");
-    }
+    async getMyBids(userId: number, skip: number, take: number) {
+        if (!userId) {
+            throw new Error("User ID was not given!");
+        }
 
-    const myBids = await prisma.bid.findMany({
-        where: { userId: userId },
-        orderBy: { bidTime: "desc" },
-        include: {
-            auction: {
-                select: {
-                    id: true,
-                    title: true,
-                    currentPrice: true,
-                    status: true,
-                    endTime: true
+        const myBids = await prisma.bid.findMany({
+            where: { userId: userId },
+            orderBy: { bidTime: "desc" },
+            skip: skip,
+            take: take,
+            include: {
+                auction: {
+                    select: {
+                        id: true,
+                        title: true,
+                        currentPrice: true,
+                        status: true,
+                        endTime: true
+                    }
                 }
             }
-        }
-    });
+        });
 
-    return myBids;
-}
+        return myBids;
+    }
 }

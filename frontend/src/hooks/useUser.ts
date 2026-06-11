@@ -109,7 +109,7 @@ export const useSellerRegister = () => {
     });
 }
 
-export const useMeData = () => {
+export const useMeData = (options?: { enabled?: boolean }) => {
   return useQuery<MeResponse, AxiosError<{ error: string }>>({ 
     queryKey: ["me"],
     queryFn: async () => {
@@ -118,7 +118,8 @@ export const useMeData = () => {
       return response.data;
     },
     refetchOnWindowFocus: false, 
-    retry: false
+    retry: false,
+    enabled: options?.enabled
   });
 };
 
@@ -143,14 +144,14 @@ export const useDeleteMe = () => {
   });
 };
 
-export const usePublicProfile = (userId: number) => {
+export const usePublicProfile = (userId: number, options?: { enabled?: boolean }) => {
   return useQuery<PublicProfileDTO, AxiosError<{ error: string }>>({
     queryKey: ["publicProfile", userId],
     queryFn: async () => {
       const response = await api.get<PublicProfileDTO>(`/user/${userId}`);
       return response.data;
     },
-    enabled: !!userId,
+    enabled: options?.enabled !== undefined ? (!!userId && options.enabled) : !!userId,
     refetchOnWindowFocus: false,
   });
 };

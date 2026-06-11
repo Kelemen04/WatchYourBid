@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { GetTransactionsNumberSchema, TransactionResponseSchema, type UploadMoneyDTO } from "../dto/transaction.dto";
+import { AllTransactionResponseSchema, GetTransactionsNumberSchema, TransactionResponseSchema, type UploadMoneyDTO } from "../dto/transaction.dto";
 import { transactionService } from "../services/transaction.service";
 import z from "zod";
 
@@ -44,7 +44,15 @@ export async function withdrawMoney(req: Request, res: Response) {
 export async function getTransactionHistory(req: Request, res: Response) {
     const userId = req.user?.id as number;
     try {
-        const result = await transactionService.getTransactionHistory(userId);
+        const validationResult = GetTransactionsNumberSchema.safeParse(req.query);
+        
+        if (!validationResult.success) {
+          return res.status(400).json({ error: validationResult.error.issues[0]?.message || "Invalid input!" });
+        }
+        
+        const { take,skip } = validationResult.data;
+
+        const result = await transactionService.getTransactionHistory(userId, skip, take);
         const cleanResponse = z.array(TransactionResponseSchema).parse(result);
         return res.status(200).json(cleanResponse);
     } catch (e) {
@@ -63,7 +71,7 @@ export async function getAllTransactionHistory(req: Request, res: Response) {
         const { take,skip } = validationResult.data;
 
         const result = await transactionService.getAllTransactionHistory(skip,take);
-        const cleanResponse = z.array(TransactionResponseSchema).parse(result);
+        const cleanResponse = z.array(AllTransactionResponseSchema).parse(result);
         return res.status(200).json(cleanResponse);
     } catch (e) {
         return res.status(400).json({ error: e instanceof Error ? e.message : "Unknown error" });

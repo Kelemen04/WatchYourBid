@@ -82,6 +82,7 @@ export const MeResponseSchema = z.object({
   seller: z.object({
     description: z.string(),
     address: BaseAddressSchema,
+    rating: z.number(),
   }).nullable()
 });
 

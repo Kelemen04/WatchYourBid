@@ -7,13 +7,16 @@ import {
 import AuctionListItem from "../components/layout/AuctionListItem";
 import { useNavigate } from "react-router-dom";
 import { getUserRole } from "../api/axios";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function PendingAuctionsList() {
   const navigate = useNavigate();
   const myRole = getUserRole();
+  const [page, setPage] = useState(0);
+  const take = 5;
+  const skip = page * take;
 
-  const { data: auctions, isLoading } = useGetPendingAuctions();
+  const { data: auctions, isLoading } = useGetPendingAuctions(skip, take);
   const { mutate: approve } = useApproveAuction();
   const { mutate: cancel } = useCancelAuction();
 
@@ -76,6 +79,38 @@ export default function PendingAuctionsList() {
           <p className="text-text-muted text-lg uppercase tracking-widest">
             No pending auctions found.
           </p>
+        </div>
+      )}
+
+      {!isLoading && auctions && (
+        <div className="mt-8 flex justify-center items-center gap-8">
+          <button
+            onClick={() => setPage((old) => Math.max(old - 1, 0))}
+            disabled={page === 0}
+            className={`w-36 flex justify-center items-center py-2.5 font-bold uppercase tracking-wider text-xs border rounded-lg transition-colors ${
+              skip === 0
+                ? "border-text-muted/20 text-text-muted/50 cursor-not-allowed bg-gray-50"
+                : "border-background text-background hover:bg-background hover:text-white"
+            }`}
+          >
+            &larr; Previous
+          </button>
+
+          <span className="font-inter font-bold text-background text-sm uppercase tracking-widest w-20 text-center shrink-0">
+            Page {Math.floor(skip / take) + 1}
+          </span>
+
+          <button
+            onClick={() => setPage((old) => old + 1)}
+            disabled={!auctions || auctions.length < take}
+            className={`w-36 flex justify-center items-center py-2.5 font-bold uppercase tracking-wider text-xs border rounded-lg transition-colors ${
+              auctions.length < take
+                ? "border-text-muted/20 text-text-muted/50 cursor-not-allowed bg-gray-50"
+                : "border-background text-background hover:bg-background hover:text-white"
+            }`}
+          >
+            Next &rarr;
+          </button>
         </div>
       )}
     </div>

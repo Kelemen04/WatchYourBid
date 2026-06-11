@@ -3,6 +3,7 @@ import { GetBidsNumberSchema, MyBidsResponseSchema, type AutoBidDTO, type PlaceB
 import { bidService } from "../services/bid.service";
 import { io } from "../utils/socket";
 import z from "zod";
+import { GetTransactionsNumberSchema } from "../dto/transaction.dto";
 
 export async function placeBid(req: Request, res: Response) {
   const userId = req.user?.id as number;
@@ -80,7 +81,15 @@ export const getMyBidsHistory = async (req: Request, res: Response) => {
   const userId = req.user?.id as number;
 
   try {
-    const bids = await bidService.getMyBids(userId);
+    const validationResult = GetTransactionsNumberSchema.safeParse(req.query);
+            
+    if (!validationResult.success) {
+      return res.status(400).json({ error: validationResult.error.issues[0]?.message || "Invalid input!" });
+    }
+            
+    const { take,skip } = validationResult.data;
+
+    const bids = await bidService.getMyBids(userId, skip, take);
     const cleanResponse = z.array(MyBidsResponseSchema).parse(bids);
 
     return res.status(200).json(cleanResponse);

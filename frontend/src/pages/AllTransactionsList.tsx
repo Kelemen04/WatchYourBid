@@ -1,12 +1,16 @@
 import { useState } from "react";
-import { useMyTransactions } from "../hooks/useTransactions";
+import { useAllTransactions } from "../hooks/useTransactions";
 
-export default function UserTransactionsPage() {
+export default function AllTransactionsList() {
   const [page, setPage] = useState(0);
   const take = 10;
   const skip = page * take;
 
-  const { data: transactions, isLoading } = useMyTransactions(skip, take);
+  const {
+    data: transactions,
+    isLoading,
+    isFetching,
+  } = useAllTransactions(skip, take);
 
   if (isLoading && page === 0) {
     return (
@@ -20,9 +24,16 @@ export default function UserTransactionsPage() {
 
   return (
     <div className="max-w-[1400px]">
-      <h2 className="font-playfair text-4xl font-bold text-background mb-6 border-b border-text-muted/20 pb-2">
-        Transaction History
-      </h2>
+      <div className="flex justify-between items-end mb-6 border-b border-text-muted/20 pb-2">
+        <h2 className="font-playfair text-4xl font-bold text-background">
+          All Transaction History
+        </h2>
+        {isFetching && page > 0 && (
+          <span className="text-sm text-primary animate-pulse">
+            Updating...
+          </span>
+        )}
+      </div>
 
       {transactions && transactions.length > 0 ? (
         <div className="flex flex-col gap-3">
@@ -33,9 +44,9 @@ export default function UserTransactionsPage() {
             return (
               <div
                 key={t.id}
-                className="flex justify-between items-center bg-white border border-text-muted/40 p-4 rounded-xl transition-colors hover:border-primary/50"
+                className="flex flex-row justify-between items-center bg-white border border-text-muted/40 p-4 rounded-xl transition-colors hover:border-primary/50"
               >
-                <div className="flex flex-col gap-1">
+                <div className="flex flex-col gap-1 flex-1">
                   <span
                     className={`text-lg font-bold uppercase tracking-widest ${
                       isReceive ? "text-emerald-500" : "text-red-500"
@@ -48,7 +59,18 @@ export default function UserTransactionsPage() {
                   </span>
                 </div>
 
-                <div className="flex flex-col items-end gap-1">
+                {/* Középső rész: Felhasználó adatai */}
+                <div className="flex flex-col gap-1 flex-1 items-center border-x border-text-muted/10 px-4">
+                  <span className="text-sm font-bold text-background uppercase tracking-wider">
+                    {t.user?.username || `User #${t.userId}`}
+                  </span>
+                  <span className="text-[10px] text-text-muted tracking-widest">
+                    {t.user?.email || "Platform Transaction"}
+                  </span>
+                </div>
+
+                {/* Jobb oldal: Összeg és Státusz */}
+                <div className="flex flex-col items-end gap-1 flex-1">
                   <span className="font-inter text-xl font-bold text-background">
                     <span>{isReceive ? "+" : "-"}</span>€
                     {t.amount.toLocaleString()}

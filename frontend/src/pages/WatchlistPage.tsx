@@ -8,7 +8,11 @@ import {
 import { RiFileList3Line } from "react-icons/ri";
 
 export default function WatchlistPage() {
-  const { data, isLoading } = useWatchlist();
+  const [page, setPage] = useState(0);
+  const take = 10;
+  const skip = page * take;
+
+  const { data, isLoading } = useWatchlist(skip, take);
   const { mutate } = useRemoveAuctionFromWatchlist();
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
@@ -19,7 +23,6 @@ export default function WatchlistPage() {
 
     if (confirmDelete) {
       setDeletingId(auctionId);
-
       mutate(
         { auctionId },
         {
@@ -29,7 +32,7 @@ export default function WatchlistPage() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading && page === 0) {
     return (
       <div className="min-h-screen flex justify-center items-center bg-slate-50">
         <span className="font-playfair text-2xl text-primary animate-pulse">
@@ -39,6 +42,8 @@ export default function WatchlistPage() {
     );
   }
 
+  const auctionList = data || [];
+
   return (
     <div className="w-full bg-text-muted/10 min-h-screen py-10">
       <div className="max-w-[1400px] mx-auto px-4 md:px-10">
@@ -46,9 +51,9 @@ export default function WatchlistPage() {
           My Watchlist
         </h1>
 
-        {data && data.length > 0 ? (
+        {auctionList.length > 0 ? (
           <div className="flex flex-col gap-8">
-            {data.map((auction) => (
+            {auctionList.map((auction) => (
               <div key={auction.id} className="flex flex-col gap-2">
                 <AuctionListItem auction={auction} />
 
@@ -66,7 +71,6 @@ export default function WatchlistPage() {
             ))}
           </div>
         ) : (
-          // Empty auction list
           <div className="text-center py-20 bg-white border border-text-muted/20 rounded-2xl shadow-sm">
             <div className="w-16 h-16 mb-4 mx-auto bg-gray-50 rounded-full flex items-center justify-center">
               <RiFileList3Line className="text-4xl" />
@@ -84,6 +88,39 @@ export default function WatchlistPage() {
             >
               Explore Auctions
             </Link>
+          </div>
+        )}
+
+        {/* Lapozó gombok */}
+        {!isLoading && auctionList.length > 0 && (
+          <div className="mt-8 flex justify-center items-center gap-8">
+            <button
+              onClick={() => setPage((old) => Math.max(old - 1, 0))}
+              disabled={page === 0}
+              className={`w-36 flex justify-center items-center py-2.5 font-bold uppercase tracking-wider text-xs border rounded-lg transition-colors ${
+                page === 0
+                  ? "border-text-muted/20 text-text-muted/50 cursor-not-allowed bg-gray-50"
+                  : "border-text-muted/40 text-background hover:border-primary hover:bg-primary hover:text-white"
+              }`}
+            >
+              &larr; Previous
+            </button>
+
+            <span className="font-inter font-bold text-background text-sm uppercase tracking-widest w-20 text-center shrink-0">
+              Page {page + 1}
+            </span>
+
+            <button
+              onClick={() => setPage((old) => old + 1)}
+              disabled={auctionList.length < take}
+              className={`w-36 flex justify-center items-center py-2.5 font-bold uppercase tracking-wider text-xs border rounded-lg transition-colors ${
+                auctionList.length < take
+                  ? "border-text-muted/20 text-text-muted/50 cursor-not-allowed bg-gray-50"
+                  : "border-text-muted/40 text-background hover:border-primary hover:bg-primary hover:text-white"
+              }`}
+            >
+              Next &rarr;
+            </button>
           </div>
         )}
       </div>

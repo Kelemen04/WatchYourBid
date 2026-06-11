@@ -93,6 +93,7 @@ export const AuctionFullSchema = AuctionSchema.extend({
   userId: z.number(),
   currentPrice: z.number(),
   status: z.enum(AuctionStatus),
+  images: z.array(z.string()),
 
   bids: z.array(
     z.object({
@@ -128,8 +129,6 @@ export const AuctionFilterSchema = z.object({
   minYear: z.coerce.number().min(0).optional(),
   maxYear: z.coerce.number().min(0).optional(),
   sortBy: z.string().optional().default("newest"),
-  skip: z.coerce.number().min(0).optional().default(0),
-  take: z.coerce.number().min(1).optional().default(20),
 });
 
 export type AuctionCardData = z.infer<typeof AuctionCardSchema>;

@@ -6,13 +6,13 @@ import type { AuctionTableData } from "../dto/auction.dto";
 
 export default function AllAuctionsList() {
   const [skip, setSkip] = useState(0);
-  const take = 20;
+  const take = 10;
 
   const { data: auctions, isLoading } = useGetStaffAuctions(skip, take);
   const { mutate: cancelAuction } = useCancelAuction();
   const { mutate: deleteAuction } = useAuctionDelete();
 
-  if (isLoading) {
+  if (isLoading && skip === 0) {
     return (
       <div className="flex justify-center items-center h-64">
         <span className="font-playfair text-2xl text-primary animate-pulse">
@@ -49,18 +49,14 @@ export default function AllAuctionsList() {
                       {auction.currentPrice} EUR
                     </strong>
                   </span>
-
                   <span className="text-gray-300">|</span>
-
                   <span className="uppercase tracking-widest text-[10px]">
                     Status:{" "}
                     <strong className="text-background text-xs">
                       {auction.status}
                     </strong>
                   </span>
-
                   <span className="text-gray-300">|</span>
-
                   <span className="uppercase tracking-widest text-[10px]">
                     Owner:{" "}
                     <strong className="text-background text-xs">
@@ -70,7 +66,6 @@ export default function AllAuctionsList() {
                 </div>
               </div>
 
-              {/* Buttons */}
               <div className="flex gap-2 w-full md:w-auto justify-end mt-2 md:mt-0">
                 {["ACTIVE", "UPCOMING", "PENDING"].includes(auction.status) && (
                   <button
@@ -85,12 +80,11 @@ export default function AllAuctionsList() {
                         cancelAuction(auction.id);
                       }
                     }}
-                    className="px-4 py-1.5 bg-blue-600 text-white hover:bg-blue-700 hover:text-white border border-blue-700 hover:border-blue-800 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-colors"
+                    className="px-4 py-1.5 bg-blue-600 text-white hover:bg-blue-700 border border-blue-700 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-colors"
                   >
                     Cancel
                   </button>
                 )}
-
                 <button
                   onClick={(e) => {
                     e.preventDefault();
@@ -103,7 +97,7 @@ export default function AllAuctionsList() {
                       deleteAuction(auction.id);
                     }
                   }}
-                  className="px-4 py-1.5 bg-red-500 text-white hover:bg-red-700 hover:text-white border border-red-700 hover:border-red-800 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-colors"
+                  className="px-4 py-1.5 bg-red-500 text-white hover:bg-red-700 border border-red-700 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-colors"
                 >
                   Delete
                 </button>
@@ -119,26 +113,31 @@ export default function AllAuctionsList() {
         </div>
       )}
 
-      {/* Pagination */}
-      {!isLoading && auctions && auctions.length > 0 && (
-        <div className="mt-8 flex justify-center gap-4">
+      {/* Rögzített szélességű, középre igazított Pagination */}
+      {!isLoading && auctions && (
+        <div className="mt-8 flex justify-center items-center gap-8">
           <button
             onClick={() => setSkip((p) => Math.max(0, p - take))}
             disabled={skip === 0}
-            className={`px-6 py-2 font-bold uppercase tracking-wider text-xs border rounded-lg transition-colors ${
+            className={`w-36 flex justify-center items-center py-2.5 font-bold uppercase tracking-wider text-xs border rounded-lg transition-colors ${
               skip === 0
-                ? "border-gray-200 text-gray-400 bg-gray-50 cursor-not-allowed"
+                ? "border-text-muted/20 text-text-muted/50 cursor-not-allowed bg-gray-50"
                 : "border-background text-background hover:bg-background hover:text-white"
             }`}
           >
-            &larr; Prev
+            &larr; Previous
           </button>
+
+          <span className="font-inter font-bold text-background text-sm uppercase tracking-widest w-20 text-center shrink-0">
+            Page {Math.floor(skip / take) + 1}
+          </span>
+
           <button
             onClick={() => setSkip((p) => p + take)}
-            disabled={!auctions || auctions.length < take}
-            className={`px-6 py-2 font-bold uppercase tracking-wider text-xs border rounded-lg transition-colors ${
-              !auctions || auctions.length < take
-                ? "border-gray-200 text-gray-400 bg-gray-50 cursor-not-allowed"
+            disabled={auctions.length < take}
+            className={`w-36 flex justify-center items-center py-2.5 font-bold uppercase tracking-wider text-xs border rounded-lg transition-colors ${
+              auctions.length < take
+                ? "border-text-muted/20 text-text-muted/50 cursor-not-allowed bg-gray-50"
                 : "border-background text-background hover:bg-background hover:text-white"
             }`}
           >

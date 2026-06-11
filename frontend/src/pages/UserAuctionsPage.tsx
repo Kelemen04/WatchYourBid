@@ -4,7 +4,12 @@ import AuctionListItem from "../components/layout/AuctionListItem";
 import { useAuctionDelete, useAuctionsByUser } from "../hooks/useAuctions";
 
 export default function UserAuctionsPage() {
-  const { data, isLoading } = useAuctionsByUser();
+  const [page, setPage] = useState(0);
+  const take = 5;
+  const skip = page * take;
+
+  // A 'data' tartalmazza a listát
+  const { data: auctions, isLoading } = useAuctionsByUser(skip, take);
   const { mutate: auctionDelete } = useAuctionDelete();
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
@@ -17,7 +22,7 @@ export default function UserAuctionsPage() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading && page === 0) {
     return (
       <div className="flex justify-center items-center h-64">
         <span className="font-playfair text-2xl text-primary animate-pulse">
@@ -27,6 +32,9 @@ export default function UserAuctionsPage() {
     );
   }
 
+  // Biztonságos tömb a listázáshoz
+  const auctionList = auctions || [];
+
   return (
     <div className="flex flex-col min-h-screen">
       <div className="max-w-[1400px]">
@@ -34,9 +42,9 @@ export default function UserAuctionsPage() {
           Your auctions:
         </h2>
 
-        {data && data.length > 0 ? (
+        {auctionList.length > 0 ? (
           <div className="flex flex-col flex-wrap gap-10">
-            {data.map((auction) => (
+            {auctionList.map((auction) => (
               <div key={auction.id} className="flex flex-col gap-2">
                 <AuctionListItem auction={auction} />
 
@@ -65,6 +73,39 @@ export default function UserAuctionsPage() {
             <p className="text-gray-500 italic">
               You don't have any auctions yet!
             </p>
+          </div>
+        )}
+
+        {/* Lapozó gombok */}
+        {!isLoading && (
+          <div className="mt-8 flex justify-center items-center gap-8">
+            <button
+              onClick={() => setPage((old) => Math.max(old - 1, 0))}
+              disabled={page === 0}
+              className={`w-36 flex justify-center items-center py-2.5 font-bold uppercase tracking-wider text-xs border rounded-lg transition-colors ${
+                page === 0
+                  ? "border-text-muted/20 text-text-muted/50 cursor-not-allowed bg-gray-50"
+                  : "border-text-muted/40 text-background hover:border-primary hover:bg-primary hover:text-white"
+              }`}
+            >
+              &larr; Previous
+            </button>
+
+            <span className="font-inter font-bold text-background text-sm uppercase tracking-widest w-20 text-center shrink-0">
+              Page {page + 1}
+            </span>
+
+            <button
+              onClick={() => setPage((old) => old + 1)}
+              disabled={auctionList.length < take}
+              className={`w-36 flex justify-center items-center py-2.5 font-bold uppercase tracking-wider text-xs border rounded-lg transition-colors ${
+                auctionList.length < take
+                  ? "border-text-muted/20 text-text-muted/50 cursor-not-allowed bg-gray-50"
+                  : "border-text-muted/40 text-background hover:border-primary hover:bg-primary hover:text-white"
+              }`}
+            >
+              Next &rarr;
+            </button>
           </div>
         )}
       </div>

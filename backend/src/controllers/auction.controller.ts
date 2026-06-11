@@ -3,6 +3,7 @@ import { auctionService } from "../services/auction.service";
 import { AuctionFilterSchema, type AuctionFilterDTO, type CreateAuctionDTO } from "../dto/auction.dto";
 import type { WatchCategory } from "../../generated/prisma";
 import { ZodError } from "zod";
+import { GetTransactionsNumberSchema } from "../dto/transaction.dto";
 
 export async function createAuction(req: Request, res: Response) {
     console.log("BODY:", req.body);
@@ -46,7 +47,15 @@ export async function getUserAuctions(req: Request, res: Response) {
     const userId = req.user?.id as number;
 
     try {
-        const result = await auctionService.getUserAuctions(userId);
+        const validationResult = GetTransactionsNumberSchema.safeParse(req.query);
+                
+        if (!validationResult.success) {
+          return res.status(400).json({ error: validationResult.error.issues[0]?.message || "Invalid input!" });
+        }
+                
+        const { take,skip } = validationResult.data;
+
+        const result = await auctionService.getUserAuctions(userId, skip, take);
         res.status(200).json(result);
     } catch (err) {
         return res.status(400).json({ error: err instanceof Error ? err.message : "Unknown error" });
@@ -83,7 +92,15 @@ export async function getAuctionByCategory(req: Request, res: Response) {
     }
 
     try {
-        const result = await auctionService.getAuctionByCategory(category,userId);
+        const validationResult = GetTransactionsNumberSchema.safeParse(req.query);
+                
+        if (!validationResult.success) {
+          return res.status(400).json({ error: validationResult.error.issues[0]?.message || "Invalid input!" });
+        }
+                
+        const { take,skip } = validationResult.data;
+
+        const result = await auctionService.getAuctionByCategory(category,userId, skip, take);
         res.status(200).json(result);
     } catch (err) {
         return res.status(400).json({ error: err instanceof Error ? err.message : "Unknown error" });
@@ -109,7 +126,15 @@ export async function addToWatchList(req: Request, res: Response) {
 export async function getWatchList(req: Request, res: Response) {
     const userId = req.user?.id as number;
     try{
-        const watchList = await auctionService.getWatchList(userId);
+        const validationResult = GetTransactionsNumberSchema.safeParse(req.query);
+                
+        if (!validationResult.success) {
+          return res.status(400).json({ error: validationResult.error.issues[0]?.message || "Invalid input!" });
+        }
+                
+        const { take,skip } = validationResult.data;
+
+        const watchList = await auctionService.getWatchList(userId, skip, take);
         return res.status(200).json(watchList);
     } catch (err) {
         return res.status(400).json({ error: err instanceof Error ? err.message : "Unknown error"})
@@ -138,9 +163,16 @@ export async function getAuctionByFilters(req: Request, res: Response) {
         if (!filters.success) {
           return res.status(400).json({ error: filters.error.issues[0]?.message || "Invalid input!" });
         }
-        console.log("FILTERS: ", filters.data)
+
+        const validationResult = GetTransactionsNumberSchema.safeParse(req.query);
+                
+        if (!validationResult.success) {
+          return res.status(400).json({ error: validationResult.error.issues[0]?.message || "Invalid input!" });
+        }
+                
+        const { take,skip } = validationResult.data;
     
-        const result = await auctionService.getAuctionByFilters(filters.data);
+        const result = await auctionService.getAuctionByFilters(filters.data, skip, take);
         res.status(200).json(result);
     } catch (err) {
         return res.status(400).json({ error: err instanceof Error ? err.message : "Unknown error" });
@@ -187,7 +219,15 @@ export async function cancelAuctionByStaff(req: Request, res: Response) {
 
 export async function getPendingAuctions(req: Request, res: Response) {
     try {
-        const auctions = await auctionService.getPendingAuctions();
+        const validationResult = GetTransactionsNumberSchema.safeParse(req.query);
+                
+        if (!validationResult.success) {
+          return res.status(400).json({ error: validationResult.error.issues[0]?.message || "Invalid input!" });
+        }
+                
+        const { take,skip } = validationResult.data;
+
+        const auctions = await auctionService.getPendingAuctions(skip, take);
         res.status(200).json(auctions);
     } catch (e) {
         res.status(400).json({ error: "Failed to fetch pending auctions" });
@@ -195,10 +235,15 @@ export async function getPendingAuctions(req: Request, res: Response) {
 }
 
 export async function getAllAuctions(req: Request, res: Response) {
-    const skip = Number(req.query.skip) || 0;
-    const take = Number(req.query.take) || 20;
-
     try {
+        const validationResult = GetTransactionsNumberSchema.safeParse(req.query);
+                
+        if (!validationResult.success) {
+          return res.status(400).json({ error: validationResult.error.issues[0]?.message || "Invalid input!" });
+        }
+                
+        const { take,skip } = validationResult.data;
+
         const auctions = await auctionService.getAllAuctions(skip, take);
         res.status(200).json(auctions);
     } catch (err) {

@@ -13,11 +13,56 @@ import { Link, useParams } from "react-router-dom";
 import { useAuctionData } from "../../hooks/useAuctions";
 import { useAuctionBids } from "../../hooks/useBids";
 
+// 1. Különálló komponens a visszaszámlálónak, hogy ne okozzon teljes újrarenderelést
+const CountdownTimer = ({
+  endTime,
+  status,
+}: {
+  endTime: string | Date;
+  status: string;
+}) => {
+  const [timeLeft, setTimeLeft] = useState<string>("");
+
+  useEffect(() => {
+    if (!endTime) return;
+
+    const calculateTimeLeft = () => {
+      const difference = new Date(endTime).getTime() - new Date().getTime();
+
+      if (difference <= 0 || status === "ENDED" || status === "CANCELLED") {
+        setTimeLeft("Ended");
+        return;
+      }
+
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
+      const minutes = Math.floor((difference / 1000 / 60) % 60);
+      const seconds = Math.floor((difference / 1000) % 60);
+
+      // Frissítve: Most már a másodperceket is mutatja napok esetén is!
+      if (days > 0) {
+        setTimeLeft(`${days}d ${hours}h ${minutes}m ${seconds}s`);
+      } else if (hours > 0) {
+        setTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
+      } else {
+        setTimeLeft(`${minutes}m ${seconds}s`);
+      }
+    };
+
+    calculateTimeLeft();
+    const timer = setInterval(calculateTimeLeft, 1000);
+
+    return () => clearInterval(timer);
+  }, [endTime, status]);
+
+  return <>{timeLeft}</>;
+};
+
+// Fő komponens
 export default function BidInformation() {
   const { id } = useParams();
   const auctionId = Number(id);
   const [showAutoBid, setShowAutoBid] = useState(false);
-  const [timeLeft, setTimeLeft] = useState<string>("");
 
   const { mutate: placeBid, isPending: isBidPending } = useBidCreate();
   const { mutate: autoBid, isPending: isAutoBidPending } = useAutoBidCreate();
@@ -38,43 +83,6 @@ export default function BidInformation() {
     setError: setAutoError,
     formState: { errors: autoErrors },
   } = useForm<AutoBidDTO>({ resolver: zodResolver(AutoBidSchema) });
-
-  // Countdown Timer Logic
-  useEffect(() => {
-    if (!auction?.endTime) return;
-
-    const calculateTimeLeft = () => {
-      const difference =
-        new Date(auction.endTime).getTime() - new Date().getTime();
-
-      if (
-        difference <= 0 ||
-        auction.status === "ENDED" ||
-        auction.status === "CANCELLED"
-      ) {
-        setTimeLeft("Ended");
-        return;
-      }
-
-      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
-      const minutes = Math.floor((difference / 1000 / 60) % 60);
-      const seconds = Math.floor((difference / 1000) % 60);
-
-      if (days > 0) {
-        setTimeLeft(`${days}d ${hours}h ${minutes}m`);
-      } else if (hours > 0) {
-        setTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
-      } else {
-        setTimeLeft(`${minutes}m ${seconds}s`);
-      }
-    };
-
-    calculateTimeLeft();
-    const timer = setInterval(calculateTimeLeft, 1000);
-
-    return () => clearInterval(timer);
-  }, [auction?.endTime, auction?.status]);
 
   const onSubmitBid = (data: PlaceBidDTO) => {
     placeBid(
@@ -167,7 +175,10 @@ export default function BidInformation() {
                 isActive ? "text-[var(--color-surface)]" : "text-stone-500"
               }`}
             >
-              {timeLeft}
+              <CountdownTimer
+                endTime={auction.endTime}
+                status={auction.status}
+              />
             </span>
           </div>
         </div>

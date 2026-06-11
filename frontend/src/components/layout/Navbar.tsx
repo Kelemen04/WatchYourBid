@@ -19,12 +19,14 @@ function SearchAutocomplete() {
     return () => clearTimeout(timer);
   }, [inputValue]);
 
-  const { data: suggestions, isLoading } = useAuctionsByFilters({
-    searchTerm: debouncedValue.length > 1 ? debouncedValue : undefined,
-    take: 5,
-    skip: 0,
-    sortBy: "newest",
-  });
+  const { data: suggestions, isLoading } = useAuctionsByFilters(
+    {
+      searchTerm: debouncedValue.length > 1 ? debouncedValue : undefined,
+      sortBy: "newest",
+    },
+    0,
+    5,
+  );
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && inputValue.trim() !== "") {
@@ -335,7 +337,7 @@ export default function Navbar() {
         </div>
       </nav>
 
-      <div className="content bg-white min-h-screen mt-20">
+      <div className="content bg-text-muted/20 min-h-screen mt-20">
         <Outlet />
       </div>
     </>

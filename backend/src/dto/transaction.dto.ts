@@ -27,6 +27,20 @@ export const TransactionResponseSchema = z.object({
   createdAt: z.coerce.date(),
 });
 
+export const AllTransactionResponseSchema = z.object({
+  id: z.string(),
+  userId: z.number(),
+  amount: z.number(),
+  type: z.string(),
+  status: z.string(),
+  stripeSessionId: z.string().nullable(),
+  createdAt: z.coerce.date(),
+  user: z.object({
+    username: z.string(),
+    email: z.string(),
+  })
+});
+
 export type TransactionResponseDTO = z.infer<typeof TransactionResponseSchema>;
 export type UploadMoneyDTO = z.infer<typeof UploadMoneySchema>
 export type GetTransactionsNumberDTO = z.infer<typeof GetTransactionsNumberSchema>; 

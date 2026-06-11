@@ -67,14 +67,16 @@ export const useDeleteReview = () => {
   });
 };
 
-export const useGetPendingAuctions = () => {
+export const useGetPendingAuctions = (skip: number, take: number) => {
   return useQuery<
     AuctionItemData[],
     AxiosError<{ error: string }>
   >({
-    queryKey: ["pending-auctions"],
+    queryKey: ["pending-auctions", skip, take],
     queryFn: async () => {
-      const response = await api.get<AuctionItemData[]>("/auction/pending");
+      const response = await api.get<AuctionItemData[]>("/auction/pending", {
+        params: {skip, take}
+      });
       return response.data;
     },
     refetchOnWindowFocus: false,

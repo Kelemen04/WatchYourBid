@@ -29,9 +29,9 @@ interface MessageResponse {
   message: string;
 }
 
-export const useAuctionsByFilters = (filters: AuctionFilterDTO) => {
+export const useAuctionsByFilters = (filters: AuctionFilterDTO, skip: number, take: number) => {
   return useQuery<AuctionItemData[], AxiosError<{ error: string }>>({
-    queryKey: ['auctionsByFilters', filters],
+    queryKey: ['auctionsByFilters', filters, skip, take],
     
     queryFn: async () => {
       const cleanedFilters: Record<string, string | number> = {};
@@ -42,11 +42,8 @@ export const useAuctionsByFilters = (filters: AuctionFilterDTO) => {
         }
       });
 
-      if (cleanedFilters.skip === undefined) cleanedFilters.skip = 0;
-      if (cleanedFilters.take === undefined) cleanedFilters.take = 20;
-
       const response = await api.get<AuctionItemData[]>("/auction", {
-        params: cleanedFilters,
+        params: { ...cleanedFilters, skip, take },
       });
       
       return response.data;
@@ -68,11 +65,13 @@ export const useHomeData = () => {
   });
 };
 
-export const useWatchlist = () => {
+export const useWatchlist = (skip: number, take: number) => {
   return useQuery<AuctionItemData[], AxiosError<{ error: string }>>({
-    queryKey: ['watchlistAuctions'], 
+    queryKey: ['watchlistAuctions', skip, take], 
     queryFn: async () => {
-      const response = await api.get<AuctionItemData[]>("/auction/watchlist");
+      const response = await api.get<AuctionItemData[]>("/auction/watchlist", {
+        params: { skip, take },
+      });
       return response.data;
     },
     refetchOnWindowFocus: false,
@@ -122,13 +121,15 @@ export const useRemoveAuctionFromWatchlist = () => {
   });
 };
 
-export const useCategoryData = (categoryName: string) => {
+export const useCategoryData = (categoryName: string, skip: number, take: number) => {
   return useQuery<AuctionCategoryResponse, AxiosError<{ error: string }>>({
-    queryKey: ['categoryAuctions', categoryName], 
+    queryKey: ['categoryAuctions', categoryName, skip, take], 
     queryFn: async () => {
       const formattedCategory = categoryName.toUpperCase();
       console.log(formattedCategory)
-      const response = await api.get<AuctionCategoryResponse>(`/auction/category/${formattedCategory}`);
+      const response = await api.get<AuctionCategoryResponse>(`/auction/category/${formattedCategory}`, {
+        params: { skip, take }
+      });
       return response.data;
     },
     refetchOnWindowFocus: false, 
@@ -192,7 +193,7 @@ export const useAuctionUpdate = (auctionId: number) => {
   return useMutation<
     CreateAuctionResponse,
     AxiosError<{ error: string }>,
-    { auctionData: AuctionInput; images: File[] }
+    { auctionData: AuctionInput & { existingImages?: string[] }; images: File[] }
   >({
     mutationFn: async ({ auctionData, images }) => {
       
@@ -252,11 +253,13 @@ export const useAuctionDelete = () => {
   });
 };
 
-export const useAuctionsByUser = () => {
+export const useAuctionsByUser = (skip: number, take: number) => {
   return useQuery<AuctionItemData[], AxiosError<{ error: string }>>({
-    queryKey: ['auctionsByUser'], 
+    queryKey: ['auctionsByUser', skip, take], 
     queryFn: async () => {
-      const response = await api.get<AuctionItemData[]>("/auction/me");
+      const response = await api.get<AuctionItemData[]>("/auction/me", {
+        params: { skip, take}
+      });
       return response.data;
     },
     refetchOnWindowFocus: false,
@@ -264,7 +267,7 @@ export const useAuctionsByUser = () => {
   });
 };
 
-export const useGetStaffAuctions = (skip: number = 0, take: number = 20) => {
+export const useGetStaffAuctions = (skip: number, take: number) => {
   return useQuery<
     AuctionTableData[],
     AxiosError<{ error: string }>

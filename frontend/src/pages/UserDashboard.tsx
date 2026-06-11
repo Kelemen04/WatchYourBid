@@ -56,10 +56,10 @@ export default function UserDashboard() {
 
         {/* Navigation links */}
         <div className="flex flex-col gap-4 text-sm font-medium text-text">
-          {(isAdmin || isMod) && (
+          {isAdmin && (
             <div className="border-t border-border pt-4 mt-2">
               <h4 className="text-[18px] font-bold text-background uppercase tracking-widest mb-3">
-                {isAdmin ? "ADMIN" : "MODERATOR"}
+                Admin
               </h4>
               <div className="flex flex-col gap-4 text-text-muted text-[16px]">
                 <Link
@@ -68,6 +68,33 @@ export default function UserDashboard() {
                 >
                   Manage Users
                 </Link>
+                <Link
+                  to="/dashboard/admin/manage-auctions"
+                  className="hover:text-primary transition-colors"
+                >
+                  Manage Auctions
+                </Link>
+                <Link
+                  to="/dashboard/admin/pending-auctions"
+                  className="hover:text-primary transition-colors"
+                >
+                  Approve Auctions
+                </Link>
+                <Link
+                  to="/dashboard/admin/manage-transactions"
+                  className="hover:text-primary transition-colors"
+                >
+                  Manage Transactions
+                </Link>
+              </div>
+            </div>
+          )}
+          {isMod && (
+            <div className="border-t border-border pt-4 mt-2">
+              <h4 className="text-[18px] font-bold text-background uppercase tracking-widest mb-3">
+                Moderator
+              </h4>
+              <div className="flex flex-col gap-4 text-text-muted text-[16px]">
                 <Link
                   to="/dashboard/admin/manage-auctions"
                   className="hover:text-primary transition-colors"

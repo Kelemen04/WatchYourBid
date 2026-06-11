@@ -15,6 +15,7 @@ export const CreateAuctionSchema = z.object({
   moneyInterval: z.number().optional(),
   minBidIncrement: z.number().default(1),
   isAscending: z.boolean().optional(),
+  existingImages: z.array(z.string()).optional(),
 
   watchItem: z.object({
     brand: z.string().min(1, "Brand is required"),

@@ -23,6 +23,7 @@ import LoginForm from "../features/auth/LoginForm";
 import RegisterForm from "../features/auth/RegisterForm";
 import EmailForm from "../features/auth/EmailForm";
 import ResetPassword from "../features/auth/ResetPasswordForm";
+import AllTransactionsList from "../pages/AllTransactionsList";
 
 export default function AppRouter() {
   return (
@@ -43,6 +44,10 @@ export default function AppRouter() {
             <Route
               path="admin/pending-auctions"
               element={<PendingAuctionsList />}
+            />
+            <Route
+              path="admin/manage-transactions"
+              element={<AllTransactionsList />}
             />
           </Route>
 
