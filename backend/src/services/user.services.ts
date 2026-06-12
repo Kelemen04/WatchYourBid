@@ -55,6 +55,8 @@ export const userService = {
             where: { id: userId },
             select: {
                 username: true,
+                email: true,
+                phoneNumber: true,
                 firstName: true,
                 lastName: true,
                 profilePicture: true,

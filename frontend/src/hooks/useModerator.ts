@@ -20,6 +20,11 @@ export const useApproveAuction = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pending-auctions"] });
+
+      queryClient.invalidateQueries({ queryKey: ["homeAuctions"] });
+      queryClient.invalidateQueries({ queryKey: ["categoryAuctions"] });
+      queryClient.invalidateQueries({ queryKey: ["auctionsByFilters"] });
+      queryClient.invalidateQueries({ queryKey: ["staff-auctions"] });
     },
     onError: (err) => {
       console.error(err.response?.data?.error || "Approval failed!");
@@ -47,22 +52,15 @@ export const useCancelAuction = () => {
   });
 };
 
-export const useDeleteReview = () => {
+export const useDeleteReview = (userId: number) => {
   const queryClient = useQueryClient();
-  return useMutation<
-    { message: string },
-    AxiosError<{ error: string }>,
-    number
-  >({
+  return useMutation({
     mutationFn: async (reviewId: number) => {
       const response = await api.delete(`/review/${reviewId}`);
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["reviews"] });
-    },
-    onError: (err) => {
-      console.error(err.response?.data?.error || "Review deletion failed!");
+      queryClient.invalidateQueries({ queryKey: ["userReviews", userId] });
     },
   });
 };

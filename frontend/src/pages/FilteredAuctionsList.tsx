@@ -60,17 +60,6 @@ export default function FilteredAuctionsList() {
   return (
     <div className="w-full bg-slate-50 min-h-screen py-10">
       <div className="max-w-[1400px] mx-auto px-4 md:px-10">
-        <div className="mb-8">
-          <h1 className="font-playfair text-3xl md:text-5xl font-bold text-surface mb-2">
-            Explore Auctions
-          </h1>
-          <p className="font-inter text-gray-500">
-            {currentFilters.searchTerm
-              ? `Showing results for "${currentFilters.searchTerm}"`
-              : "Discover the finest luxury timepieces."}
-          </p>
-        </div>
-
         <div className="flex flex-col lg:flex-row gap-8">
           <aside className="w-full lg:w-72 flex-shrink-0">
             <div className="sticky top-4 h-fit">
@@ -79,6 +68,16 @@ export default function FilteredAuctionsList() {
           </aside>
 
           <main className="flex-1 flex flex-col">
+            <div className="mb-8">
+              <h1 className="font-playfair text-3xl md:text-5xl font-bold text-surface mb-2">
+                Explore Auctions
+              </h1>
+              <p className="font-inter text-gray-500">
+                {currentFilters.searchTerm
+                  ? `Showing results for "${currentFilters.searchTerm}"`
+                  : "Discover the finest luxury timepieces."}
+              </p>
+            </div>
             {isLoading ? (
               <div className="flex justify-center items-center h-64">
                 <span className="font-inter font-bold text-gray-400 uppercase tracking-widest animate-pulse">

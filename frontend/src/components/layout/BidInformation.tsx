@@ -286,30 +286,38 @@ export default function BidInformation() {
 
       {/* ── Pricing Section ── */}
       <div className="px-6 py-6 border-b border-stone-100 flex flex-col gap-4">
-        <div className="flex items-end justify-between">
-          <div className="flex flex-col">
-            <span className="text-[12px] font-bold tracking-[0.2em] uppercase text-stone-500 mb-1">
-              Current Price
-            </span>
-            <span className="font-inter text-4xl font-semibold text-primary tracking-tight transition-all duration-500">
-              {currentPrice.toLocaleString("en-US")}
-              <span className="font-playfair text-sm font-bold text-stone-500 ml-2 uppercase tracking-widest">
-                Eur
-              </span>
+        {auctionType === "VICKREY" || auctionType === "FPSB" ? (
+          <div className="flex items-center justify-center py-2">
+            <span className="text-[12px] font-bold tracking-[0.2em] uppercase text-stone-400">
+              Prices are hidden
             </span>
           </div>
-          <div className="flex flex-col items-end pb-1">
-            <span className="text-[11px] font-bold tracking-[0.2em] uppercase text-stone-500 mb-1">
-              Starting Price
-            </span>
-            <span className="font-inter text-lg text-stone-600">
-              {startingPrice.toLocaleString("en-US")}
-              <span className="font-playfair text-sm font-bold text-stone-500 ml-2 uppercase tracking-widest">
-                Eur
+        ) : (
+          <div className="flex items-end justify-between">
+            <div className="flex flex-col">
+              <span className="text-[12px] font-bold tracking-[0.2em] uppercase text-stone-500 mb-1">
+                Current Price
               </span>
-            </span>
+              <span className="font-inter text-4xl font-semibold text-primary tracking-tight transition-all duration-500">
+                {currentPrice.toLocaleString("en-US")}
+                <span className="font-playfair text-sm font-bold text-stone-500 ml-2 uppercase tracking-widest">
+                  Eur
+                </span>
+              </span>
+            </div>
+            <div className="flex flex-col items-end pb-1">
+              <span className="text-[11px] font-bold tracking-[0.2em] uppercase text-stone-500 mb-1">
+                Starting Price
+              </span>
+              <span className="font-inter text-lg text-stone-600">
+                {startingPrice.toLocaleString("en-US")}
+                <span className="font-playfair text-sm font-bold text-stone-500 ml-2 uppercase tracking-widest">
+                  Eur
+                </span>
+              </span>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* ── Bidding Forms (Body) ── */}

@@ -62,6 +62,14 @@ export default function Home() {
     );
   }
 
+  // Közös osztályok a listákhoz (hogy ne kelljen ismételni)
+  const cardSizingClass =
+    "shrink-0 snap-start w-[85vw] sm:w-[calc(50%-12px)] md:w-[calc(33.333%-16px)] lg:w-[calc(25%-18px)] xl:w-[calc(20%-19.2px)]";
+  const scrollContainerClass =
+    "flex overflow-x-auto gap-6 px-4 md:px-10 scroll-pl-4 md:scroll-pl-10 pb-6 pt-2 snap-x snap-mandatory after:content-[''] after:shrink-0 after:w-4 md:after:w-10 [&::-webkit-scrollbar]:h-2.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-stone-300 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-stone-400 transition-colors";
+  const maskClass =
+    "-mx-4 md:-mx-10 relative [mask-image:linear-gradient(to_right,black_0%,black_90%,transparent_100%)]";
+
   return (
     <main className="w-full bg-text-muted/10 min-h-screen pb-24">
       {/* Hero section */}
@@ -120,10 +128,14 @@ export default function Home() {
               Promoted
             </h2>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            {data?.promoted.map((auction) => (
-              <AuctionCard key={auction.id} auction={auction} />
-            ))}
+          <div className={maskClass}>
+            <div className={scrollContainerClass}>
+              {data?.promoted.map((auction) => (
+                <div key={auction.id} className={cardSizingClass}>
+                  <AuctionCard auction={auction} />
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -134,10 +146,14 @@ export default function Home() {
               Most Popular
             </h2>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            {data?.trending.map((item, index) => (
-              <AuctionCard key={index} auction={item.auction} />
-            ))}
+          <div className={maskClass}>
+            <div className={scrollContainerClass}>
+              {data?.trending.map((item, index) => (
+                <div key={index} className={cardSizingClass}>
+                  <AuctionCard auction={item.auction} />
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -148,10 +164,14 @@ export default function Home() {
               Ending Soon
             </h2>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            {data?.latest.map((auction) => (
-              <AuctionCard key={auction.id} auction={auction} />
-            ))}
+          <div className={maskClass}>
+            <div className={scrollContainerClass}>
+              {data?.latest.map((auction) => (
+                <div key={auction.id} className={cardSizingClass}>
+                  <AuctionCard auction={auction} />
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -162,10 +182,14 @@ export default function Home() {
               Smartwatches
             </h2>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            {data?.smartwatches.map((auction) => (
-              <AuctionCard key={auction.id} auction={auction} />
-            ))}
+          <div className={maskClass}>
+            <div className={scrollContainerClass}>
+              {data?.smartwatches.map((auction) => (
+                <div key={auction.id} className={cardSizingClass}>
+                  <AuctionCard auction={auction} />
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -176,24 +200,32 @@ export default function Home() {
               Wristwatches
             </h2>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            {data?.wristwatches.map((auction) => (
-              <AuctionCard key={auction.id} auction={auction} />
-            ))}
+          <div className={maskClass}>
+            <div className={scrollContainerClass}>
+              {data?.wristwatches.map((auction) => (
+                <div key={auction.id} className={cardSizingClass}>
+                  <AuctionCard auction={auction} />
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
-        {/* Pocket Watches (Javítottam a 'Wathes' elírást) */}
+        {/* Pocket Watches */}
         <section>
           <div className="flex items-end justify-between mb-6">
             <h2 className="font-playfair text-3xl md:text-4xl font-bold text-slate-900 border-l-4 border-primary pl-4 leading-none">
               Pocket Watches
             </h2>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            {data?.pocketWatches.map((auction) => (
-              <AuctionCard key={auction.id} auction={auction} />
-            ))}
+          <div className={maskClass}>
+            <div className={scrollContainerClass}>
+              {data?.pocketWatches.map((auction) => (
+                <div key={auction.id} className={cardSizingClass}>
+                  <AuctionCard auction={auction} />
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -204,10 +236,14 @@ export default function Home() {
               Clocks
             </h2>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            {data?.clocks.map((auction) => (
-              <AuctionCard key={auction.id} auction={auction} />
-            ))}
+          <div className={maskClass}>
+            <div className={scrollContainerClass}>
+              {data?.clocks.map((auction) => (
+                <div key={auction.id} className={cardSizingClass}>
+                  <AuctionCard auction={auction} />
+                </div>
+              ))}
+            </div>
           </div>
         </section>
       </div>

@@ -27,13 +27,17 @@ export const useReviewCreate = () => {
   });
 };
 
-export const useUserReviews = (userId: number) => {
+export const useUserReviews = (userId: number, skip: number = 0, take: number = 5) => {
   return useQuery<UserReviewDTO[], AxiosError<{ error: string }>>({
-    queryKey: ["userReviews", userId],
+    queryKey: ["userReviews", userId, skip, take],
+    
     queryFn: async () => {
-      const response = await api.get<UserReviewDTO[]>(`/user/${userId}/reviews`);
+      const response = await api.get<UserReviewDTO[]>(`/user/${userId}/reviews`, {
+        params: { skip, take }
+      });
       return response.data;
     },
+    
     enabled: !!userId,
     refetchOnWindowFocus: false,
   });

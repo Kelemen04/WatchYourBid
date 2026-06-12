@@ -1,4 +1,3 @@
-import { error } from "console";
 import type { Request, Response } from "express";
 import { reviewService } from "../services/review.service";
 import { UserReviewResponseSchema, type ReviewDTO } from "../dto/review.dto";
@@ -33,12 +32,16 @@ export async function deleteReview(req: Request,res: Response) {
 export const getUserReviews = async (req: Request, res: Response) => {
   try {
     const userId = Number(req.params.id);
+    
+    const skip = Number(req.query.skip) || 0;
+    const take = Number(req.query.take) || 5;
 
     if (isNaN(userId)) {
         return res.status(400).json({ error: "Invalid user ID!" });
     }
 
-    const reviews = await reviewService.getReviewsByUserId(userId);
+    const reviews = await reviewService.getReviewsByUserId(userId, skip, take);
+    
     const cleanResponse = z.array(UserReviewResponseSchema).parse(reviews);
 
     return res.status(200).json(cleanResponse);

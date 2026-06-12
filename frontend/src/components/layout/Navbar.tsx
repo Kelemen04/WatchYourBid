@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate, Outlet } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useLogout } from "../../hooks/useAuth";
 import { useNavbar } from "../../hooks/useNavbar";
 import { getAccessToken } from "../../api/axios";
@@ -336,10 +336,6 @@ export default function Navbar() {
           )}
         </div>
       </nav>
-
-      <div className="content min-h-screen mt-20">
-        <Outlet />
-      </div>
     </>
   );
 }

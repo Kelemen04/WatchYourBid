@@ -63,41 +63,49 @@ export const CreateAuctionSchema = z.object({
 });
 
 export const AuctionFilterSchema = z.object({
-  searchTerm: z.string({ error: "Search term must be a text!" }).optional(),
+  searchTerm: z.string().optional(),
   
   category: z.nativeEnum(WatchCategory, {
     error: () => ({ message: "The selected category does not exist!" })
   }).optional(),
+
   minPrice: z.coerce
     .number({ error: "Minimum price must be a number!" })
     .min(0, "Price cannot be negative!")
     .optional(),
+
   maxPrice: z.coerce
     .number({ error: "Maximum price must be a number!" })
     .min(0, "Price cannot be negative!")
     .optional(),
+
   auctionType: z.nativeEnum(AuctionType, {
     error: () => ({ message: "Invalid auction type!" })
   }).optional(),
-  brand: z.string({ error: "Brand must be a text!" }).optional(),
-  condition: z.string({ error: "Condition must be a text!" }).optional(),
-  material: z.string({ error: "Material must be a text!" }).optional(),
+
+  brand: z.string().optional(),
+  material: z.string().optional(),
+
   minYear: z.coerce
     .number({ error: "Year must be a number!" })
     .min(0, "Year cannot be negative!")
     .optional(),
+
   maxYear: z.coerce
     .number({ error: "Year must be a number!" })
     .min(0, "Year cannot be negative!")
     .optional(),
-  sortBy: z.string({ error: "Sort by must be a text!" })
-    .optional()
-    .default("newest"),
+
+  sortBy: z.enum(["newest", "oldest", "price_asc", "price_desc", "ending_soon"])
+    .default("newest")
+    .optional(),
+
   skip: z.coerce
     .number({ error: "Skip must be a number!" })
     .min(0, "Skip cannot be negative!")
     .optional()
     .default(0),
+
   take: z.coerce
     .number({ error: "Take must be a number!" })
     .min(1, "Take must be at least 1!")

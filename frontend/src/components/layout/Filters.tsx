@@ -5,11 +5,9 @@ export default function Filters() {
   const location = useLocation();
   const [searchParams] = useSearchParams();
 
-  // Amikor a felhasználó rányom az "Apply Filters" gombra
   const handleApplyFilters = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault(); // Megakadályozza az oldal újratöltését
+    e.preventDefault();
 
-    // A natív FormData összeszedi az összes input értékét a 'name' attribútumok alapján
     const formData = new FormData(e.currentTarget);
     const params = new URLSearchParams();
 
@@ -149,24 +147,7 @@ export default function Filters() {
         </div>
       </div>
 
-      {/* 7. Condition */}
-      <div className="flex flex-col">
-        <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500 mb-2">
-          Condition
-        </label>
-        <select
-          name="condition"
-          defaultValue={searchParams.get("condition") || ""}
-          className="w-full px-3.5 py-3 bg-stone-50 border border-stone-200 text-sm text-[var(--color-surface)] outline-none focus:border-[var(--color-primary)] focus:bg-white transition-all duration-300 cursor-pointer appearance-none"
-        >
-          <option value="">Any Condition</option>
-          <option value="NEW">New</option>
-          <option value="USED">Used</option>
-          <option value="VINTAGE">Vintage</option>
-        </select>
-      </div>
-
-      {/* 8. Material */}
+      {/* 7. Material */}
       <div className="flex flex-col">
         <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500 mb-2">
           Material
@@ -180,7 +161,7 @@ export default function Filters() {
         />
       </div>
 
-      {/* 9. Sort By */}
+      {/* 8. Sort By */}
       <div className="flex flex-col">
         <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500 mb-2">
           Sort By

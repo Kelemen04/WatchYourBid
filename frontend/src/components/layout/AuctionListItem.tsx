@@ -3,14 +3,12 @@ import type { AuctionItemData } from "../../dto/auction.dto";
 import { Link } from "react-router-dom";
 import { BsBookmark, BsBookmarkFill } from "react-icons/bs";
 import { useAddToWatchlist } from "../../hooks/useAuctions";
-import { useQueryClient } from "@tanstack/react-query";
 
 export default function AuctionListItem({
   auction,
 }: {
   auction: AuctionItemData;
 }) {
-  const queryClient = useQueryClient();
   const [timeState, setTimeState] = useState({
     days: 0,
     hours: 0,
@@ -66,10 +64,9 @@ export default function AuctionListItem({
     mutate(
       { auctionId: auction.id },
       {
-        onSuccess: (data) => {
-          alert(data.message);
-          queryClient.invalidateQueries({ queryKey: ["categoryAuctions"] });
-          queryClient.invalidateQueries({ queryKey: ["auctionsByFilters"] });
+        onSuccess: () => {
+          // A hook (useAddToWatchlist) a háttérben már mindent frissít!
+          // alert("Added to watchlist!"); // Opcionális
         },
         onError: (err) => {
           alert(err.response?.data?.error || "Failed to add to watchlist");

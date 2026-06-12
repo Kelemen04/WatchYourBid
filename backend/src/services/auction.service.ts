@@ -5,13 +5,19 @@ import { auctionTasks } from "../jobs/auction.queues";
 import { minioService } from "./minio.service";
 import "multer";
 
-function parseSortBy(sortBy: string) {
+function parseSortBy(sortBy?: string) {
     switch (sortBy) {
-        case "price_asc": return { currentPrice: "asc" as const };
-        case "price_desc": return { currentPrice: "desc" as const };
-        case "ending_soon": return { endTime: "asc" as const };
+        case "price_asc": 
+            return { currentPrice: "asc" as const };
+        case "price_desc": 
+            return { currentPrice: "desc" as const };
+        case "ending_soon": 
+            return { endTime: "asc" as const };
+        case "oldest": 
+            return { createdAt: "asc" as const };
         case "newest": 
-        default: return { createdAt: "desc" as const };
+        default: 
+            return { createdAt: "desc" as const };
     }
 }
 
@@ -556,7 +562,7 @@ export const auctionService = {
             include: { auctions: { include: { watchItem: true } } }
         })
 
-        return watchList.map(entry => hideFields(entry.auctions) ) || [];
+        return watchList.map(entry => ({...hideFields(entry.auctions), isWatchlisted: true })) || [];
     },
     async deleteAuctionFromWatchList(userId: number, auctionId: number) {
         if(!userId){
@@ -642,7 +648,9 @@ export const auctionService = {
             others: newOthers
         };
     },
-    async getAuctionByFilters(filters: AuctionFilterDTO, skip: number, take: number) {
+    async getAuctionByFilters(filters: AuctionFilterDTO, skip: number, take: number, userId?: number) {
+        const watchListInclude = userId ? { where: { userId } } : false;
+        
         const minPriceNum = filters.minPrice !== undefined ? Number(filters.minPrice) : undefined;
         const maxPriceNum = filters.maxPrice !== undefined ? Number(filters.maxPrice) : undefined;
         const minYearNum = filters.minYear !== undefined ? Number(filters.minYear) : undefined;
@@ -651,11 +659,11 @@ export const auctionService = {
         const result = await prisma.auction.findMany({
             where: {
                 status: "ACTIVE",
+                // 1. Általános keresőszó (cím, leírás, watchItem modell alapján)
                 ...(filters.searchTerm ? {
                     OR: [
                         { title: { contains: filters.searchTerm, mode: "insensitive" } },
                         { description: { contains: filters.searchTerm, mode: "insensitive" } },
-                        { watchItem: { brand: { contains: filters.searchTerm, mode: "insensitive" } } },
                         { watchItem: { model: { contains: filters.searchTerm, mode: "insensitive" } } },
                     ],
                 } : {}),
@@ -666,9 +674,17 @@ export const auctionService = {
                 auctionType: filters.auctionType,
                 watchItem: {
                     category: filters.category,
-                    brand: filters.brand,
-                    condition: filters.condition,
-                    material: filters.material,
+                    
+                    // 2. Brand: Részleges szöveges keresés (insensitive)
+                    ...(filters.brand ? {
+                        brand: { contains: filters.brand, mode: "insensitive" }
+                    } : {}),
+
+                    // 3. Material: Részleges szöveges keresés (insensitive)
+                    ...(filters.material ? {
+                        material: { contains: filters.material, mode: "insensitive" }
+                    } : {}),
+
                     ...(minYearNum !== undefined || maxYearNum !== undefined ? {
                         productionYear: {
                             gte: minYearNum,
@@ -685,33 +701,57 @@ export const auctionService = {
                         pocketWatch: true,
                         clock: true
                     }
-                }
+                },
+                watchList: watchListInclude
             },
-            orderBy: parseSortBy(filters.sortBy),
+            orderBy: parseSortBy(filters.sortBy || "newest"),
             skip: skip,
             take: take,
         });
 
-        const newResult = result.map(hideFields);
+        const mapAuctionWithWatchlist = (auction: any) => {
+            const isWatchlisted = userId ? auction.watchList?.length > 0 : false;
+            
+            const { watchList, ...rest } = auction;
+            
+            return {
+                ...hideFields(rest),
+                isWatchlisted
+            };
+        };
 
-        return newResult;
+        return result.map(mapAuctionWithWatchlist);
     },
     async getUserAuctions(userId: number, skip: number, take: number){
+        const watchListInclude = userId ? { where: { userId } } : false;
+
         const result = await prisma.auction.findMany({
             where: { userId: userId },
             skip: skip,
             take: take,
             orderBy: { createdAt: "desc"},
             include: { 
-                watchItem: true
-                }
+                watchItem: true,
+                watchList: watchListInclude
+            }
         })
 
         if(!result){
             throw new Error("User auctions not found!");
         }
 
-        return result;
+        const mapAuctionWithWatchlist = (auction: any) => {
+            const isWatchlisted = userId ? auction.watchList?.length > 0 : false;
+            
+            const { watchList, ...rest } = auction;
+            
+            return {
+                ...hideFields(rest),
+                isWatchlisted
+            };
+        };
+
+        return result.map(mapAuctionWithWatchlist);
     },
     async getAuctionById(auctionId: number, userId?: number){
         const result = await prisma.auction.findUnique({
@@ -753,11 +793,9 @@ export const auctionService = {
             hasReviewed = !!existingReview;
         }
 
-        // Explicit módon építsd fel a visszatérési értéket
         const responseData = {
             ...result,
             hasReviewed,
-            // Ha FPSB vagy VICKREY, itt felülírjuk a szenzitív adatokat
             currentPrice: (result.auctionType === "FPSB" || result.auctionType === "VICKREY") && result.status === "ACTIVE" 
                 ? 0 
                 : result.currentPrice,
@@ -877,27 +915,33 @@ export const auctionService = {
         return { message: "Auction cancelled by moderation successfully!", auction: updated };
     },
     async getPendingAuctions(skip: number, take: number){
-        return await prisma.auction.findMany({
-            where: {
-                status: "PENDING",
-            },
+        const result = await prisma.auction.findMany({
+            where: { status: "PENDING" },
             skip: skip,
             take: take,
             orderBy: { createdAt: "desc" },
-            include: {
-                watchItem: true
-            }
-        })
+            include: { watchItem: true }
+        });
+
+        return result.map(auction => ({
+            ...auction,
+            isWatchlisted: false
+        }));
     },
     async getAllAuctions(skip: number, take: number) {
-        return await prisma.auction.findMany({
-            skip: skip,
-            take: take,
-            orderBy: { createdAt: "desc" },
-            include: {
-                user: { select: { username: true } },
-                watchItem: true
-            }
-        });
-    }
+    const result = await prisma.auction.findMany({
+        skip: skip,
+        take: take,
+        orderBy: { createdAt: "desc" },
+        include: {
+            user: { select: { username: true } },
+            watchItem: true
+        }
+    });
+
+    return result.map(auction => ({
+        ...auction,
+        isWatchlisted: false
+    }));
+}
 }

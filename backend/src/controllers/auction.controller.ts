@@ -159,23 +159,28 @@ export async function deleteAuctionFromWatchList(req: Request, res: Response) {
 
 export async function getAuctionByFilters(req: Request, res: Response) {
     try {
-        const filters = AuctionFilterSchema.safeParse(req.query);
-        if (!filters.success) {
-          return res.status(400).json({ error: filters.error.issues[0]?.message || "Invalid input!" });
+        const validated = AuctionFilterSchema.safeParse(req.query);
+        
+        if (!validated.success) {
+            return res.status(400).json({ 
+                error: validated.error.issues[0]?.message || "Invalid input!" 
+            });
         }
 
-        const validationResult = GetTransactionsNumberSchema.safeParse(req.query);
-                
-        if (!validationResult.success) {
-          return res.status(400).json({ error: validationResult.error.issues[0]?.message || "Invalid input!" });
-        }
-                
-        const { take,skip } = validationResult.data;
-    
-        const result = await auctionService.getAuctionByFilters(filters.data, skip, take);
+        const userId = (req as any).user?.id; 
+
+        const result = await auctionService.getAuctionByFilters(
+            validated.data,
+            validated.data.skip,
+            validated.data.take,
+            userId
+        );
+        
         res.status(200).json(result);
     } catch (err) {
-        return res.status(400).json({ error: err instanceof Error ? err.message : "Unknown error" });
+        return res.status(400).json({ 
+            error: err instanceof Error ? err.message : "Unknown error" 
+        });
     }
 }
 

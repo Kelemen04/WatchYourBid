@@ -45,6 +45,8 @@ const addressRefinement = (data: any, ctx: z.RefinementCtx) => {
 
 export const PublicProfileSchema = z.object({
   username: z.string(),
+  email: z.string().email(),
+  phoneNumber: z.string().nullable(),
   firstName: z.string().nullable(),
   lastName: z.string().nullable(),
   profilePicture: z.string().nullable(),

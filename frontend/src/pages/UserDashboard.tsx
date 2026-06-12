@@ -6,8 +6,6 @@ import { getUserId, getUserRole } from "../api/axios";
 
 export default function UserDashboard() {
   const { mutate, isPending } = useDeleteMe();
-
-  // JAVÍTVA: A teljes profil lekérése, ami tartalmazza a buyert és sellert is
   const { data: fullUserData } = useMeData();
 
   const navigate = useNavigate();
@@ -18,7 +16,6 @@ export default function UserDashboard() {
   const isAdmin = myRole === "ADMIN" || isSuperAdmin;
   const isMod = myRole === "MODERATOR";
 
-  // Így már biztonságosan tudjuk ellenőrizni a teljes adatból:
   const isRegisteredBuyer = !!fullUserData?.buyer;
   const isRegisteredSeller = !!fullUserData?.seller;
 

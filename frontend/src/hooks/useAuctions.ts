@@ -80,18 +80,25 @@ export const useWatchlist = (skip: number, take: number) => {
 };
 
 export const useAddToWatchlist = () => {
+  const queryClient = useQueryClient();
+
   return useMutation<
     MessageResponse,
     AxiosError<{ error: string }>,
     { auctionId: number }
   >({
     mutationFn: async ({ auctionId }) => {
-      
       const response = await api.post<MessageResponse>("/auction/watchlist", { auctionId });
       return response.data;
     },
     onSuccess: (data) => {
       console.log("Success!", data.message);
+      
+      queryClient.invalidateQueries({ queryKey: ['homeAuctions'] });
+      queryClient.invalidateQueries({ queryKey: ['categoryAuctions'] });
+      queryClient.invalidateQueries({ queryKey: ['auctionsByFilters'] });
+      queryClient.invalidateQueries({ queryKey: ['watchlistAuctions'] });
+      queryClient.invalidateQueries({ queryKey: ['auctionsByUser'] });
     },
     onError: (err) => {
       console.error(err.response?.data?.error || "Auction adding to watchlist failed!");

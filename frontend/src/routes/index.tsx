@@ -1,6 +1,7 @@
-import { Routes, Route } from "react-router";
+import { Routes, Route, Outlet } from "react-router-dom"; // <-- Outlet importálása
 import Home from "../pages/Home";
 import Navbar from "../components/layout/Navbar";
+import Footer from "../components/layout/Footer"; // <-- Footer importálása
 import UserDashboard from "../pages/UserDashboard";
 import WatchCategoryPage from "../pages/WatchCategoryPage";
 import AuctionPage from "../pages/AuctionPage";
@@ -27,11 +28,26 @@ import AllTransactionsList from "../pages/AllTransactionsList";
 import UpdateBuyerPage from "../pages/UpdateBuyerPage";
 import UpdateSellerPage from "../pages/UpdateSellerPage";
 
+// ── ÚJ: Közös elrendezés (Layout) a Navbarral és a Footerrel ──
+const MainLayout = () => {
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Navbar />
+      <main className="flex-grow">
+        <div className="content mt-20">
+          <Outlet />
+        </div>
+      </main>
+      <Footer />
+    </div>
+  );
+};
+
 export default function AppRouter() {
   return (
     <>
       <Routes>
-        <Route element={<Navbar />}>
+        <Route element={<MainLayout />}>
           <Route path="/dashboard" element={<UserDashboard />}>
             <Route index element={<UserAuctionsPage />} />
 

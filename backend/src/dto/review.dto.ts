@@ -13,7 +13,11 @@ export const UserReviewResponseSchema = z.object({
   reviewer: z.object({
     id: z.number(),
     username: z.string(),
-  })
+  }),
+
+  auction: z.object({
+    title: z.string(),
+  }).optional(),
 });
 
 export type ReviewDTO = z.infer<typeof ReviewSchema>

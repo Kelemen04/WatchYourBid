@@ -129,7 +129,7 @@ export const reviewService = {
             return { message: "Review deleted successfully!"}
         })
     },
-    async getReviewsByUserId(userId: number) {
+    async getReviewsByUserId(userId: number, skip: number, take: number) {
         if (!userId) {
             throw new Error("User ID not given!");
         }
@@ -151,8 +151,15 @@ export const reviewService = {
                         id: true,
                         username: true
                     }
+                },
+                auction: {
+                    select: {
+                        title: true
+                    }
                 }
             },
+            skip: skip,
+            take: take,
             orderBy: {
                 createdAt: 'desc'
             }
@@ -166,6 +173,9 @@ export const reviewService = {
                 reviewer: {
                     id: r.author.id,
                     username: r.author.username
+                },
+                auction: {
+                    title: r.auction?.title ?? "Unknown Auction"
                 }
             })
         );
