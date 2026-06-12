@@ -337,7 +337,7 @@ export default function Navbar() {
         </div>
       </nav>
 
-      <div className="content bg-text-muted/20 min-h-screen mt-20">
+      <div className="content min-h-screen mt-20">
         <Outlet />
       </div>
     </>

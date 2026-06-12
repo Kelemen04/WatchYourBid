@@ -1,5 +1,5 @@
 import express from 'express';
-import { getMe, updateMe, registerBuyer, registerSeller, deleteMe, getUserById, uploadUserImage, getAllUsers, verifyUser, updateUserRole } from '../controllers/user.controller'
+import { getMe, updateMe, registerBuyer, registerSeller, deleteMe, getUserById, uploadUserImage, getAllUsers, verifyUser, updateUserRole, updateSeller, updateBuyer } from '../controllers/user.controller'
 import { BuyerRegisterSchema , SellerRegisterSchema } from '../dto/user.dto';
 import { authenticateToken, validate } from '../middlewares/auth.middleware';
 import { verifyRoles } from '../middlewares/roleAuth.middleware';
@@ -19,6 +19,9 @@ router.delete('/me', authenticateToken(), deleteMe)
 
 router.post('/me/register-buyer', authenticateToken(), upload.single("image"), validate(BuyerRegisterSchema), verifyRoles("USER"), registerBuyer)
 router.post('/me/register-seller', authenticateToken(), upload.single("image"), validate(SellerRegisterSchema), verifyRoles("USER"), registerSeller)
+
+router.patch('/me/update-buyer', authenticateToken(), upload.single("image"), validate(BuyerRegisterSchema), verifyRoles("USER"), updateBuyer)
+router.patch('/me/update-seller', authenticateToken(), upload.single("image"), validate(SellerRegisterSchema), verifyRoles("USER"), updateSeller)
 
 router.post('/me/avatar', authenticateToken(), upload.single("image"), uploadUserImage)
 

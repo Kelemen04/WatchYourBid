@@ -1,7 +1,8 @@
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom"; // <-- Link import hozzáadva
 import { socket } from "../../main";
 import { useEffect, useState } from "react";
 import type { AuctionFullData } from "../../dto/auction.dto";
+import { usePublicProfile } from "../../hooks/useUser"; // <-- ÚJ IMPORT
 
 interface AuctionInformationProps {
   data: AuctionFullData | undefined;
@@ -28,6 +29,12 @@ const InfoRow = ({
 export default function AuctionInformation({ data }: AuctionInformationProps) {
   const { id } = useParams();
 
+  // --- ÚJ: Lekérjük az eladó (owner) adatait ---
+  const { data: sellerProfile, isLoading: isSellerLoading } = usePublicProfile(
+    data?.userId as number,
+    { enabled: !!data?.userId }, // Csak akkor fut le, ha már betöltött az aukció!
+  );
+
   const images = data?.images?.length
     ? data.images
     : ["/placeholder-watch.png"];
@@ -46,7 +53,6 @@ export default function AuctionInformation({ data }: AuctionInformationProps) {
     if (!id) return;
     socket.emit("joinAuction", id);
 
-    // Any helyett unknown a linter hiba elkerülésére
     const handleBidUpdate = (updatedData: unknown) => {
       console.log("New bid: ", updatedData);
     };
@@ -62,11 +68,9 @@ export default function AuctionInformation({ data }: AuctionInformationProps) {
   if (!data) return null;
 
   return (
-    // EGYETLEN NAGY FEHÉR DOBOZ AZ EGÉSZNEK
     <div className="flex flex-col gap-10 bg-white border border-stone-200 rounded-3xl p-6 sm:p-10 shadow-sm">
       {/* ── KÉPGALÉRIA ── */}
       <div className="flex flex-col gap-4">
-        {/* Fő nagy kép */}
         <div className="w-full aspect-[4/3] bg-stone-50 rounded-2xl overflow-hidden border border-stone-200 shadow-inner relative group cursor-crosshair">
           <img
             src={activeImage}
@@ -75,7 +79,6 @@ export default function AuctionInformation({ data }: AuctionInformationProps) {
           />
         </div>
 
-        {/* Kis indexképek (Thumbnails) */}
         {images.length > 1 && (
           <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-stone-300">
             {images.map((img, index) => (
@@ -101,7 +104,7 @@ export default function AuctionInformation({ data }: AuctionInformationProps) {
 
       {/* ── CÍM ÉS LEÍRÁS ── */}
       <div className="border-b border-stone-100 pb-8">
-        <h1 className="font-[var(--font-playfair)] text-4xl md:text-5xl font-bold text-background tracking-tight mb-4">
+        <h1 className="font-playfair text-4xl md:text-5xl font-bold text-background tracking-tight mb-4">
           {data.title}
         </h1>
         <p className="font-inter text-stone-600 leading-relaxed whitespace-pre-line text-[15px]">
@@ -109,9 +112,58 @@ export default function AuctionInformation({ data }: AuctionInformationProps) {
         </p>
       </div>
 
+      {/* ── ELADÓ (TULAJDONOS) ADATAI ── */}
+      {data.userId && (
+        <div className="flex items-center gap-5 pb-8 border-b border-stone-100">
+          <div className="w-16 h-16 rounded-full overflow-hidden bg-stone-100 border-2 border-[var(--color-primary)] shrink-0">
+            <img
+              src={sellerProfile?.profilePicture || "/default-avatar.png"}
+              alt="Seller Avatar"
+              className={`w-full h-full object-cover ${isSellerLoading ? "animate-pulse" : ""}`}
+            />
+          </div>
+
+          <div className="flex flex-col flex-1 gap-1">
+            <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-stone-500">
+              Owner
+            </span>
+
+            {isSellerLoading ? (
+              <div className="h-5 w-32 bg-stone-200 animate-pulse rounded"></div>
+            ) : (
+              // Itt egy divbe tettük a nevet és a ratinget, hogy egymás mellé kerüljenek
+              <div className="flex items-center justify-between w-full">
+                <Link
+                  to={`/user/${data.userId}`}
+                  className="font-playfair text-xl font-bold text-surface hover:text-primary transition-colors"
+                >
+                  {sellerProfile?.firstName} {sellerProfile?.lastName}
+                </Link>
+
+                {/* Rating a jobb oldalon */}
+                {sellerProfile && (
+                  <div className="flex items-center gap-2 bg-stone-50 px-3 py-1 rounded-full border border-stone-100">
+                    <span className="text-2xl font-bold text-stone-700">
+                      {sellerProfile.seller?.rating?.toFixed(1) || "0.0"} / 5.0
+                    </span>
+                    <span className="text-yellow-400 text-2xl">★</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {!isSellerLoading && sellerProfile && (
+              <span className="text-[12px] font-medium text-stone-500">
+                @{sellerProfile.username}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ── SPECIFIKÁCIÓK ── */}
       <div>
-        <h3 className="font-[var(--font-playfair)] text-2xl font-bold text-background mb-6 pb-2 border-b-2 border-[var(--color-primary)] inline-block">
+        <h3 className="font-playfair text-3xl font-bold text-background mb-6 pb-2 border-b-2 border-primary inline-block">
           Watch Specifications
         </h3>
 
@@ -132,37 +184,18 @@ export default function AuctionInformation({ data }: AuctionInformationProps) {
               data.watchItem?.weight ? `${data.watchItem.weight} g` : undefined
             }
           />
-        </div>
-
-        {/* Tulajdonságok / Kiegészítők (Címkék) */}
-        <div className="flex flex-wrap gap-4 pt-6 mt-4">
-          <span
-            className={`text-[10px] font-bold uppercase tracking-wider px-4 py-1.5 rounded-full border ${
-              data.watchItem?.isOriginal
-                ? "bg-green-50 border-green-200 text-green-700"
-                : "bg-stone-50 border-stone-200 text-stone-400"
-            }`}
-          >
-            Original
-          </span>
-          <span
-            className={`text-[10px] font-bold uppercase tracking-wider px-4 py-1.5 rounded-full border ${
-              data.watchItem?.hasBox
-                ? "bg-stone-800 border-stone-800 text-white"
-                : "bg-stone-50 border-stone-200 text-stone-400"
-            }`}
-          >
-            Has Box
-          </span>
-          <span
-            className={`text-[10px] font-bold uppercase tracking-wider px-4 py-1.5 rounded-full border ${
-              data.watchItem?.hasPapers
-                ? "bg-[var(--color-primary)] border-[var(--color-primary)] text-white"
-                : "bg-stone-50 border-stone-200 text-stone-400"
-            }`}
-          >
-            Has Papers
-          </span>
+          <InfoRow
+            label="Original"
+            value={data.watchItem?.isOriginal ? "Yes" : "No"}
+          />
+          <InfoRow
+            label="Has Box"
+            value={data.watchItem?.hasBox ? "Yes" : "No"}
+          />
+          <InfoRow
+            label="Has Papers"
+            value={data.watchItem?.hasPapers ? "Yes" : "No"}
+          />
         </div>
 
         {/* ── KATEGÓRIA SPECIFIKUS ADATOK ── */}
@@ -171,7 +204,7 @@ export default function AuctionInformation({ data }: AuctionInformationProps) {
         {data.watchItem?.category === "WRISTWATCH" &&
           data.watchItem.wristwatch && (
             <div className="mt-12">
-              <h3 className="font-[var(--font-playfair)] text-xl font-bold text-stone-800 mb-6 pb-2 border-b-2 border-stone-200 inline-block">
+              <h3 className="font-playfair text-3xl font-bold text-stone-800 mb-6 pb-2 border-b-2 border-primary inline-block">
                 Wristwatch Details
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-2">
@@ -181,7 +214,11 @@ export default function AuctionInformation({ data }: AuctionInformationProps) {
                 />
                 <InfoRow
                   label="Case Diameter"
-                  value={`${data.watchItem.wristwatch.caseDiameter} mm`}
+                  value={
+                    data.watchItem.wristwatch.caseDiameter
+                      ? `${data.watchItem.wristwatch.caseDiameter} mm`
+                      : undefined
+                  }
                 />
                 <InfoRow
                   label="Water Resistance"
@@ -203,7 +240,7 @@ export default function AuctionInformation({ data }: AuctionInformationProps) {
         {data.watchItem?.category === "POCKETWATCH" &&
           data.watchItem.pocketWatch && (
             <div className="mt-12">
-              <h3 className="font-[var(--font-playfair)] text-xl font-bold text-stone-800 mb-6 pb-2 border-b-2 border-stone-200 inline-block">
+              <h3 className="font-playfair text-3xl font-bold text-stone-800 mb-6 pb-2 border-b-2 border-primary inline-block">
                 Pocket Watch Details
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-2">
@@ -231,7 +268,7 @@ export default function AuctionInformation({ data }: AuctionInformationProps) {
         {data.watchItem?.category === "SMARTWATCH" &&
           data.watchItem.smartwatch && (
             <div className="mt-12">
-              <h3 className="font-[var(--font-playfair)] text-xl font-bold text-stone-800 mb-6 pb-2 border-b-2 border-stone-200 inline-block">
+              <h3 className="font-playfair text-3xl font-bold text-stone-800 mb-6 pb-2 border-b-2 border-primary inline-block">
                 Smartwatch Details
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-2">
@@ -241,7 +278,11 @@ export default function AuctionInformation({ data }: AuctionInformationProps) {
                 />
                 <InfoRow
                   label="Battery Life"
-                  value={`${data.watchItem.smartwatch.batteryLife} hours`}
+                  value={
+                    data.watchItem.smartwatch.batteryLife
+                      ? `${data.watchItem.smartwatch.batteryLife} hours`
+                      : undefined
+                  }
                 />
                 <InfoRow
                   label="Screen Type"
@@ -262,7 +303,7 @@ export default function AuctionInformation({ data }: AuctionInformationProps) {
         {/* Clock */}
         {data.watchItem?.category === "CLOCK" && data.watchItem.clock && (
           <div className="mt-12">
-            <h3 className="font-[var(--font-playfair)] text-xl font-bold text-stone-800 mb-6 pb-2 border-b-2 border-stone-200 inline-block">
+            <h3 className="font-playfair text-3xl font-bold text-stone-800 mb-6 pb-2 border-b-2 border-primary inline-block">
               Clock Details
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-2">

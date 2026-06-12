@@ -94,6 +94,7 @@ export const AuctionFullSchema = AuctionSchema.extend({
   currentPrice: z.number(),
   status: z.enum(AuctionStatus),
   images: z.array(z.string()),
+  hasReviewed: z.boolean().optional(),
 
   bids: z.array(
     z.object({

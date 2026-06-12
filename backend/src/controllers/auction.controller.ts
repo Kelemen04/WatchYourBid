@@ -74,9 +74,9 @@ export async function getHomeAuctions(req: Request, res: Response) {
 
 export async function getAuctionById(req: Request, res: Response) {
     const auctionId = req.validatedId as number;
-
+    const userId = req.user?.id as number;
     try {
-        const result = await auctionService.getAuctionById(auctionId);
+        const result = await auctionService.getAuctionById(auctionId, userId);
         res.status(200).json(result);
     } catch (err) {
         return res.status(400).json({ error: err instanceof Error ? err.message : "Unknown error" });

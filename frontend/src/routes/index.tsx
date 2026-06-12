@@ -24,6 +24,8 @@ import RegisterForm from "../features/auth/RegisterForm";
 import EmailForm from "../features/auth/EmailForm";
 import ResetPassword from "../features/auth/ResetPasswordForm";
 import AllTransactionsList from "../pages/AllTransactionsList";
+import UpdateBuyerPage from "../pages/UpdateBuyerPage";
+import UpdateSellerPage from "../pages/UpdateSellerPage";
 
 export default function AppRouter() {
   return (
@@ -37,8 +39,6 @@ export default function AppRouter() {
             <Route path="bids/me" element={<UserBidsPage />} />
             <Route path="auctions/me" element={<UserAuctionsPage />} />
 
-            <Route path="register-buyer" element={<RegisterBuyerPage />} />
-            <Route path="register-seller" element={<RegisterSellerPage />} />
             <Route path="admin/manage-auctions" element={<AllAuctionsList />} />
             <Route path="admin/manage-users" element={<AllUsersList />} />
             <Route
@@ -57,6 +57,10 @@ export default function AppRouter() {
             path="/auction/category/:category"
             element={<WatchCategoryPage />}
           />
+          <Route path="register-buyer" element={<RegisterBuyerPage />} />
+          <Route path="register-seller" element={<RegisterSellerPage />} />
+          <Route path="update-buyer" element={<UpdateBuyerPage />} />
+          <Route path="update-seller" element={<UpdateSellerPage />} />
           <Route path="/auction" element={<CreateAuctionPage />} />
           <Route path="/auction/:id" element={<AuctionPage />} />
           <Route path="/auction/:id/update" element={<UpdateAuctionPage />} />

@@ -713,7 +713,7 @@ export const auctionService = {
 
         return result;
     },
-    async getAuctionById(auctionId: number){
+    async getAuctionById(auctionId: number, userId?: number){
         const result = await prisma.auction.findUnique({
             where: { id: auctionId },
             include: { 
@@ -741,19 +741,32 @@ export const auctionService = {
             }
         })
 
-        if(!result){
+        if (!result) {
             throw new Error("Auction not found!");
         }
 
-        if ((result.auctionType === "FPSB" || result.auctionType === "VICKREY") && result.status === "ACTIVE") {
-            return {
-                ...result,
-                currentPrice: 0,
-                bids: [],
-            };
+        let hasReviewed = false;
+        if (userId) {
+            const existingReview = await prisma.review.findFirst({
+                where: { auctionId: auctionId, authorId: userId }
+            });
+            hasReviewed = !!existingReview;
         }
 
-        return result;
+        // Explicit módon építsd fel a visszatérési értéket
+        const responseData = {
+            ...result,
+            hasReviewed,
+            // Ha FPSB vagy VICKREY, itt felülírjuk a szenzitív adatokat
+            currentPrice: (result.auctionType === "FPSB" || result.auctionType === "VICKREY") && result.status === "ACTIVE" 
+                ? 0 
+                : result.currentPrice,
+            bids: (result.auctionType === "FPSB" || result.auctionType === "VICKREY") && result.status === "ACTIVE" 
+                ? [] 
+                : result.bids
+        };
+
+        return responseData;
     },
 
     async uploadAuctionFiles(auctionId: number, userId: number, files: Express.Multer.File[]){

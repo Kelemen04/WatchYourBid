@@ -87,6 +87,24 @@ export async function registerSeller(req: Request, res: Response) {
   }
 }
 
+export async function updateBuyer(req: Request, res: Response) {
+    try {
+        const result = await userService.updateBuyer(req.body, req.user?.id as number);
+        res.status(200).json({ message: "Buyer profile updated successfully", user: result });
+    } catch (err: any) {
+        res.status(400).json({ error: err.message });
+    }
+}
+
+export async function updateSeller(req: Request, res: Response) {
+    try {
+        const result = await userService.updateSeller(req.body, req.user?.id as number);
+        res.status(200).json({ message: "Seller profile updated successfully", user: result });
+    } catch (err: any) {
+        res.status(400).json({ error: err.message });
+    }
+}
+
 export async function uploadUserImage(req: Request, res: Response) {
   const userId = req.user?.id as number;
   

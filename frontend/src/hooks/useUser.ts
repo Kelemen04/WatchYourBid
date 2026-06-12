@@ -22,6 +22,8 @@ interface MessageResponse {
   message: string;
 }
 
+// --- REGISTER HOOKS ---
+
 export const useBuyerRegister = () => {
   const queryClient = useQueryClient()
   const navigate = useNavigate();
@@ -32,24 +34,17 @@ export const useBuyerRegister = () => {
       { buyerData: BuyerRegisterDTO, image?: File }
     >({
       mutationFn: async ({ buyerData, image}) => {
+        // 1. Lépés: Elküldjük a szöveges regisztrációs adatokat sima JSON-ként
+        const response = await api.post<BuyerRegisterResponse>(`/user/me/register-buyer`, buyerData);
+
+        // 2. Lépés: Ha van kép, azt a dedikált avatar végpontra küldjük
         if (image) {
             const formData = new FormData();
-
-            Object.entries(buyerData).forEach(([key, value]) => {
-                if (value !== undefined && value !== null) {
-                    formData.append(key, value.toString());
-                }
-            });
             formData.append("image", image);
-
-            const response = await api.post<BuyerRegisterResponse>(`/user/me/register-buyer`, formData, {
+            await api.post(`/user/me/avatar`, formData, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
-
-            return response.data;
         }
-
-        const response = await api.post<BuyerRegisterResponse>(`/user/me/register-buyer`, buyerData);
 
         return response.data;
       },
@@ -75,25 +70,17 @@ export const useSellerRegister = () => {
       { sellerData: SellerRegisterDTO, image?: File }
     >({
       mutationFn: async ({ sellerData, image}) => {
+        // 1. Lépés: Szöveges adatok
+        const response = await api.post<SellerRegisterResponse>(`/user/me/register-seller`, sellerData);
 
+        // 2. Lépés: Kép feltöltése
         if (image) {
             const formData = new FormData();
-
-            Object.entries(sellerData).forEach(([key, value]) => {
-                if (value !== undefined && value !== null) {
-                    formData.append(key, value.toString());
-                }
-            });
             formData.append("image", image);
-
-            const response = await api.post<SellerRegisterResponse>(`/user/me/register-seller`, formData, {
+            await api.post(`/user/me/avatar`, formData, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
-
-            return response.data;
         }
-
-        const response = await api.post<SellerRegisterResponse>(`/user/me/register-seller`, sellerData);
 
         return response.data;
       },
@@ -105,6 +92,76 @@ export const useSellerRegister = () => {
       },
       onError: (err) => {
         console.error(err.response?.data?.error || "Seller account creation failed!");
+      },
+    });
+}
+
+// --- UPDATE HOOKS ---
+
+export const useBuyerUpdate = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation<
+      BuyerRegisterResponse,
+      AxiosError<{ error: string }>,
+      { buyerData: BuyerRegisterDTO, image?: File }
+    >({
+      mutationFn: async ({ buyerData, image}) => {
+        // 1. Lépés: Szöveges adatok frissítése (PATCH)
+        const response = await api.patch<BuyerRegisterResponse>(`/user/me/update-buyer`, buyerData);
+
+        // 2. Lépés: Új kép feltöltése (csak ha tényleg választott újat)
+        if (image) {
+            const formData = new FormData();
+            formData.append("image", image);
+            await api.post(`/user/me/avatar`, formData, {
+                headers: { "Content-Type": "multipart/form-data" },
+            });
+        }
+
+        return response.data;
+      },
+      onSuccess: (data) => {
+        console.log("Success! Buyer account updated successfully: ", data);
+        queryClient.invalidateQueries({ queryKey: ['me'] });
+        queryClient.invalidateQueries({ queryKey: ['navbar'] });
+      },
+      onError: (err) => {
+        console.error(err.response?.data?.error || "Buyer account update failed!");
+      },
+    });
+}
+
+export const useSellerUpdate = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation<
+      SellerRegisterResponse,
+      AxiosError<{ error: string }>,
+      { sellerData: SellerRegisterDTO, image?: File }
+    >({
+      mutationFn: async ({ sellerData, image}) => {
+        // 1. Lépés: Szöveges adatok frissítése
+        const response = await api.patch<SellerRegisterResponse>(`/user/me/update-seller`, sellerData);
+
+        // 2. Lépés: Új kép feltöltése
+        if (image) {
+            const formData = new FormData();
+            formData.append("image", image);
+            await api.post(`/user/me/avatar`, formData, {
+                headers: { "Content-Type": "multipart/form-data" },
+            });
+        }
+
+        return response.data;
+      },
+      onSuccess: (data) => {
+        console.log("Success! Seller account updated successfully: ", data);
+        queryClient.invalidateQueries({ queryKey: ['me'] }); 
+        queryClient.invalidateQueries({ queryKey: ['navbar'] });
+      },
+      onError: (err) => {
+        console.error(err.response?.data?.error || "Seller account update failed!");
       },
     });
 }

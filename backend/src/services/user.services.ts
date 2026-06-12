@@ -242,6 +242,94 @@ export const userService = {
         }
     },
 
+    async updateBuyer(data: BuyerRegisterDTO, userId: number) {
+        if (!userId) throw new Error("No user id was given");
+
+        // Ellenőrizzük, hogy létezik-e a buyer profil
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            include: { buyer: true }
+        });
+
+        if (!user || !user.buyer) {
+            throw new Error("Buyer profile not found!");
+        }
+
+        return await prisma.user.update({
+            where: { id: userId },
+            data: {
+                firstName: data.firstName,
+                lastName: data.lastName,
+                phoneNumber: data.phoneNumber,
+                // A profilképet a külön upload végpont kezeli, de ha stringként jön, frissíthetjük:
+                ...(data.profilePicture && { profilePicture: data.profilePicture }),
+                
+                buyer: {
+                    update: {
+                        shippingAddress: {
+                            update: {
+                                country: data.country,
+                                region: data.region,
+                                city: data.city,
+                                street: data.street,
+                                number: data.number,
+                                zipCode: data.zipCode,
+                                building: data.building ?? null,
+                                floor: data.floor ?? null,
+                                apartment: data.apartment ?? null,
+                            }
+                        }
+                    }
+                }
+            },
+            include: { buyer: { include: { shippingAddress: true } } }
+        });
+    },
+
+    async updateSeller(data: SellerRegisterDTO, userId: number) {
+        if (!userId) throw new Error("No user id was given");
+
+        // Ellenőrizzük, hogy létezik-e a seller profil
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            include: { seller: true }
+        });
+
+        if (!user || !user.seller) {
+            throw new Error("Seller profile not found!");
+        }
+
+        return await prisma.user.update({
+            where: { id: userId },
+            data: {
+                firstName: data.firstName,
+                lastName: data.lastName,
+                phoneNumber: data.phoneNumber,
+                ...(data.profilePicture && { profilePicture: data.profilePicture }),
+                
+                seller: {
+                    update: {
+                        description: data.description,
+                        address: {
+                            update: {
+                                country: data.country,
+                                region: data.region,
+                                city: data.city,
+                                street: data.street,
+                                number: data.number,
+                                zipCode: data.zipCode,
+                                building: data.building ?? null,
+                                floor: data.floor ?? null,
+                                apartment: data.apartment ?? null,
+                            }
+                        }
+                    }
+                }
+            },
+            include: { seller: { include: { address: true } } }
+        });
+    },
+
     async uploadUserFile(userId: number, file: Express.Multer.File) {
         if (!userId) throw new Error("User ID is required");
         const user = await prisma.user.findUnique({ where: { id: userId } });

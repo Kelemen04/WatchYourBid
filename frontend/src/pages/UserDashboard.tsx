@@ -1,13 +1,15 @@
 import { Link, Outlet, useNavigate } from "react-router-dom";
-import { useDeleteMe } from "../hooks/useUser";
+import { useDeleteMe, useMeData } from "../hooks/useUser"; // <-- JAVÍTVA: useNavbar helyett useMeData
 import TransactionForm from "../features/auth/TransactionForm";
 import WithdrawForm from "../features/auth/WithdrawForm";
 import { getUserId, getUserRole } from "../api/axios";
-import { useNavbar } from "../hooks/useNavbar";
 
 export default function UserDashboard() {
   const { mutate, isPending } = useDeleteMe();
-  const { data: userData } = useNavbar();
+
+  // JAVÍTVA: A teljes profil lekérése, ami tartalmazza a buyert és sellert is
+  const { data: fullUserData } = useMeData();
+
   const navigate = useNavigate();
   const myId = getUserId();
   const myRole = getUserRole();
@@ -15,6 +17,10 @@ export default function UserDashboard() {
   const isSuperAdmin = myRole === "SUPER_ADMIN";
   const isAdmin = myRole === "ADMIN" || isSuperAdmin;
   const isMod = myRole === "MODERATOR";
+
+  // Így már biztonságosan tudjuk ellenőrizni a teljes adatból:
+  const isRegisteredBuyer = !!fullUserData?.buyer;
+  const isRegisteredSeller = !!fullUserData?.seller;
 
   const handleDeleteAccount = () => {
     const confirmDelete = window.confirm(
@@ -43,7 +49,8 @@ export default function UserDashboard() {
             Available Balance
           </p>
           <p className="font-[var(--font-playfair)] text-3xl font-bold text-[var(--color-primary)] mb-6">
-            €{userData?.balance?.toLocaleString() || 0}
+            {/* JAVÍTVA: Itt is a fullUserData-ból olvassuk ki */}€
+            {fullUserData?.balance?.toLocaleString() || 0}
           </p>
 
           {/* Transactions */}
@@ -144,18 +151,40 @@ export default function UserDashboard() {
                 Public Profile
               </Link>
             )}
-            <Link
-              to="/dashboard/register-buyer"
-              className="hover:text-primary transition-colors"
-            >
-              Register Buyer
-            </Link>
-            <Link
-              to="/dashboard/register-seller"
-              className="hover:text-primary transition-colors"
-            >
-              Register Seller
-            </Link>
+
+            {/* BUYER LINK LOGIKA */}
+            {isRegisteredBuyer ? (
+              <Link
+                to="/update-buyer"
+                className="hover:text-primary transition-colors"
+              >
+                Update Buyer Profile
+              </Link>
+            ) : (
+              <Link
+                to="/register-buyer"
+                className="hover:text-primary transition-colors"
+              >
+                Register Buyer
+              </Link>
+            )}
+
+            {/* SELLER LINK LOGIKA */}
+            {isRegisteredSeller ? (
+              <Link
+                to="/update-seller"
+                className="hover:text-primary transition-colors"
+              >
+                Update Seller Profile
+              </Link>
+            ) : (
+              <Link
+                to="/register-seller"
+                className="hover:text-primary transition-colors"
+              >
+                Register Seller
+              </Link>
+            )}
           </div>
         </div>
 
