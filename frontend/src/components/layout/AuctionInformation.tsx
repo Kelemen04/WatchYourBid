@@ -1,14 +1,14 @@
-import { useParams, Link } from "react-router-dom"; // <-- Link import hozzáadva
+import { useParams, Link } from "react-router-dom";
 import { socket } from "../../main";
 import { useEffect, useState } from "react";
 import type { AuctionFullData } from "../../dto/auction.dto";
-import { usePublicProfile } from "../../hooks/useUser"; // <-- ÚJ IMPORT
+import { usePublicProfile } from "../../hooks/useUser";
 
 interface AuctionInformationProps {
   data: AuctionFullData | undefined;
 }
 
-// Segédkomponens egy adatmező kiírására
+// Component for input fields
 const InfoRow = ({
   label,
   value,
@@ -16,11 +16,12 @@ const InfoRow = ({
   label: string;
   value: string | number | undefined;
 }) => (
-  <div className="flex flex-col py-3 border-b border-stone-100">
-    <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-stone-500 mb-1">
+  <div className="flex flex-col py-3 border-b border-stone-100 min-w-0">
+    {" "}
+    <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-stone-500 mb-1 truncate">
       {label}
     </span>
-    <span className="text-sm font-medium text-[var(--color-surface)]">
+    <span className="text-sm font-medium text-surface break-words min-w-0">
       {value || "N/A"}
     </span>
   </div>
@@ -29,10 +30,9 @@ const InfoRow = ({
 export default function AuctionInformation({ data }: AuctionInformationProps) {
   const { id } = useParams();
 
-  // --- ÚJ: Lekérjük az eladó (owner) adatait ---
   const { data: sellerProfile, isLoading: isSellerLoading } = usePublicProfile(
     data?.userId as number,
-    { enabled: !!data?.userId }, // Csak akkor fut le, ha már betöltött az aukció!
+    { enabled: !!data?.userId },
   );
 
   const images = data?.images?.length
@@ -69,7 +69,7 @@ export default function AuctionInformation({ data }: AuctionInformationProps) {
 
   return (
     <div className="flex flex-col gap-10 bg-white border border-stone-200 rounded-3xl p-6 sm:p-10 shadow-sm">
-      {/* ── KÉPGALÉRIA ── */}
+      {/* Photos */}
       <div className="flex flex-col gap-4">
         <div className="w-full aspect-[4/3] bg-stone-50 rounded-2xl overflow-hidden border border-stone-200 shadow-inner relative group cursor-crosshair">
           <img
@@ -102,20 +102,20 @@ export default function AuctionInformation({ data }: AuctionInformationProps) {
         )}
       </div>
 
-      {/* ── CÍM ÉS LEÍRÁS ── */}
+      {/* Details */}
       <div className="border-b border-stone-100 pb-8">
-        <h1 className="font-playfair text-4xl md:text-5xl font-bold text-background tracking-tight mb-4">
+        <h1 className="font-playfair text-4xl md:text-5xl font-bold text-background tracking-tight mb-4 break-words hyphens-auto max-w-full">
           {data.title}
         </h1>
-        <p className="font-inter text-stone-600 leading-relaxed whitespace-pre-line text-[15px]">
+        <p className="font-inter text-stone-600 leading-relaxed whitespace-pre-line break-words text-[15px]">
           {data.description}
         </p>
       </div>
 
-      {/* ── ELADÓ (TULAJDONOS) ADATAI ── */}
+      {/* Seller details */}
       {data.userId && (
         <div className="flex items-center gap-5 pb-8 border-b border-stone-100">
-          <div className="w-16 h-16 rounded-full overflow-hidden bg-stone-100 border-2 border-[var(--color-primary)] shrink-0">
+          <div className="w-16 h-16 rounded-full overflow-hidden bg-stone-100 border-2 border-primary shrink-0">
             <img
               src={sellerProfile?.profilePicture || "/default-avatar.png"}
               alt="Seller Avatar"
@@ -131,7 +131,6 @@ export default function AuctionInformation({ data }: AuctionInformationProps) {
             {isSellerLoading ? (
               <div className="h-5 w-32 bg-stone-200 animate-pulse rounded"></div>
             ) : (
-              // Itt egy divbe tettük a nevet és a ratinget, hogy egymás mellé kerüljenek
               <div className="flex items-center justify-between w-full">
                 <Link
                   to={`/user/${data.userId}`}
@@ -140,7 +139,6 @@ export default function AuctionInformation({ data }: AuctionInformationProps) {
                   {sellerProfile?.firstName} {sellerProfile?.lastName}
                 </Link>
 
-                {/* Rating a jobb oldalon */}
                 {sellerProfile && (
                   <div className="flex items-center gap-2 bg-stone-50 px-3 py-1 rounded-full border border-stone-100">
                     <span className="text-2xl font-bold text-stone-700">
@@ -161,13 +159,12 @@ export default function AuctionInformation({ data }: AuctionInformationProps) {
         </div>
       )}
 
-      {/* ── SPECIFIKÁCIÓK ── */}
+      {/* Watch informations*/}
       <div>
         <h3 className="font-playfair text-3xl font-bold text-background mb-6 pb-2 border-b-2 border-primary inline-block">
           Watch Specifications
         </h3>
 
-        {/* Általános Specifikációk */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-2">
           <InfoRow label="Brand" value={data.watchItem?.brand} />
           <InfoRow label="Model" value={data.watchItem?.model} />
@@ -197,8 +194,6 @@ export default function AuctionInformation({ data }: AuctionInformationProps) {
             value={data.watchItem?.hasPapers ? "Yes" : "No"}
           />
         </div>
-
-        {/* ── KATEGÓRIA SPECIFIKUS ADATOK ── */}
 
         {/* Wristwatch */}
         {data.watchItem?.category === "WRISTWATCH" &&

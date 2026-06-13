@@ -1,7 +1,7 @@
-import { Routes, Route, Outlet } from "react-router-dom"; // <-- Outlet importálása
+import { Routes, Route, Outlet } from "react-router-dom";
 import Home from "../pages/Home";
 import Navbar from "../components/layout/Navbar";
-import Footer from "../components/layout/Footer"; // <-- Footer importálása
+import Footer from "../components/layout/Footer";
 import UserDashboard from "../pages/UserDashboard";
 import WatchCategoryPage from "../pages/WatchCategoryPage";
 import AuctionPage from "../pages/AuctionPage";
@@ -28,7 +28,7 @@ import AllTransactionsList from "../pages/AllTransactionsList";
 import UpdateBuyerPage from "../pages/UpdateBuyerPage";
 import UpdateSellerPage from "../pages/UpdateSellerPage";
 
-// ── ÚJ: Közös elrendezés (Layout) a Navbarral és a Footerrel ──
+// Navbar and footer for the pages
 const MainLayout = () => {
   return (
     <div className="min-h-screen flex flex-col">

@@ -58,8 +58,8 @@ export default function FilteredAuctionsList() {
   const auctionList = auctions || [];
 
   return (
-    <div className="w-full bg-slate-50 min-h-screen py-10">
-      <div className="max-w-[1400px] mx-auto px-4 md:px-10">
+    <div className="w-full bg-text-muted/10 min-h-screen py-10">
+      <div className="max-w-[1600px] mx-auto px-4 md:px-10">
         <div className="flex flex-col lg:flex-row gap-8">
           <aside className="w-full lg:w-72 flex-shrink-0">
             <div className="sticky top-4 h-fit">
@@ -91,17 +91,14 @@ export default function FilteredAuctionsList() {
                 ))}
               </div>
             ) : (
-              <div className="bg-white p-12 rounded-2xl border border-gray-200 text-center flex flex-col items-center justify-center shadow-sm">
-                <div className="w-20 h-20 mb-4 bg-gray-50 rounded-full flex items-center justify-center">
-                  <span className="text-3xl">&#x1F50E;&#xFE0E;</span>
-                </div>
-                <h3 className="font-playfair text-2xl font-bold text-surface mb-2">
-                  No auctions found
-                </h3>
+              <div className="text-center py-20 bg-white border border-text-muted/20 rounded-2xl shadow-sm">
+                <p className="text-text-muted text-lg uppercase tracking-widest">
+                  No auctions found.
+                </p>
               </div>
             )}
 
-            {/* Lapozó gombok */}
+            {/* Pagination */}
             {!isLoading && (
               <div className="mt-8 flex justify-center items-center gap-8">
                 <button

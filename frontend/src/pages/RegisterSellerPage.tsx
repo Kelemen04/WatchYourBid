@@ -127,6 +127,7 @@ export default function RegisterSellerPage() {
                   file={selectedFile}
                   setFile={setSelectedFile}
                   setStep={setCurrentPage}
+                  existingImage={user?.profilePicture}
                 />
               )}
             </form>

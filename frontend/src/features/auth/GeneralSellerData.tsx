@@ -29,7 +29,7 @@ export default function GeneralSellerData({ setStep }: Props) {
           Seller Details
         </h2>
         <p className="font-inter text-text-muted text-sm">
-          Tell us about yourself and your business.
+          Tell us about yourself.
         </p>
       </div>
 
@@ -101,7 +101,7 @@ export default function GeneralSellerData({ setStep }: Props) {
             htmlFor="description"
             className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5"
           >
-            Shop / Seller Description:
+            Seller Description:
           </label>
           <textarea
             id="description"

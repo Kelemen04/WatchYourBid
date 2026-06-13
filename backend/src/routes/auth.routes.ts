@@ -2,7 +2,6 @@ import express from 'express';
 import { register, login, refresh, logout, verifyEmail, resendEmailVerification, forgotPassword, resetPassword } from '../controllers/auth.controller'
 import { RegisterSchema , LoginSchema, ForgotPassword, ResetPassword } from '../dto/auth.dto';
 import { validate } from '../middlewares/auth.middleware';
-import { rateLimiter } from '../middlewares/rateLimiter.middleware';
 
 const router = express.Router();
 

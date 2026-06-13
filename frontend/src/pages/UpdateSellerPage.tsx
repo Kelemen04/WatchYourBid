@@ -1,8 +1,8 @@
 import { FormProvider, useForm } from "react-hook-form";
-import { useMeData, useSellerUpdate } from "../hooks/useUser"; // Feltételezem, van useSellerUpdate hookod
+import { useMeData, useSellerUpdate } from "../hooks/useUser";
 import type { AxiosError } from "axios";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { SellerRegisterSchema, type SellerRegisterDTO } from "../dto/user.dto";
 import AddressDataForm from "../features/auth/AddressDataFrom";
 import UserPhotoDataForm from "../features/auth/UserPhotoDataForm";
@@ -12,21 +12,10 @@ import { useNavigate } from "react-router-dom";
 export default function UpdateSellerPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedFile, setSelectedFile] = useState<File>();
-  const [existingImage, setExistingImage] = useState<string | null>(null);
 
   const { data: user, isLoading } = useMeData();
-  const { mutate } = useSellerUpdate(); // A frissítéshez tartozó mutáció
+  const { mutate } = useSellerUpdate();
   const navigate = useNavigate();
-
-  // Meglévő kép szinkronizálása a state-be
-  useEffect(() => {
-    if (user?.profilePicture && !existingImage) {
-      const timeout = setTimeout(() => {
-        setExistingImage(user.profilePicture);
-      }, 0);
-      return () => clearTimeout(timeout);
-    }
-  }, [user?.profilePicture]);
 
   const existingAddress = user?.seller?.address;
 
@@ -38,16 +27,14 @@ export default function UpdateSellerPage() {
           firstName: user.firstName || "",
           lastName: user.lastName || "",
           phoneNumber: user.phoneNumber || "",
-          profilePicture: existingImage || "",
+          profilePicture: user.profilePicture || "",
           description: user.seller?.description || "",
-
           country: existingAddress?.country || "",
           region: existingAddress?.region || "",
           city: existingAddress?.city || "",
           street: existingAddress?.street || "",
           number: existingAddress?.number || "",
           zipCode: existingAddress?.zipCode || "",
-
           building: existingAddress?.building || "",
           floor: existingAddress?.floor || "",
           apartment: existingAddress?.apartment || "",
@@ -58,11 +45,11 @@ export default function UpdateSellerPage() {
   const onSubmit = (data: SellerRegisterDTO) => {
     mutate(
       {
-        sellerData: { ...data, profilePicture: existingImage || "" },
+        sellerData: { ...data },
         image: selectedFile,
       },
       {
-        onSuccess: () => navigate("/dashboard"),
+        onSuccess: async () => navigate("/dashboard"),
         onError: (err) => {
           const serverError = err as AxiosError<{ error: string }>;
           methods.setError("root", {
@@ -85,43 +72,32 @@ export default function UpdateSellerPage() {
       <div className="w-full max-w-5xl bg-white rounded-2xl shadow-md border border-gray-100 flex h-[620px] overflow-hidden">
         {/* Sidebar */}
         <div className="w-1/3 bg-background rounded-l-2xl p-8 flex flex-col gap-6 relative overflow-hidden flex-shrink-0">
-          <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-primary/20 rounded-full blur-3xl pointer-events-none"></div>
-          <div className="absolute -bottom-10 -left-10 w-48 h-48 bg-white/5 rounded-full blur-2xl pointer-events-none"></div>
-
-          {steps.map((step) => {
-            const isActive = currentPage === step.id;
-            return (
+          {steps.map((step) => (
+            <div
+              key={step.id}
+              className={`flex items-center gap-4 p-3 rounded-xl transition-all ${currentPage === step.id ? "bg-white/10" : ""}`}
+            >
               <div
-                key={step.id}
-                className={`flex items-center gap-4 p-3 rounded-xl transition-all duration-300 ${isActive ? "bg-white/10" : ""}`}
+                className={`w-10 h-10 rounded-full flex items-center justify-center font-bold border ${currentPage === step.id ? "bg-primary text-background border-transparent" : "border-white/30 text-white"}`}
               >
-                <div
-                  className={`w-10 h-10 flex-shrink-0 rounded-full flex items-center justify-center font-bold border transition-colors ${isActive ? "bg-primary text-background border-transparent" : "border-white/30 text-white"}`}
-                >
-                  {step.id}
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xs text-white/60 font-inter uppercase tracking-widest mb-0.5">
-                    {step.subtitle}
-                  </span>
-                  <span className="font-bold text-white tracking-widest text-sm uppercase">
-                    {step.title}
-                  </span>
-                </div>
+                {step.id}
               </div>
-            );
-          })}
+              <div className="flex flex-col">
+                <span className="text-xs text-white/60 uppercase tracking-widest">
+                  {step.subtitle}
+                </span>
+                <span className="font-bold text-white tracking-widest text-sm uppercase">
+                  {step.title}
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
 
         {/* Right Content */}
         <div className="w-2/3 px-10 py-6 flex flex-col h-full overflow-hidden justify-center">
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center space-y-4">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-background"></div>
-              <p className="font-inter text-text-muted text-sm font-medium">
-                Loading seller data...
-              </p>
-            </div>
+            <div className="text-center">Loading seller data...</div>
           ) : (
             <FormProvider {...methods}>
               <form
@@ -134,6 +110,7 @@ export default function UpdateSellerPage() {
                     {methods.formState.errors.root.message}
                   </div>
                 )}
+
                 {currentPage === 1 && (
                   <GeneralSellerData setStep={setCurrentPage} />
                 )}
@@ -145,8 +122,8 @@ export default function UpdateSellerPage() {
                     file={selectedFile}
                     setFile={setSelectedFile}
                     setStep={setCurrentPage}
-                    existingImage={existingImage}
-                    setExistingImage={setExistingImage}
+                    existingImage={user?.profilePicture}
+                    setExistingImage={() => {}}
                   />
                 )}
               </form>

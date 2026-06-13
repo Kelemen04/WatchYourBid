@@ -32,6 +32,9 @@ export const PasswordResetFormSchema = z.object({
     .regex(/[0-9]/, "Must contain a number!")
     .regex(/[!@#$%^&*.?_-]/, "Must contain special characters!"),
   confirmNewPassword: z.string(),
+}).refine((data) => data.newPassword === data.confirmNewPassword, {
+  message: "Passwords don't match",
+  path: ["confirmNewPassword"],
 });
 
 export const PasswordResetSchema = z.object({

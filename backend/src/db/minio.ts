@@ -1,5 +1,6 @@
 import * as Minio from 'minio'
 
+// MinIO client configuration
 export const minioClient = new Minio.Client({
   endPoint: process.env.MINIO_ENDPOINT || "localhost",
   port: parseInt(process.env.MINIO_PORT || "9000"),
@@ -10,8 +11,10 @@ export const minioClient = new Minio.Client({
 
 const bucket = process.env.MINIO_BUCKET || "watchyourbid";
 
+// Initialize bucket and access policy
 export async function ensureBucket() {
   try {
+    // Check if bucket exists
     const exists = await minioClient.bucketExists(bucket);
 
     if (!exists) {
@@ -21,6 +24,7 @@ export async function ensureBucket() {
         console.log(`MinIO: Bucket exists: ${bucket}`);
     }
 
+    // Set public read access
     const publicReadPolicy = {
       Version: "2012-10-17",
       Statement: [

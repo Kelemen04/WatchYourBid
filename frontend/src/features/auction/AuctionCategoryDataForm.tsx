@@ -312,9 +312,8 @@ export default function AuctionCategoryDataForm({ setStep }: Props) {
   };
 
   return (
-    // JAVÍTVA ITT: flex-1 min-h-0 biztosítja, hogy összezsugorodjon a szülőhöz, aktiválva az overflow-t!
     <div className="flex flex-col flex-1 min-h-0 w-full">
-      {/* Fejléc - FIX */}
+      {/* Title */}
       <div className="mb-6 flex-shrink-0">
         <h2 className="font-playfair text-background font-bold text-4xl mb-2">
           Watch Item Data
@@ -324,9 +323,8 @@ export default function AuctionCategoryDataForm({ setStep }: Props) {
         </p>
       </div>
 
-      {/* GÖRGETHETŐ TARTALOM */}
+      {/* FORM */}
       <div className="flex-1 overflow-y-auto pr-2">
-        {/* Alapadatok rács */}
         <div className="grid grid-cols-2 gap-5">
           <div className="flex flex-col w-full">
             <label className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5">
@@ -415,7 +413,7 @@ export default function AuctionCategoryDataForm({ setStep }: Props) {
           </div>
         </div>
 
-        {/* Kategória választó */}
+        {/* KCategories */}
         <div className="flex flex-col w-full mt-5">
           <label className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5">
             Category:
@@ -431,13 +429,12 @@ export default function AuctionCategoryDataForm({ setStep }: Props) {
           </select>
         </div>
 
-        {/* Dinamikus alkategória mezők */}
         {selectedCategory === "WRISTWATCH" && <WristwatchFields />}
         {selectedCategory === "POCKETWATCH" && <PocketWatchFields />}
         {selectedCategory === "SMARTWATCH" && <SmartwatchFields />}
         {selectedCategory === "CLOCK" && <ClockFields />}
 
-        {/* Kiegészítő tulajdonságok doboza */}
+        {/* More data */}
         <div className="flex gap-6 mt-6 p-4 bg-gray-50 rounded-xl border border-gray-100 justify-center mb-4">
           <div className="flex items-center gap-2">
             <input
@@ -484,7 +481,6 @@ export default function AuctionCategoryDataForm({ setStep }: Props) {
         </div>
       </div>
 
-      {/* Navigációs gombok az oldal alján - FIX */}
       <div className="mt-4 pt-4 flex justify-between items-center flex-shrink-0 bg-white border-t border-gray-100">
         <button
           type="button"

@@ -2,38 +2,37 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useHomeData } from "../hooks/useAuctions";
 import AuctionCard from "../components/layout/AuctionCard";
+import { useQueryClient } from "@tanstack/react-query";
+import api from "../api/axios";
 
 export default function Home() {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const queryClient = useQueryClient();
 
   const heroSections = [
     {
       url: "/images/1.jpg",
-      link: "/auctions/wristwatches",
-      title: "Timeless Elegance",
-      texts:
-        "Explore our curated collection of vintage Rolex and Patek Philippe timepieces.",
+      link: "/auction/category/wristwatch",
+      title: "Luxury Wristwatches",
+      texts: "Find the perfect timepiece for any occasion.",
     },
     {
       url: "/images/2.jpg",
-      link: "/auctions/pocketwatches",
-      title: "Classic Heritage",
-      texts:
-        "Discover the intricate mechanics of 19th-century gold pocket watches.",
+      link: "/auction/category/pocketwatch",
+      title: "Classic Pocket Watches",
+      texts: "Own a piece of history with traditional designs.",
     },
     {
       url: "/images/3.jpg",
-      link: "/auctions/smartwatches",
-      title: "Modern Innovation",
-      texts:
-        "Where luxury meets technology. The finest smartwatches on the market.",
+      link: "/auction/category/smartwatch",
+      title: "Modern Smartwatches",
+      texts: "Stay connected with the latest wearable technology.",
     },
     {
       url: "/images/4.jpg",
-      link: "/auctions/clocks",
-      title: "Grand Presence",
-      texts:
-        "Exceptional grandfather clocks and maritime chronometers for collectors.",
+      link: "/auction/category/clock",
+      title: "Premium Clocks",
+      texts: "Add timeless style to your home or office.",
     },
   ];
 
@@ -47,6 +46,31 @@ export default function Home() {
     const autoplay = setInterval(next, 10000);
     return () => clearInterval(autoplay);
   }, []);
+
+  const handleMouseEnter = (linkUrl: string) => {
+    const categoryFromUrl = linkUrl.split("/").pop();
+    if (!categoryFromUrl) return;
+
+    const skip = 0;
+    const take = 10;
+
+    const formattedCategoryForBackend = categoryFromUrl.toUpperCase();
+
+    queryClient.prefetchQuery({
+      queryKey: ["categoryAuctions", categoryFromUrl, skip, take],
+
+      queryFn: async () => {
+        const response = await api.get(
+          `/auction/category/${formattedCategoryForBackend}`,
+          {
+            params: { skip, take },
+          },
+        );
+        return response.data;
+      },
+      staleTime: 60000,
+    });
+  };
 
   const current = heroSections[currentIndex];
 
@@ -62,7 +86,6 @@ export default function Home() {
     );
   }
 
-  // Közös osztályok a listákhoz (hogy ne kelljen ismételni)
   const cardSizingClass =
     "shrink-0 snap-start w-[85vw] sm:w-[calc(50%-12px)] md:w-[calc(33.333%-16px)] lg:w-[calc(25%-18px)] xl:w-[calc(20%-19.2px)]";
   const scrollContainerClass =
@@ -91,13 +114,11 @@ export default function Home() {
               <div className="flex flex-wrap gap-4">
                 <Link
                   to={current.link}
-                  className="bg-primary hover:bg-primary-hover text-background px-8 py-4 rounded-xl font-bold font-inter transition-all transform hover:scale-105 active:scale-95 shadow-lg shadow-primary/20 uppercase tracking-wider text-sm"
+                  onMouseEnter={() => handleMouseEnter(current.link)}
+                  className="bg-primary hover:bg-primary-hover text-background px-8 py-4 rounded-xl font-bold font-inter transition-all transform hover:scale-105 active:scale-95 shadow-lg shadow-primary/20 uppercase tracking-wider text-sm inline-block"
                 >
-                  View Auction
+                  Explore Collection
                 </Link>
-                <button className="border border-white/30 hover:bg-white/10 text-white px-8 py-4 rounded-xl font-bold font-inter transition-all backdrop-blur-sm uppercase tracking-wider text-sm">
-                  Details
-                </button>
               </div>
             </div>
 

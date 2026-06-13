@@ -118,14 +118,14 @@ export default function UserProfilePage() {
               </div>
             </div>
 
-            {/* Eladói Statisztika Kártya */}
+            {/* Seller stats */}
             {profile.seller && (
               <div className="bg-white border border-stone-200 p-6 rounded-3xl shadow-sm hover:shadow-md transition-shadow flex flex-col">
                 <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400 mb-4 pb-4 border-b border-stone-100">
                   Seller Rating
                 </h4>
                 <div className="flex items-center gap-4">
-                  <span className="text-5xl font-black text-background">
+                  <span className="text-4xl font-black text-background">
                     {profile.seller.rating.toFixed(1)}/5.0
                   </span>
                   <div className="flex flex-row">
@@ -140,7 +140,7 @@ export default function UserProfilePage() {
               </div>
             )}
 
-            {/* Eladói Bemutatkozás */}
+            {/* Seller description */}
             {profile.seller?.description && (
               <div className="bg-white border border-stone-200 p-6 rounded-3xl shadow-sm hover:shadow-md transition-shadow overflow-hidden">
                 <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400 mb-4 pb-4 border-b border-stone-100">
@@ -190,12 +190,11 @@ export default function UserProfilePage() {
                       )}
                     </div>
 
-                    {/* Komment */}
                     <p className="text-stone-700 leading-relaxed text-[15px] italic break-words whitespace-pre-wrap">
                       "{rev.comment}"
                     </p>
 
-                    {/* Aukció Neve */}
+                    {/* Auction name */}
                     {rev.auction && (
                       <div className="border-t border-stone-100 mt-1">
                         <div className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.1em] text-stone-500">
@@ -209,7 +208,7 @@ export default function UserProfilePage() {
                   </div>
                 ))}
 
-                {/* Lapozó gombok */}
+                {/* Pagination */}
                 <div className="flex justify-center gap-4 mt-8 pt-6">
                   <button
                     disabled={skip === 0}

@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { LoginSchema, type LoginDTO } from "../../dto/auth.dto";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { AxiosError } from "axios";
-import { Link } from "react-router-dom"; // <-- A sima <a> tag helyett!
+import { Link } from "react-router-dom";
 
 export default function LoginForm() {
   const { mutate, isPending } = useLogin();

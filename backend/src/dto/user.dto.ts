@@ -66,6 +66,7 @@ export const SellerRegisterSchema = PersonInfoSchema.merge(BaseAddressSchema).ex
 }).superRefine(addressRefinement);
 
 export const MeResponseSchema = z.object({
+  id: z.number(),
   username: z.string(),
   email: z.string().email(),
   firstName: z.string().nullable(),

@@ -91,7 +91,7 @@ export default function WatchlistPage() {
           </div>
         )}
 
-        {/* Lapozó gombok */}
+        {/* Pagination */}
         {!isLoading && auctionList.length > 0 && (
           <div className="mt-8 flex justify-center items-center gap-8">
             <button

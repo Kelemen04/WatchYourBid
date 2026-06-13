@@ -1,7 +1,6 @@
 import type { Request, Response } from "express";
 import { GetBidsNumberSchema, MyBidsResponseSchema, type AutoBidDTO, type PlaceBidDTO, type PlacePromotingBidDTO } from "../dto/bids.dto";
 import { bidService } from "../services/bid.service";
-import { io } from "../utils/socket";
 import z from "zod";
 import { GetTransactionsNumberSchema } from "../dto/transaction.dto";
 

@@ -10,6 +10,8 @@ export const useNavbar = () => {
       const response = await api.get<MeResponse>("/user/me");
       return response.data;
     },
+    staleTime: 0,
+    // Only pick the fields needed for the navbar
     select: (data) => ({
       username: data.username,
       profilePicture: data.profilePicture,

@@ -19,7 +19,7 @@ export default function GeneralBuyerData({ setStep }: Props) {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Fejléc - Fix */}
+      {/* Title */}
       <div className="mb-6 flex-shrink-0">
         <h2 className="font-playfair text-background font-bold text-4xl mb-2">
           Personal Information
@@ -29,7 +29,6 @@ export default function GeneralBuyerData({ setStep }: Props) {
         </p>
       </div>
 
-      {/* Görgethető tartalom */}
       <div className="flex-1 overflow-y-auto pr-2 space-y-5">
         <div className="grid grid-cols-2 gap-5">
           <div className="flex flex-col w-full">
@@ -94,7 +93,7 @@ export default function GeneralBuyerData({ setStep }: Props) {
         </div>
       </div>
 
-      {/* Gomb - Fix alul */}
+      {/* Pagination */}
       <div className="mt-4 pt-4 flex justify-end flex-shrink-0 bg-white border-t border-gray-100">
         <button
           type="button"

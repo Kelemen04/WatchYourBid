@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useRefreshToken } from "../hooks/useAuth";
 import { useAuth } from "../hooks/useAuth";
 
+// Helps the user to remain logged in across page reloads
 const PersistLogin = ({ children }: { children: React.ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const refresh = useRefreshToken();

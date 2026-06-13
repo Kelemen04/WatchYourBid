@@ -108,7 +108,7 @@ export const bidService = {
 
             const lastBid = await tx.bid.findFirst({
                 where: { auctionId: auctionId },
-                orderBy: { bidTime: "desc" }
+                orderBy: { bidAmount: "desc" }
             })
 
             if (auction.auctionType === "JAPANESE") {
@@ -116,10 +116,18 @@ export const bidService = {
                     throw new Error("In a Japanese auction, you must bid exactly the current round price!");
                 }
 
-                if (lastBid && lastBid.userId === userId && lastBid.bidAmount === auction.currentPrice) {
+                const myBidThisRound = await tx.bid.findFirst({
+                    where: { 
+                        auctionId: auctionId, 
+                        userId: userId, 
+                        bidAmount: auction.currentPrice 
+                    }
+                });
+
+                if (myBidThisRound) {
                     throw new Error("You already accepted the price for this round!");
                 }
-            } 
+            }
             else if (auction.auctionType === "FPSB" || auction.auctionType === "VICKREY") {
                 if (data.bidAmount < auction.startingPrice) {
                     throw new Error("Your secret bid must be at least the starting price!");
@@ -161,8 +169,8 @@ export const bidService = {
         });
 
         if (dutchAuctionEndedData) {
-            const delayedJobs = await auctionTasks.getDelayed();
-            for (const job of delayedJobs) {
+            const jobsToClean = await auctionTasks.getJobs(['delayed', 'waiting', 'paused']);
+            for (const job of jobsToClean) {
                 if (job.id?.startsWith(`price-drop-${auctionId}`) || job.id?.startsWith(`close-${auctionId}`)) {
                     await job.remove();
                 }
@@ -206,7 +214,7 @@ export const bidService = {
 
     async placePromotingBid(data: PlacePromotingBidDTO, userId: number, auctionId: number) {
         const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        // today.setHours(0, 0, 0, 0);
 
         const newBid = await prisma.$transaction(async (tx) => {
             const user = await tx.user.findUnique({
@@ -371,64 +379,113 @@ export const bidService = {
     async processAutoBids(auctionId: number, userId: number) {
         let autoBidDetails: any = null;
 
-        const nextWinnerId = await prisma.$transaction(async (tx) => {
+        await prisma.$transaction(async (tx) => {
             const auction = await tx.auction.findUnique({
                 where: { id: auctionId }
             });
 
-            if (!auction || auction.status !== "ACTIVE") {
-                return null;
-            }
+            if (!auction || auction.status !== "ACTIVE") return;
 
-            const minRequiredWalletBalance = (auction?.currentPrice || 0) + (auction?.minBidIncrement || 0);
+            const increment = auction.minBidIncrement || 1;
+            const minRequiredBalance = auction.currentPrice + increment;
 
-            const targetAutoBid = await tx.autoBid.findFirst({
+            const activeAutoBids = await tx.autoBid.findMany({
                 where: { 
-                    auctionId: auctionId, 
-                    userId: { not: userId },
-                    maxAmount: { gte: (auction?.currentPrice || 0) + (auction?.minBidIncrement || 0) },
-                    user: { balance: { gte: minRequiredWalletBalance }}
+                    auctionId: auctionId,
+                    maxAmount: { gte: minRequiredBalance },
+                    user: { balance: { gte: minRequiredBalance } }
                 },
-                orderBy: { maxAmount: "desc" },
-                include: { auction: true }
+                orderBy: [
+                    { maxAmount: "desc" },
+                    { id: "asc" }
+                ]
             });
 
-            if (!targetAutoBid) return null;
+            if (activeAutoBids.length === 0) return;
 
-            const auctionData = targetAutoBid.auction;
-            const nextBidAmount = auctionData.currentPrice + (targetAutoBid.increment as number || auctionData.minBidIncrement as number);
+            const currentHighestBid = await tx.bid.findFirst({
+                where: { auctionId },
+                orderBy: { bidAmount: "desc" }
+            });
 
-            if (nextBidAmount <= targetAutoBid.maxAmount) {
-                await tx.auction.update({
-                    where: { id: auctionId, currentPrice: auctionData.currentPrice },
-                    data: { currentPrice: nextBidAmount }
-                });
+            const currentWinnerId = currentHighestBid?.userId;
 
-                await tx.bid.create({
-                    data: {
-                        bidAmount: nextBidAmount,
-                        userId: targetAutoBid.userId,
-                        auctionId: auctionId,
-                        autoBidId: targetAutoBid.id
-                    }
-                });
+            const highestAuto = activeAutoBids[0];
+            if (!highestAuto) return;
+            const secondHighestAuto = activeAutoBids.length > 1 ? activeAutoBids[1] : null;
 
-                autoBidDetails = {
-                    auctionId,
-                    newPrice: nextBidAmount,
-                    bidderId: targetAutoBid.userId,
-                    isAutoBid: true
-                };
-
-                return targetAutoBid.userId;
+            if (highestAuto.userId === currentWinnerId && !secondHighestAuto) {
+                return;
             }
-            return null;
+
+            let newPrice = auction.currentPrice;
+            let winnerId = currentWinnerId;
+            const bidsToInsert = [];
+
+            if (secondHighestAuto && secondHighestAuto.userId !== highestAuto.userId) {
+                const secondMax = secondHighestAuto.maxAmount;
+                const jumpPrice = Math.min(
+                    highestAuto.maxAmount,
+                    secondMax + (highestAuto.increment || increment)
+                );
+
+                if (jumpPrice > auction.currentPrice) {
+                    bidsToInsert.push({
+                        bidAmount: secondMax,
+                        userId: secondHighestAuto.userId,
+                        auctionId: auctionId,
+                        autoBidId: secondHighestAuto.id
+                    });
+
+                    bidsToInsert.push({
+                        bidAmount: jumpPrice,
+                        userId: highestAuto.userId,
+                        auctionId: auctionId,
+                        autoBidId: highestAuto.id
+                    });
+
+                    newPrice = jumpPrice;
+                    winnerId = highestAuto.userId;
+                }
+            } else {
+                if (highestAuto.userId !== currentWinnerId) {
+                    const jumpPrice = auction.currentPrice + (highestAuto.increment || increment);
+                    
+                    if (jumpPrice <= highestAuto.maxAmount) {
+                        bidsToInsert.push({
+                            bidAmount: jumpPrice,
+                            userId: highestAuto.userId,
+                            auctionId: auctionId,
+                            autoBidId: highestAuto.id
+                        });
+                        newPrice = jumpPrice;
+                        winnerId = highestAuto.userId;
+                    }
+                }
+            }
+
+            if (bidsToInsert.length > 0) {
+                await tx.auction.update({
+                    where: { id: auctionId },
+                    data: { currentPrice: newPrice }
+                });
+
+                await tx.bid.createMany({
+                    data: bidsToInsert
+                });
+
+                autoBidDetails = { 
+                    auctionId, 
+                    newPrice, 
+                    bidderId: winnerId, 
+                    isAutoBid: true 
+                };
+            }
         });
 
-        if (nextWinnerId && autoBidDetails) {
+        // Kiküldjük a socket eseményt a háború VÉGÉN (így csak 1 villanás van a frontend-en)
+        if (autoBidDetails) {
             io.to(`auction-${auctionId}`).emit("BidUpdated", autoBidDetails);
-
-            await this.processAutoBids(auctionId, nextWinnerId);
         }
     },
 

@@ -13,7 +13,6 @@ import { useParams } from "react-router-dom";
 export default function UpdateAuctionPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  // 1. ÚJ STATE: Itt tároljuk a szerverről jövő, még megmaradt képek URL-jeit
   const [existingImages, setExistingImages] = useState<string[]>([]);
 
   const { id } = useParams<{ id: string }>();
@@ -22,7 +21,6 @@ export default function UpdateAuctionPage() {
   const { data: auction, isLoading } = useAuctionData(auctionId);
   const { mutate } = useAuctionUpdate(auctionId);
 
-  // 2. Szinkronizáljuk a szerverről jövő képeket a helyi state-be, ha betöltődtek az adatok
   useEffect(() => {
     if (auction?.images && existingImages.length === 0) {
       const timeout = setTimeout(() => {
@@ -173,7 +171,7 @@ export default function UpdateAuctionPage() {
           })}
         </div>
 
-        {/* Jobb oldali tartalmi rész */}
+        {/* Right side */}
         <div className="w-2/3 px-10 py-6 flex flex-col h-full overflow-hidden justify-center">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center space-y-4">
@@ -186,7 +184,7 @@ export default function UpdateAuctionPage() {
             <FormProvider {...methods}>
               <form
                 onSubmit={methods.handleSubmit(onSubmit, (validationErrors) =>
-                  console.log("❌ SÉMA HIBÁK:", validationErrors),
+                  console.log("Schema erros:", validationErrors),
                 )}
                 noValidate
                 className="flex flex-col flex-1 min-h-0"
@@ -207,7 +205,6 @@ export default function UpdateAuctionPage() {
                   <AuctionCategoryDataForm setStep={setCurrentPage} />
                 )}
                 {currentPage === 4 && (
-                  // 4. JAVÍTÁS: Átadjuk a meglévő képek állapotát a fotós formnak
                   <AuctionPhotoDataForm
                     files={selectedFiles}
                     setFiles={setSelectedFiles}

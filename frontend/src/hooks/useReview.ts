@@ -1,6 +1,6 @@
 import type { ReviewDTO, UserReviewDTO } from "../dto/review.dto";
 import type { AxiosError } from "axios";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "../api/axios";
 
 interface ReviewResponse {
@@ -8,18 +8,20 @@ interface ReviewResponse {
 }
 
 export const useReviewCreate = () => {
+  const queryClient = useQueryClient();
+
   return useMutation<
     ReviewResponse,
     AxiosError<{ error: string }>,
-    {reviewData: ReviewDTO, auctionId: number }
+    { reviewData: ReviewDTO, auctionId: number }
   >({
     mutationFn: async ({ reviewData , auctionId }) => {
-      
       const response = await api.post<ReviewResponse>(`/auction/${auctionId}/review`, reviewData);
       return response.data;
     },
-    onSuccess: (data) => {
-      console.log("Success! Review created successfully: ", data);
+    onSuccess: (_, variables) => {
+      console.log("Success! Review created successfully");
+      queryClient.invalidateQueries({ queryKey: ["auction", variables.auctionId] });
     },
     onError: (err) => {
       console.error(err.response?.data?.error || "Review creation failed!");
@@ -38,6 +40,7 @@ export const useUserReviews = (userId: number, skip: number = 0, take: number = 
       return response.data;
     },
     
+    // Only fetch if a valid userId is provided
     enabled: !!userId,
     refetchOnWindowFocus: false,
   });

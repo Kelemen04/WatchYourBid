@@ -6,7 +6,7 @@ import { incrementClick, validateCategory, validateId } from "../middlewares/auc
 import { ReviewSchema } from "../dto/review.dto";
 import { createReview } from "../controllers/review.controller";
 import { PlacePromotingBidSchema } from "../dto/bids.dto";
-import { getAuctionBids, placePromotingBid } from "../controllers/bid.controller";
+import { placePromotingBid } from "../controllers/bid.controller";
 import { upload } from "../middlewares/minio.middleware";
 import { verifyRoles } from "../middlewares/roleAuth.middleware";
 

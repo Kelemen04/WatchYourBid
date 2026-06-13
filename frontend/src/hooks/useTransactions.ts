@@ -1,15 +1,17 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { AxiosError } from "axios";
 import type { AllTransactionDTO, TransactionDTO, UploadMoneyDTO } from "../dto/transaction.dto";
 import api from "../api/axios";
 
 interface UploadMoneyResponse {
-    url: string;
+    url: string; // The Stripe Checkout URL
 }
 
 interface WithdrawMoneyResponse {
     message: string;
 }
+
+// Mutations
 
 export const useUploadMoney = () => {
   return useMutation<
@@ -18,13 +20,11 @@ export const useUploadMoney = () => {
       UploadMoneyDTO
     >({
       mutationFn: async (data: UploadMoneyDTO) => {
-        console.log(data)
         const response = await api.post<UploadMoneyResponse>(`/transaction/create-checkout-session`, data);
-        console.log(response)
         return response.data;
       },
       onSuccess: (data) => {
-        console.log("Success! Money uploaded successfully: ", data.url);
+        // Redirect the user to the Stripe payment page
         window.location.href = data.url;
       },
       onError: (err) => {
@@ -34,25 +34,30 @@ export const useUploadMoney = () => {
 }
 
 export const useWithdrawMoney = () => {
+  const queryClient = useQueryClient();
+  
   return useMutation<
       WithdrawMoneyResponse,
       AxiosError<{ error: string }>,
       UploadMoneyDTO
     >({
       mutationFn: async (data: UploadMoneyDTO) => {
-        console.log(data)
         const response = await api.post<WithdrawMoneyResponse>(`/transaction/withdraw`, data);
-        console.log(response)
         return response.data;
       },
       onSuccess: (data) => {
-        console.log("Success! Withdraw successfull: ", data.message);
+        console.log("Success! Withdraw successful: ", data.message);
+
+        queryClient.invalidateQueries({ queryKey: ["me"] }); 
+        queryClient.invalidateQueries({ queryKey: ["myTransactions"] });
       },
       onError: (err) => {
         console.error(err.response?.data?.error || "Withdraw failed!");
       },
     });
 }
+
+// Queries
 
 export const useMyTransactions = (skip: number, take: number) => {
   return useQuery<TransactionDTO[], AxiosError<{ error: string }>>({

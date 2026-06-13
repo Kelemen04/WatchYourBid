@@ -17,7 +17,9 @@ export default function Filters() {
       }
     });
 
-    navigate(`${location.pathname}?${params.toString()}`);
+    const targetPath = "/auctions";
+
+    navigate(`${targetPath}?${params.toString()}`);
   };
 
   const handleResetFilters = () => {

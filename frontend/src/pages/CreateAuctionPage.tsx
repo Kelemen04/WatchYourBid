@@ -83,15 +83,14 @@ export default function CreateAuctionPage() {
           })}
         </div>
 
-        {/* Jobb oldali tartalmi rész */}
+        {/* Displaying */}
         <div className="w-2/3 px-10 py-6 flex flex-col h-full overflow-hidden">
           <FormProvider {...methods}>
             <form
               onSubmit={methods.handleSubmit(onSubmit, (validationErrors) =>
-                console.log("❌ SÉMA HIBÁK:", validationErrors),
+                console.log("Schema errors:", validationErrors),
               )}
               noValidate
-              // ITT VAN A JAVÍTÁS: flex-1 és min-h-0
               className="flex flex-col flex-1 min-h-0"
             >
               {methods.formState.errors.root && (

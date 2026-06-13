@@ -11,7 +11,6 @@ export default function CategoryPage() {
   const take = 10;
   const skip = page * take;
 
-  // Átadjuk a skip és take értékeket
   const { data, isLoading } = useCategoryData(category || "", skip, take);
 
   const formattedCategory = category
@@ -31,7 +30,7 @@ export default function CategoryPage() {
   const auctionList = data?.others || [];
 
   return (
-    <div className="w-full mb-10 px-4 md:px-10 flex flex-col gap-16 mt-24">
+    <div className="w-full bg-text-muted/10 py-10 px-4 md:px-10 flex flex-col gap-16">
       <div className="flex flex-col md:flex-row gap-10 items-start">
         <aside className="w-full md:w-[300px] shrink-0">
           <div className="sticky top-4">
@@ -77,7 +76,7 @@ export default function CategoryPage() {
               </div>
             )}
 
-            {/* Lapozó gombok */}
+            {/* Pagination */}
             {!isLoading && (
               <div className="mt-8 flex justify-center items-center gap-8">
                 <button

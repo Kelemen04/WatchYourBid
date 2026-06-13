@@ -19,7 +19,14 @@ export default function AuctionOwnerPanel() {
         "Are you sure you want to delete this auction? This action cannot be undone.",
       )
     ) {
-      deleteAuction(auctionId);
+      deleteAuction(auctionId, {
+        onError: (err) => {
+          const msg =
+            err.response?.data?.error ||
+            "Deletion failed! This auction might not be deletable.";
+          alert(msg);
+        },
+      });
     }
   };
 

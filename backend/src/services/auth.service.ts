@@ -50,12 +50,29 @@ export const authService = {
       await transporter.sendMail({
         to: data.email,
         subject: "Email verification for WatchYourBid app",
-        html: `<h1>Verify your email</h1>
-              <p>Thank you for registering! Please click the button below to verify your account:</p>
-              <a href="${verificationLink}" style="background: #fbbf24; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
-                Verify My Account
-              </a>`
-      })
+        html: `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h1 style="color: #111827; font-size: 24px;">Verify your email</h1>
+            <p style="color: #4b5563; font-size: 16px; line-height: 1.5;">
+              Thank you for registering! We're excited to have you on board. Please click the button below to verify your account and start your journey with WatchYourBid.
+            </p>
+            
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
+              <tr>
+                <td align="center" bgcolor="#fbbf24" style="border-radius: 8px;">
+                  <a href="${verificationLink}" 
+                    style="display: block; padding: 14px 28px; font-size: 16px; font-weight: bold; color: #ffffff; text-decoration: none; border-radius: 8px; border: 1px solid #fbbf24; background-color: #fbbf24;">
+                    Verify My Account
+                  </a>
+                </td>
+              </tr>
+            </table>
+            
+            <p style="color: #9ca3af; font-size: 12px; margin-top: 40px;">
+              If you didn't create an account, you can safely ignore this email.
+            </p>
+          </div>`
+      });
       console.log("Email sent!")
     } catch (error) {
       console.error("Email error:", error);
@@ -185,11 +202,26 @@ export const authService = {
       await transporter.sendMail({
         to: existing.email,
         subject: "Email verification for WatchYourBid app",
-        html: `<h1>Verify your email</h1>
-              <p>Thank you for registering! Please click the button below to verify your account:</p>
-              <a href="${verificationLink}" style="background: #fbbf24; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
-                Verify My Account
-              </a>`
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+            <h1 style="color: #1f2937;">Verify your email</h1>
+            <p style="color: #4b5563; font-size: 16px;">
+              Thank you for registering! Please click the button below to verify your account:
+            </p>
+            
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
+              <tr>
+                <td align="center" bgcolor="#fbbf24" style="border-radius: 8px;">
+                  <a href="${verificationLink}" 
+                    style="display: block; padding: 14px 28px; font-family: sans-serif; font-size: 16px; font-weight: bold; color: #ffffff; text-decoration: none; border-radius: 8px; border: 1px solid #fbbf24;">
+                    Verify My Account
+                  </a>
+                </td>
+              </tr>
+            </table>
+            
+            <p style="color: #9ca3af; font-size: 12px;">If you didn't create an account, you can safely ignore this email.</p>
+          </div>`
       })
       
       console.log("Email resent!")
@@ -217,12 +249,29 @@ export const authService = {
       await transporter.sendMail({
         to: existing.email,
         subject: "Password reset",
-        html: `<h1>Reset your password</h1>
-              <p>Please click the button below to reset your password:</p>
-              <a href="${forgotLink}" style="background: #fbbf24; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
-                Reset password
-              </a>`
-      })
+        html: `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h1 style="color: #111827; font-size: 24px;">Reset your password</h1>
+            <p style="color: #4b5563; font-size: 16px; line-height: 1.5;">
+              We received a request to reset your password. If you didn't make this request, you can safely ignore this email. Otherwise, click the button below to set a new password:
+            </p>
+            
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
+              <tr>
+                <td align="center" bgcolor="#fbbf24" style="border-radius: 8px;">
+                  <a href="${forgotLink}" 
+                    style="display: block; padding: 14px 28px; font-size: 16px; font-weight: bold; color: #ffffff; text-decoration: none; border-radius: 8px; border: 1px solid #fbbf24; background-color: #fbbf24;">
+                    Reset Password
+                  </a>
+                </td>
+              </tr>
+            </table>
+            
+            <p style="color: #9ca3af; font-size: 12px; margin-top: 40px;">
+              This link will expire in a short time for your security.
+            </p>
+          </div>`
+      });
       
       console.log("Email sent for resetting password!")
 

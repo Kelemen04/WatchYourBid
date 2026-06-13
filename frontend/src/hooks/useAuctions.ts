@@ -4,6 +4,7 @@ import type { AxiosError } from 'axios';
 import type { AuctionCardData, AuctionFullData, AuctionInput, AuctionItemData, AuctionTableData, AuctionFilterDTO } from '../dto/auction.dto';
 import { useNavigate } from 'react-router-dom';
 
+// Interfaces for API responses
 interface HomeAuctionsResponse {
   trending: { auction: AuctionCardData }[];
   latest: AuctionCardData[];
@@ -19,7 +20,6 @@ interface AuctionCategoryResponse {
   others: AuctionItemData[]
 }
 
-
 interface CreateAuctionResponse {
   message: string;
   auction: AuctionFullData;
@@ -29,6 +29,8 @@ interface MessageResponse {
   message: string;
 }
 
+// Query Hooks
+
 export const useAuctionsByFilters = (filters: AuctionFilterDTO, skip: number, take: number) => {
   return useQuery<AuctionItemData[], AxiosError<{ error: string }>>({
     queryKey: ['auctionsByFilters', filters, skip, take],
@@ -36,6 +38,7 @@ export const useAuctionsByFilters = (filters: AuctionFilterDTO, skip: number, ta
     queryFn: async () => {
       const cleanedFilters: Record<string, string | number> = {};
 
+      // Remove empty or undefined values before sending to the backend
       Object.entries(filters).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== "") {
           cleanedFilters[key] = value as string | number;
@@ -49,7 +52,7 @@ export const useAuctionsByFilters = (filters: AuctionFilterDTO, skip: number, ta
       return response.data;
     },
     refetchOnWindowFocus: false,
-    refetchInterval: 30000,
+    refetchInterval: 30000, // Auto-refresh data every 30 seconds
   });
 };
 
@@ -79,6 +82,8 @@ export const useWatchlist = (skip: number, take: number) => {
   });
 };
 
+// Mutation Hooks for modifying data
+
 export const useAddToWatchlist = () => {
   const queryClient = useQueryClient();
 
@@ -94,6 +99,7 @@ export const useAddToWatchlist = () => {
     onSuccess: (data) => {
       console.log("Success!", data.message);
       
+      // Refresh all lists so the bookmark icon updates instantly everywhere
       queryClient.invalidateQueries({ queryKey: ['homeAuctions'] });
       queryClient.invalidateQueries({ queryKey: ['categoryAuctions'] });
       queryClient.invalidateQueries({ queryKey: ['auctionsByFilters'] });
@@ -132,6 +138,7 @@ export const useCategoryData = (categoryName: string, skip: number, take: number
   return useQuery<AuctionCategoryResponse, AxiosError<{ error: string }>>({
     queryKey: ['categoryAuctions', categoryName, skip, take], 
     queryFn: async () => {
+      // Convert category to uppercase("WRISTWATCH" etc.)
       const formattedCategory = categoryName.toUpperCase();
       console.log(formattedCategory)
       const response = await api.get<AuctionCategoryResponse>(`/auction/category/${formattedCategory}`, {
@@ -159,6 +166,8 @@ export const useAuctionData = ( id: number) => {
 
 export const useAuctionCreate = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  
   return useMutation<
     CreateAuctionResponse,
     AxiosError<{ error: string }>,
@@ -166,10 +175,11 @@ export const useAuctionCreate = () => {
   >({
     mutationFn: async ({ auctionData, images }) => {
       
+      // 1. Create the auction first to get its new ID
       const response = await api.post<CreateAuctionResponse>("/auction/", auctionData);
-      
       const auctionId = response.data.auction.id; 
 
+      // 2. If there are images, upload them to the newly created auction
       if (images && images.length > 0) {
         const formData = new FormData();
         images.forEach((file) => {
@@ -185,6 +195,13 @@ export const useAuctionCreate = () => {
     },
     onSuccess: (data) => {
       console.log("Success! Auction created successfully: ", data.auction.title);
+      
+      // Clear cache so the new auction appears immediately in all lists
+      queryClient.invalidateQueries({ queryKey: ['homeAuctions'] });
+      queryClient.invalidateQueries({ queryKey: ['categoryAuctions'] });
+      queryClient.invalidateQueries({ queryKey: ['auctionsByUser'] });
+      queryClient.invalidateQueries({ queryKey: ['auctionsByFilters'] });
+
       navigate('/dashboard')
     },
     onError: (err) => {
@@ -206,7 +223,7 @@ export const useAuctionUpdate = (auctionId: number) => {
       
       const response = await api.put<CreateAuctionResponse>(`/auction/${auctionId}`, auctionData);
       
-
+      // Upload new images if were added during the update
       if (images && images.length > 0) {
         const formData = new FormData();
         images.forEach((file) => {
@@ -247,6 +264,7 @@ export const useAuctionDelete = () => {
     onSuccess: (data, auctionId) => {
       console.log("Auction deleted successfully:", data.message);
 
+      // Remove the deleted auction from all cached lists
       queryClient.invalidateQueries({ queryKey: ['homeAuctions'] });
       queryClient.invalidateQueries({ queryKey: ['categoryAuctions'] });
       queryClient.invalidateQueries({ queryKey: ['auctionsByUser'] });

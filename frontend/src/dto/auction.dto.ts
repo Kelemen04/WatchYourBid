@@ -81,6 +81,7 @@ export const AuctionCardSchema = z.object({
   endTime: z.coerce.date(),
   images: z.array(z.string()).optional(),
   isWatchlisted: z.boolean().default(false),
+  status: z.enum(AuctionStatus),
 });
 
 export const AuctionItemSchema = AuctionCardSchema.extend({

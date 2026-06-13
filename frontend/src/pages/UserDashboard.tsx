@@ -1,5 +1,5 @@
 import { Link, Outlet, useNavigate } from "react-router-dom";
-import { useDeleteMe, useMeData } from "../hooks/useUser"; // <-- JAVÍTVA: useNavbar helyett useMeData
+import { useDeleteMe, useMeData } from "../hooks/useUser";
 import TransactionForm from "../features/auth/TransactionForm";
 import WithdrawForm from "../features/auth/WithdrawForm";
 import { getUserId, getUserRole } from "../api/axios";
@@ -29,6 +29,12 @@ export default function UserDashboard() {
         onSuccess: () => {
           navigate("/home");
         },
+        onError: (err) => {
+          const errorMessage =
+            err.response?.data?.error ||
+            "Account deletion failed! You might have active auctions or bids.";
+          alert(errorMessage);
+        },
       });
     }
   };
@@ -46,8 +52,7 @@ export default function UserDashboard() {
             Available Balance
           </p>
           <p className="font-[var(--font-playfair)] text-3xl font-bold text-[var(--color-primary)] mb-6">
-            {/* JAVÍTVA: Itt is a fullUserData-ból olvassuk ki */}€
-            {fullUserData?.balance?.toLocaleString() || 0}
+            €{fullUserData?.balance?.toLocaleString() || 0}
           </p>
 
           {/* Transactions */}
@@ -149,7 +154,7 @@ export default function UserDashboard() {
               </Link>
             )}
 
-            {/* BUYER LINK LOGIKA */}
+            {/* Buyer register or update */}
             {isRegisteredBuyer ? (
               <Link
                 to="/update-buyer"
@@ -166,7 +171,7 @@ export default function UserDashboard() {
               </Link>
             )}
 
-            {/* SELLER LINK LOGIKA */}
+            {/* Seller register or update */}
             {isRegisteredSeller ? (
               <Link
                 to="/update-seller"

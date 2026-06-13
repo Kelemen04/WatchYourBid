@@ -8,7 +8,6 @@ export default function UserAuctionsPage() {
   const take = 5;
   const skip = page * take;
 
-  // A 'data' tartalmazza a listát
   const { data: auctions, isLoading } = useAuctionsByUser(skip, take);
   const { mutate: auctionDelete } = useAuctionDelete();
   const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -16,7 +15,14 @@ export default function UserAuctionsPage() {
   const handleDelete = (auctionId: number) => {
     if (window.confirm("Are you sure you want to delete this auction?")) {
       setDeletingId(auctionId);
+
       auctionDelete(auctionId, {
+        onError: (err) => {
+          const errorMessage =
+            err.response?.data?.error ||
+            "Failed to delete auction. It might have active bids.";
+          alert(errorMessage);
+        },
         onSettled: () => setDeletingId(null),
       });
     }
@@ -32,7 +38,6 @@ export default function UserAuctionsPage() {
     );
   }
 
-  // Biztonságos tömb a listázáshoz
   const auctionList = auctions || [];
 
   return (
@@ -69,14 +74,14 @@ export default function UserAuctionsPage() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-20 bg-white border border-text-muted/20 rounded-2xl">
-            <p className="text-gray-500 italic">
+          <div className="text-center py-20 bg-white border border-text-muted/20 rounded-2xl shadow-sm">
+            <p className="text-text-muted text-lg uppercase tracking-widest">
               You don't have any auctions yet!
             </p>
           </div>
         )}
 
-        {/* Lapozó gombok */}
+        {/* Pagination */}
         {!isLoading && (
           <div className="mt-8 flex justify-center items-center gap-8">
             <button

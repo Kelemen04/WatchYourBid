@@ -1,5 +1,6 @@
 import { createContext } from "react";
 
+// User state and context definitions
 interface AuthState {
   user: { username: string; id: number; role: string } | null;
   accessToken: string | null;

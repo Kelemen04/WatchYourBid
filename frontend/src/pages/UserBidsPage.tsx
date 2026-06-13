@@ -79,7 +79,6 @@ export default function UserBidsPage() {
             &larr; Previous
           </button>
 
-          {/* AKTUÁLIS OLDALSZÁM */}
           <span className="font-inter font-bold text-background text-sm uppercase tracking-widest w-20 text-center shrink-0">
             Page {page + 1}
           </span>

@@ -36,7 +36,7 @@ export default function AddressDataForm({ setStep }: Props) {
           Address Information
         </h2>
         <p className="font-inter text-text-muted text-sm">
-          Where should we send your items?
+          Give us your address.
         </p>
       </div>
 
@@ -198,7 +198,7 @@ export default function AddressDataForm({ setStep }: Props) {
               htmlFor="building"
               className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5"
             >
-              Building (Opt):
+              Building (Optional):
             </label>
             <input
               type="text"
@@ -212,7 +212,7 @@ export default function AddressDataForm({ setStep }: Props) {
               htmlFor="floor"
               className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5"
             >
-              Floor (Opt):
+              Floor (Optional):
             </label>
             <input
               type="text"
@@ -226,7 +226,7 @@ export default function AddressDataForm({ setStep }: Props) {
               htmlFor="apartment"
               className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5"
             >
-              Apt (Opt):
+              Apt (Optional):
             </label>
             <input
               type="text"

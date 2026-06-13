@@ -110,7 +110,6 @@ export async function resetPassword(req: Request, res: Response) {
   const body = req.body as ResetPasswordDTO;
 
   try{
-    console.log("CONT")
     const resetPassword = await authService.resetPassword(body);
     res.status(200).json(resetPassword);
   } catch(e){

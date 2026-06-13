@@ -22,6 +22,7 @@ interface MessageResponse {
   message: string;
 }
 
+// Helper hook to access the global authentication state
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) throw new Error("useAuth must be used within an AuthProvider");
@@ -34,11 +35,13 @@ export const useLogin = () => {
 
   return useMutation<LoginResponse, AxiosError<{ error: string }>, LoginDTO>({
     mutationFn: async (data: LoginDTO) => {
+      // Allows the browser to receive and send HttpOnly cookies
       const response = await api.post('/auth/login', data, { withCredentials: true});
       return response.data;
     },
     
     onSuccess: (data) => {
+      // Save the token and update the global app state
       setAccessToken(data.accessToken);
       setAuth({
         user: { 
@@ -50,7 +53,6 @@ export const useLogin = () => {
       });
 
       console.log("Login successful, global state updated!");
-      
       navigate('/home');
     },
 
@@ -70,6 +72,7 @@ export const useLogout = () => {
     } catch (err) {
       console.error("Logout error:", err);
     } finally {
+      // Delete the tokens and global state to securely log the user out
       setAccessToken(null);
       setAuth({ user: null, accessToken: null });
       navigate('/home');
@@ -140,12 +143,13 @@ export const useRefreshToken = () => {
 
   const refresh = async () => {
     try {
+      // Ask the server for a new access token using the hidden refresh cookie
       const response = await api.post('/auth/refresh', {}, { withCredentials: true });
       
       const { accessToken, user } = response.data;
 
+      // Restore the user session
       setAccessToken(accessToken);
-
       setAuth({
         user: user,
         accessToken: accessToken
@@ -153,6 +157,7 @@ export const useRefreshToken = () => {
 
       return accessToken;
     } catch {
+      // If the refresh token is expired or invalid, clear the session completely
       setAccessToken(null);
       setAuth({ user: null, accessToken: null });
       return null;

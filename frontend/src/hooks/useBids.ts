@@ -20,6 +20,8 @@ interface PromoteResponse {
   message: string;
 }
 
+// Mutation
+
 export const useAuctionPromote = () => {
   const queryClient = useQueryClient();
 
@@ -33,7 +35,8 @@ export const useAuctionPromote = () => {
       return response.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["auction", variables.auctionId] });
+      // Refresh auction to show new promotion status
+      queryClient.invalidateQueries({ queryKey: ["auctionDetails", variables.auctionId] });
     },
   });
 };
@@ -51,8 +54,9 @@ export const useBidCreate = () => {
       return response.data;
     },
     onSuccess: (_, variables) => {
+      // Refresh bids list and auction price
       queryClient.invalidateQueries({ queryKey: ["bids", variables.auctionId] });
-      queryClient.invalidateQueries({ queryKey: ["auction", variables.auctionId] });
+      queryClient.invalidateQueries({ queryKey: ["auctionDetails", variables.auctionId] });
     },
   });
 };
@@ -70,8 +74,9 @@ export const useAutoBidCreate = () => {
       return response.data;
     },
     onSuccess: (_, variables) => {
+      // Update bid history and auction data after autobid setup
       queryClient.invalidateQueries({ queryKey: ["bids", variables.auctionId] });
-      queryClient.invalidateQueries({ queryKey: ["auction", variables.auctionId] });
+      queryClient.invalidateQueries({ queryKey: ["auctionDetails", variables.auctionId] });
     },
   });
 };
@@ -89,11 +94,14 @@ export const useBuyNow = () => {
       return response.data;
     },
     onSuccess: (_, variables) => {
+      // Show auction as ended
       queryClient.invalidateQueries({ queryKey: ["bids", variables.auctionId] });
-      queryClient.invalidateQueries({ queryKey: ["auction", variables.auctionId] });
+      queryClient.invalidateQueries({ queryKey: ["auctionDetails", variables.auctionId] });
     },
   });
 };
+
+// Queries
 
 export const useAuctionBids = (id: number, take: number) => {
   return useQuery<BidDataDTO[], AxiosError<{ error: string }>>({
@@ -104,7 +112,7 @@ export const useAuctionBids = (id: number, take: number) => {
       });
       return response.data;
     },
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: false, // Prevent unnecessary refetching
   });
 };
 

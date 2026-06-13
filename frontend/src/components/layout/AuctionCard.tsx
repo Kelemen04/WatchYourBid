@@ -12,8 +12,17 @@ export default function AuctionCard({ auction }: { auction: AuctionCardData }) {
 
   useEffect(() => {
     const calculateTime = () => {
+      // If ended, set timer to zero
+      if (auction.status === "ENDED" || auction.status === "CANCELLED") {
+        setTimeLeft("0D 0H 0M 0S");
+        setIsEnded(true);
+        return;
+      }
+
+      // Calculating countdown time
       const difference =
         new Date(auction.endTime).getTime() - new Date().getTime();
+
       if (difference <= 0) {
         setTimeLeft("0D 0H 0M 0S");
         setIsEnded(true);
@@ -30,11 +39,12 @@ export default function AuctionCard({ auction }: { auction: AuctionCardData }) {
 
       setTimeLeft(`${days}D ${hours}H ${minutes}M ${seconds}S`);
     };
+
     calculateTime();
     const interval = setInterval(calculateTime, 1000);
 
     return () => clearInterval(interval);
-  }, [auction.endTime]);
+  }, [auction.endTime, auction.status]);
 
   const { mutate } = useAddToWatchlist();
 
@@ -80,6 +90,7 @@ export default function AuctionCard({ auction }: { auction: AuctionCardData }) {
             type="button"
             onClick={(e) => {
               e.preventDefault();
+              e.stopPropagation();
               handleWatchlistClick(e);
             }}
             className="absolute top-3 right-3 p-2.5 bg-white/90 backdrop-blur-sm rounded-full border border-gray-200 text-gray-400 hover:text-primary hover:border-primary shadow-sm transition-all z-10"

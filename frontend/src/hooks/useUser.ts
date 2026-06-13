@@ -22,7 +22,7 @@ interface MessageResponse {
   message: string;
 }
 
-// --- REGISTER HOOKS ---
+// Register and update hooks
 
 export const useBuyerRegister = () => {
   const queryClient = useQueryClient()
@@ -34,10 +34,10 @@ export const useBuyerRegister = () => {
       { buyerData: BuyerRegisterDTO, image?: File }
     >({
       mutationFn: async ({ buyerData, image}) => {
-        // 1. Lépés: Elküldjük a szöveges regisztrációs adatokat sima JSON-ként
+        // Send registration details
         const response = await api.post<BuyerRegisterResponse>(`/user/me/register-buyer`, buyerData);
 
-        // 2. Lépés: Ha van kép, azt a dedikált avatar végpontra küldjük
+        // If a profile image is given, upload it separately
         if (image) {
             const formData = new FormData();
             formData.append("image", image);
@@ -51,7 +51,7 @@ export const useBuyerRegister = () => {
       onSuccess: (data) => {
         console.log("Success! Buyer account created successfully: ", data);
         queryClient.invalidateQueries({ queryKey: ['me'] });
-        queryClient.invalidateQueries({ queryKey: ['navbar'] });
+        queryClient.refetchQueries({ queryKey: ['me'] });
         navigate('/home');
       },
       onError: (err) => {
@@ -70,10 +70,8 @@ export const useSellerRegister = () => {
       { sellerData: SellerRegisterDTO, image?: File }
     >({
       mutationFn: async ({ sellerData, image}) => {
-        // 1. Lépés: Szöveges adatok
         const response = await api.post<SellerRegisterResponse>(`/user/me/register-seller`, sellerData);
 
-        // 2. Lépés: Kép feltöltése
         if (image) {
             const formData = new FormData();
             formData.append("image", image);
@@ -86,8 +84,8 @@ export const useSellerRegister = () => {
       },
       onSuccess: (data) => {
         console.log("Success! Seller account created successfully: ", data);
-        queryClient.invalidateQueries({ queryKey: ['me'] }); 
-        queryClient.invalidateQueries({ queryKey: ['navbar'] });
+        queryClient.invalidateQueries({ queryKey: ['me'] });
+        queryClient.refetchQueries({ queryKey: ['me'] });
         navigate('/home');
       },
       onError: (err) => {
@@ -96,10 +94,9 @@ export const useSellerRegister = () => {
     });
 }
 
-// --- UPDATE HOOKS ---
-
 export const useBuyerUpdate = () => {
   const queryClient = useQueryClient()
+  const navigate = useNavigate();
 
   return useMutation<
       BuyerRegisterResponse,
@@ -107,10 +104,8 @@ export const useBuyerUpdate = () => {
       { buyerData: BuyerRegisterDTO, image?: File }
     >({
       mutationFn: async ({ buyerData, image}) => {
-        // 1. Lépés: Szöveges adatok frissítése (PATCH)
         const response = await api.patch<BuyerRegisterResponse>(`/user/me/update-buyer`, buyerData);
 
-        // 2. Lépés: Új kép feltöltése (csak ha tényleg választott újat)
         if (image) {
             const formData = new FormData();
             formData.append("image", image);
@@ -124,7 +119,8 @@ export const useBuyerUpdate = () => {
       onSuccess: (data) => {
         console.log("Success! Buyer account updated successfully: ", data);
         queryClient.invalidateQueries({ queryKey: ['me'] });
-        queryClient.invalidateQueries({ queryKey: ['navbar'] });
+        queryClient.refetchQueries({ queryKey: ['me'] });
+        navigate('/dashboard');
       },
       onError: (err) => {
         console.error(err.response?.data?.error || "Buyer account update failed!");
@@ -134,6 +130,7 @@ export const useBuyerUpdate = () => {
 
 export const useSellerUpdate = () => {
   const queryClient = useQueryClient()
+  const navigate = useNavigate();
 
   return useMutation<
       SellerRegisterResponse,
@@ -141,10 +138,8 @@ export const useSellerUpdate = () => {
       { sellerData: SellerRegisterDTO, image?: File }
     >({
       mutationFn: async ({ sellerData, image}) => {
-        // 1. Lépés: Szöveges adatok frissítése
         const response = await api.patch<SellerRegisterResponse>(`/user/me/update-seller`, sellerData);
 
-        // 2. Lépés: Új kép feltöltése
         if (image) {
             const formData = new FormData();
             formData.append("image", image);
@@ -157,8 +152,9 @@ export const useSellerUpdate = () => {
       },
       onSuccess: (data) => {
         console.log("Success! Seller account updated successfully: ", data);
-        queryClient.invalidateQueries({ queryKey: ['me'] }); 
-        queryClient.invalidateQueries({ queryKey: ['navbar'] });
+        queryClient.invalidateQueries({ queryKey: ['me'] });
+        queryClient.refetchQueries({ queryKey: ['me'] });
+        navigate('/dashboard');
       },
       onError: (err) => {
         console.error(err.response?.data?.error || "Seller account update failed!");
@@ -166,12 +162,13 @@ export const useSellerUpdate = () => {
     });
 }
 
+// Profile and admin hooks
+
 export const useMeData = (options?: { enabled?: boolean }) => {
   return useQuery<MeResponse, AxiosError<{ error: string }>>({ 
     queryKey: ["me"],
     queryFn: async () => {
       const response = await api.get<MeResponse>(`/user/me`);
-      console.log(response);
       return response.data;
     },
     refetchOnWindowFocus: false, 
@@ -191,9 +188,8 @@ export const useDeleteMe = () => {
     onSuccess: (data) => {
       console.log("Account deleted successfully:", data.message);
       
-      setAccessToken(null);
-      
-      queryClient.clear();
+      setAccessToken(null); // Clear local token
+      queryClient.clear(); // Clear all cached user data
     },
     onError: (err) => {
       console.error("Account deletion failed:", err.response?.data?.error || "Unknown error!");
@@ -235,6 +231,7 @@ export const useVerifyUser = () => {
     },
     onSuccess: (data) => {
       console.log("Success:", data.message);
+      // Refresh admin user list so the verified status updates immediately
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
     },
     onError: (err) => {
@@ -252,6 +249,7 @@ export const useUpdateUserRole = () => {
     },
     onSuccess: (data) => {
       console.log("Success:", data.message);
+      // Refresh admin user list to show the new role
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
     },
     onError: (err) => {

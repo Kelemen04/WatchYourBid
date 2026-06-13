@@ -1,4 +1,21 @@
-import { useEffect, useState } from "react";
+import { useMemo, useEffect, useRef } from "react";
+
+const useImagePreview = (file: File | undefined) => {
+  const preview = useMemo(() => {
+    if (!file) {
+      return null;
+    }
+    return URL.createObjectURL(file);
+  }, [file]);
+
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview);
+    };
+  }, [preview]);
+
+  return preview;
+};
 
 interface Props {
   setStep: React.Dispatch<React.SetStateAction<number>>;
@@ -15,20 +32,8 @@ export default function UserPhotoDataForm({
   existingImage,
   setExistingImage,
 }: Props) {
-  const [preview, setPreview] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!file) {
-      const timeoutId = setTimeout(() => setPreview(null), 0);
-      return () => clearTimeout(timeoutId);
-    }
-    const objectUrl = URL.createObjectURL(file);
-    const timeoutId = setTimeout(() => setPreview(objectUrl), 0);
-    return () => {
-      clearTimeout(timeoutId);
-      URL.revokeObjectURL(objectUrl);
-    };
-  }, [file]);
+  const preview = useImagePreview(file);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -36,7 +41,6 @@ export default function UserPhotoDataForm({
     }
   };
 
-  // Vagy az új kiválasztott fájl előnézete, vagy a szerverről érkező régi kép
   const displayImage = preview || existingImage;
 
   return (
@@ -46,7 +50,7 @@ export default function UserPhotoDataForm({
           Profile Photo
         </h2>
         <p className="font-inter text-text-muted text-sm">
-          Upload a picture so people can recognize you.
+          Upload a picture about yourself.
         </p>
       </div>
 
@@ -72,10 +76,11 @@ export default function UserPhotoDataForm({
             <p className="font-inter text-text-muted font-bold text-sm">
               Click to select new photo
             </p>
-            <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 5MB</p>
+            <p className="text-xs text-gray-500 mt-1">Up to 5MB</p>
             <input
               type="file"
               id="file"
+              ref={fileInputRef}
               accept="image/*"
               onChange={handleFileChange}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
@@ -85,16 +90,17 @@ export default function UserPhotoDataForm({
 
         {displayImage && (
           <div className="flex flex-col items-center gap-3">
-            <div className="relative w-40 h-40 rounded-full overflow-hidden border-4 border-primary shadow-lg bg-white">
-              <img
-                src={displayImage}
-                alt="Profile Preview"
-                className="object-cover w-full h-full"
-              />
+            <div className="relative w-40 h-40">
+              <div className="w-40 h-40 rounded-full overflow-hidden border-4 border-primary shadow-lg bg-white">
+                <img
+                  src={displayImage}
+                  alt="Profile Preview"
+                  className="w-full h-full object-cover"
+                />
+              </div>
 
-              {/* Ha ez a szerveren lévő kép, jelezzük egy címkével */}
               {!preview && existingImage && (
-                <span className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-primary text-background font-bold text-[9px] px-2 py-0.5 rounded uppercase tracking-widest shadow-md">
+                <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-primary text-background font-bold text-[9px] px-2 py-0.5 rounded uppercase tracking-widest shadow-md z-10 whitespace-nowrap">
                   Saved
                 </span>
               )}
@@ -104,16 +110,14 @@ export default function UserPhotoDataForm({
                 onClick={() => {
                   setFile(undefined);
                   if (setExistingImage) setExistingImage(null);
+                  if (fileInputRef.current) fileInputRef.current.value = "";
                 }}
-                className="absolute top-2 right-4 w-7 h-7 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center text-xs font-bold transition-all shadow-md z-10"
+                className="absolute -top-1 -right-1 w-8 h-8 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center text-xs font-bold transition-all shadow-xl z-[100] ring-2 ring-white"
                 title="Remove photo"
               >
                 ✕
               </button>
             </div>
-            <span className="text-xs font-bold text-text-muted uppercase tracking-widest">
-              {preview ? file?.name : "Current Profile Picture"}
-            </span>
           </div>
         )}
       </div>
@@ -130,7 +134,7 @@ export default function UserPhotoDataForm({
           type="submit"
           className="text-white bg-background hover:bg-primary-hover font-bold tracking-widest uppercase rounded-xl text-sm px-8 py-3.5 transition-all"
         >
-          Submit Updates
+          Submit
         </button>
       </div>
     </div>

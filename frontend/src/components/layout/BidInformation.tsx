@@ -13,15 +13,17 @@ import { Link, useParams } from "react-router-dom";
 import { useAuctionData } from "../../hooks/useAuctions";
 import { useAuctionBids } from "../../hooks/useBids";
 import { useQueryClient } from "@tanstack/react-query";
-import { io } from "socket.io-client";
+import { useMeData } from "../../hooks/useUser";
+import { socket } from "../../main";
 
-// 1. Különálló komponens a visszaszámlálónak, szép dobozos dizájnnal
 const CountdownTimer = ({
   endTime,
   status,
+  onTimeUp,
 }: {
   endTime: string | Date;
   status: string;
+  onTimeUp?: () => void;
 }) => {
   const [timeState, setTimeState] = useState({
     days: 0,
@@ -34,16 +36,31 @@ const CountdownTimer = ({
   useEffect(() => {
     if (!endTime) return;
 
+    let safeEndString = endTime.toString();
+    if (!safeEndString.includes("T")) {
+      safeEndString = safeEndString.replace(" ", "T");
+    }
+    if (!safeEndString.endsWith("Z")) {
+      safeEndString += "Z";
+    }
+
+    const endMs = new Date(safeEndString).getTime();
+
     const calculateTime = () => {
-      const difference = new Date(endTime).getTime() - new Date().getTime();
+      const now = new Date().getTime();
+      const difference = endMs - now;
 
       if (difference <= 0 || status === "ENDED" || status === "CANCELLED") {
-        setTimeState({
-          days: 0,
-          hours: 0,
-          minutes: 0,
-          seconds: 0,
-          isEnded: true,
+        setTimeState((prev) => {
+          if (
+            !prev.isEnded &&
+            status !== "ENDED" &&
+            status !== "CANCELLED" &&
+            onTimeUp
+          ) {
+            onTimeUp();
+          }
+          return { days: 0, hours: 0, minutes: 0, seconds: 0, isEnded: true };
         });
         return;
       }
@@ -68,7 +85,7 @@ const CountdownTimer = ({
     const timer = setInterval(calculateTime, 1000);
 
     return () => clearInterval(timer);
-  }, [endTime, status]);
+  }, [endTime, status, onTimeUp]);
 
   if (timeState.isEnded) {
     return (
@@ -120,70 +137,60 @@ const CountdownTimer = ({
   );
 };
 
-// 2. Fő komponens
+// MAIN COMPONENT
 export default function BidInformation() {
   const { id } = useParams();
   const auctionId = Number(id);
   const queryClient = useQueryClient();
   const [showAutoBid, setShowAutoBid] = useState(false);
 
+  const [localSecretBidPlaced, setLocalSecretBidPlaced] = useState(false);
+
+  const { data: user } = useMeData();
+  const currentUserId = user?.id;
+
   const { mutate: placeBid, isPending: isBidPending } = useBidCreate();
   const { mutate: autoBid, isPending: isAutoBidPending } = useAutoBidCreate();
   const { mutate: buyNow, isPending: isBuyNowPending } = useBuyNow();
 
-  // KIVETTÜK A REFETCH FÜGGVÉNYEKET AZ AUTOMATIKUS FRISSÍTÉSHEZ
   const { data: bids, refetch: refetchBids } = useAuctionBids(auctionId, 10);
   const { data: auction, refetch: refetchAuction } = useAuctionData(auctionId);
 
-  // --- SOCKET.IO INTEGRÁCIÓ ---
+  // SOCKET.IO
   useEffect(() => {
     if (!auctionId) return;
 
-    // 1. Csatlakozás a szerverhez
-    const socket = io("http://localhost:8000"); // Ezt írd át, ha a backend címe/portja más!
-
-    // 2. Szobába lépés az ID alapján
     socket.emit("joinAuction", auctionId);
 
-    // 3. Események figyelése és frissítés (any típus mellőzve, paraméter nélküli arrow function)
     const handleUpdate = () => {
-      queryClient.invalidateQueries({ queryKey: ["auction", auctionId] });
+      queryClient.invalidateQueries({
+        queryKey: ["auctionDetails", auctionId],
+      });
       queryClient.invalidateQueries({ queryKey: ["bids", auctionId] });
     };
 
     socket.on("BidUpdated", handleUpdate);
     socket.on("AuctionEnded", handleUpdate);
 
-    // 4. Takarítás kilépéskor
     return () => {
       socket.emit("leaveAuction", auctionId);
-      socket.disconnect();
+      socket.off("BidUpdated", handleUpdate);
+      socket.off("AuctionEnded", handleUpdate);
     };
   }, [auctionId, queryClient]);
-  // ---------------------------------
 
-  // --- AUTOMATIKUS FRISSÍTÉS A DUTCH / JAPANESE AUKCIÓK ÁRESÉSÉHEZ ---
-  useEffect(() => {
+  /*useEffect(() => {
     if (!auction || auction.status !== "ACTIVE") return;
 
     if (auction.auctionType === "DUTCH" || auction.auctionType === "JAPANESE") {
-      const intervalMs = (auction.tickInterval || 5) * 1000;
-
       const timer = setInterval(() => {
         refetchAuction();
         refetchBids();
-      }, intervalMs);
+      }, 2000);
 
       return () => clearInterval(timer);
     }
-  }, [
-    auction?.status,
-    auction?.auctionType,
-    auction?.tickInterval,
-    refetchAuction,
-    refetchBids,
-  ]);
-  // ------------------------------------------------------------------
+  }, [auction?.status, auction?.auctionType, refetchAuction, refetchBids]);*/
 
   const {
     register: registerBid,
@@ -203,12 +210,31 @@ export default function BidInformation() {
     placeBid(
       { data, auctionId },
       {
-        onError: (err) =>
-          setBidError("root", {
-            type: "server",
-            message: (err as AxiosError<{ error: string }>).response?.data
-              ?.error,
-          }),
+        onSuccess: () => {
+          if (
+            auction?.auctionType === "VICKREY" ||
+            auction?.auctionType === "FPSB"
+          ) {
+            setLocalSecretBidPlaced(true);
+          }
+        },
+        onError: (err) => {
+          const errorMsg = (err as AxiosError<{ error: string }>).response?.data
+            ?.error;
+
+          if (
+            errorMsg &&
+            (errorMsg.includes("already submitted") ||
+              errorMsg.includes("already bid"))
+          ) {
+            setLocalSecretBidPlaced(true);
+          } else {
+            setBidError("root", {
+              type: "server",
+              message: errorMsg || "An error occurred.",
+            });
+          }
+        },
       },
     );
   };
@@ -242,12 +268,41 @@ export default function BidInformation() {
 
   const {
     auctionType,
-    currentPrice,
     minBidIncrement,
     startingPrice,
     buyingPrice,
     status,
+    userId: auctionOwnerId,
   } = auction;
+
+  const isActive = status === "ACTIVE";
+
+  const isMyAuction = Boolean(
+    currentUserId && auctionOwnerId && currentUserId === auctionOwnerId,
+  );
+
+  const isHighestBidder = Boolean(
+    bids && bids.length > 0 && bids[0].user.id === currentUserId,
+  );
+
+  const myBids = bids?.filter((b) => b.user.id === currentUserId) || [];
+  const myMaxBid =
+    myBids.length > 0 ? Math.max(...myBids.map((b) => b.bidAmount)) : null;
+
+  const hasAcceptedCurrentPrice = myMaxBid === auction.currentPrice;
+
+  let isOutJapanese = false;
+  if (auctionType === "JAPANESE" && auction.currentPrice > startingPrice) {
+    if (myMaxBid === null) {
+      isOutJapanese = true;
+    } else if (myMaxBid < auction.currentPrice - (auction.moneyInterval || 0)) {
+      isOutJapanese = true;
+    }
+  }
+
+  const hasSecretBid =
+    localSecretBidPlaced ||
+    Boolean(bids?.some((b) => b.user.id === currentUserId));
 
   const auctionTypeLabel: Record<string, string> = {
     DUTCH: "Dutch Auction",
@@ -257,14 +312,12 @@ export default function BidInformation() {
     FPSB: "First-Price Sealed-Bid",
   };
 
-  const isActive = status === "ACTIVE";
-
   return (
     <div className="w-full max-w-[420px] bg-white border border-stone-200 font-inter shadow-md relative overflow-hidden">
-      {/* ── Top Accent Line ── */}
+      {/* Top Accent Line */}
       <div className="absolute top-0 left-0 w-full h-1 bg-primary opacity-80" />
 
-      {/* ── Header: Type and Countdown ── */}
+      {/* Header: Type and Countdown*/}
       <div className="px-6 py-5 border-b border-stone-100 flex items-start justify-between bg-stone-50/50 mt-1">
         <div className="flex flex-col gap-1">
           <span className="text-[12px] font-bold tracking-[0.2em] uppercase text-stone-500">
@@ -279,12 +332,19 @@ export default function BidInformation() {
             Time Remaining
           </span>
           <div className="flex items-center gap-3">
-            <CountdownTimer endTime={auction.endTime} status={auction.status} />
+            <CountdownTimer
+              endTime={auction.endTime}
+              status={auction.status}
+              onTimeUp={() => {
+                refetchAuction();
+                refetchBids();
+              }}
+            />
           </div>
         </div>
       </div>
 
-      {/* ── Pricing Section ── */}
+      {/* Pricing Section */}
       <div className="px-6 py-6 border-b border-stone-100 flex flex-col gap-4">
         {auctionType === "VICKREY" || auctionType === "FPSB" ? (
           <div className="flex items-center justify-center py-2">
@@ -299,7 +359,7 @@ export default function BidInformation() {
                 Current Price
               </span>
               <span className="font-inter text-4xl font-semibold text-primary tracking-tight transition-all duration-500">
-                {currentPrice.toLocaleString("en-US")}
+                {auction.currentPrice.toLocaleString("en-US")}
                 <span className="font-playfair text-sm font-bold text-stone-500 ml-2 uppercase tracking-widest">
                   Eur
                 </span>
@@ -320,15 +380,26 @@ export default function BidInformation() {
         )}
       </div>
 
-      {/* ── Bidding Forms (Body) ── */}
+      {/* Bidding Forms */}
       <div className="px-6 py-6 flex flex-col gap-5">
+        {isMyAuction && (
+          <div className="w-full bg-stone-100 text-stone-500 px-5 py-4 text-center text-[11px] font-bold tracking-[0.2em] uppercase border border-stone-200">
+            This is your auction. You cannot bid on it.
+          </div>
+        )}
+
         {/* Buy Now Option */}
         {buyingPrice && isActive && (
           <div className="pb-5 border-b border-stone-100">
             <button
               type="button"
               onClick={handleBuyNow}
-              disabled={isBidPending || isBuyNowPending}
+              disabled={
+                isBidPending ||
+                isBuyNowPending ||
+                isHighestBidder ||
+                isMyAuction
+              }
               className="group w-full flex items-center justify-between bg-white text-surface border border-stone-200 px-5 py-3.5 cursor-pointer transition-all duration-300 hover:border-primary hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="text-[11px] font-inter font-bold tracking-[0.2em] uppercase transition-colors group-hover:text-primary">
@@ -346,30 +417,53 @@ export default function BidInformation() {
 
         {isActive ? (
           <>
-            {/* Dutch / Japanese: One-click acceptance */}
+            {/* DUTCH / JAPANeSE */}
             {(auctionType === "DUTCH" || auctionType === "JAPANESE") && (
-              <button
-                type="button"
-                disabled={isBidPending}
-                onClick={() =>
-                  placeBid({ data: { bidAmount: currentPrice }, auctionId })
-                }
-                className="w-full bg-surface text-white px-5 py-4 cursor-pointer transition-all duration-300 hover:bg-stone-800 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center gap-1.5"
-              >
-                <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-white/90">
-                  {auctionType === "DUTCH"
-                    ? "Buy at this price"
-                    : "Accept current price"}
-                </span>
-                <span className="font-inter text-xl font-semibold tracking-wide transition-all duration-500">
-                  {isBidPending
-                    ? "Processing..."
-                    : `${currentPrice.toLocaleString("en-US")} EUR`}
-                </span>
-              </button>
+              <>
+                {auctionType === "JAPANESE" && isOutJapanese ? (
+                  <div className="w-full bg-stone-100 text-stone-400 px-5 py-4 text-center text-[11px] font-bold tracking-[0.2em] uppercase border border-stone-200">
+                    You are no longer in this auction
+                  </div>
+                ) : auctionType === "JAPANESE" && hasAcceptedCurrentPrice ? (
+                  <div className="w-full bg-primary/10 text-primary px-5 py-4 text-center text-[11px] font-bold tracking-[0.2em] uppercase border border-primary/20">
+                    Price Accepted. Waiting for others...
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={isBidPending || isMyAuction}
+                    onClick={() =>
+                      placeBid(
+                        {
+                          data: { bidAmount: auction.currentPrice },
+                          auctionId,
+                        },
+                        {
+                          onSuccess: () => {
+                            refetchAuction();
+                            refetchBids();
+                          },
+                        },
+                      )
+                    }
+                    className="w-full bg-surface text-white px-5 py-4 cursor-pointer transition-all duration-300 hover:bg-stone-800 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center gap-1.5"
+                  >
+                    <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-white/90">
+                      {auctionType === "DUTCH"
+                        ? "Buy at this price"
+                        : "Accept current price"}
+                    </span>
+                    <span className="font-inter text-xl font-semibold tracking-wide transition-all duration-500">
+                      {isBidPending
+                        ? "Processing..."
+                        : `${auction.currentPrice.toLocaleString("en-US")} EUR`}
+                    </span>
+                  </button>
+                )}
+              </>
             )}
 
-            {/* English Auction Form */}
+            {/* ENGLISH */}
             {auctionType === "ENGLISH" && (
               <div className="flex flex-col gap-4">
                 <form
@@ -377,14 +471,20 @@ export default function BidInformation() {
                   className="flex flex-col gap-3"
                 >
                   <div className="flex flex-col gap-1.5">
+                    {isHighestBidder && !isMyAuction && (
+                      <div className="py-2.5 bg-primary/10 border border-primary/20 text-primary text-[11px] font-bold tracking-[0.15em] uppercase text-center mb-1">
+                        You hold the highest bid!
+                      </div>
+                    )}
                     <label className="text-[10px] font-bold tracking-[0.2em] uppercase text-stone-600">
                       Your Bid Amount
                     </label>
                     <input
                       {...registerBid("bidAmount", { valueAsNumber: true })}
                       type="number"
-                      placeholder={`Min. ${(currentPrice + (minBidIncrement || 0)).toLocaleString("en-US")} EUR`}
-                      className="w-full px-4 py-3.5 bg-stone-50 border border-stone-200 font-inter text-lg text-surface placeholder:font-inter placeholder:text-sm placeholder:text-stone-500 outline-none focus:border-primary focus:bg-white transition-all duration-300"
+                      placeholder={`Min. ${(auction.currentPrice + (minBidIncrement || 0)).toLocaleString("en-US")} EUR`}
+                      disabled={isHighestBidder || isMyAuction}
+                      className="w-full px-4 py-3.5 bg-stone-50 border border-stone-200 font-inter text-lg text-surface placeholder:font-inter placeholder:text-sm placeholder:text-stone-500 outline-none focus:border-primary focus:bg-white transition-all duration-300 disabled:opacity-50 disabled:bg-stone-100"
                     />
                     {bidErrors.bidAmount && (
                       <p className="text-[11px] text-red-600 mt-1 font-medium">
@@ -399,126 +499,162 @@ export default function BidInformation() {
                   </div>
                   <button
                     type="submit"
-                    disabled={isBidPending}
+                    disabled={isBidPending || isHighestBidder || isMyAuction}
                     className="w-full py-4 bg-primary text-white text-[11px] font-bold tracking-[0.2em] uppercase cursor-pointer transition-all duration-300 hover:opacity-90 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isBidPending ? "Processing..." : "Place Bid"}
+                    {isBidPending
+                      ? "Processing..."
+                      : isHighestBidder
+                        ? "Currently Winning"
+                        : "Place Bid"}
                   </button>
                 </form>
 
-                <button
-                  type="button"
-                  onClick={() => setShowAutoBid(!showAutoBid)}
-                  className="w-full py-3 bg-transparent border border-stone-200 text-[10px] font-bold tracking-[0.15em] uppercase text-stone-600 cursor-pointer transition-colors hover:border-primary hover:text-primary flex items-center justify-center gap-2"
-                >
-                  <span
-                    className={`text-sm transition-transform duration-300 ${showAutoBid ? "rotate-45" : ""}`}
-                  >
-                    +
-                  </span>
-                  {showAutoBid ? "Hide Auto-bid" : "Set up Auto-bid"}
-                </button>
-
-                {showAutoBid && (
-                  <form
-                    onSubmit={handleSubmitAuto(onSubmitAutoBid)}
-                    className="flex flex-col gap-4 p-5 bg-stone-50 border border-stone-200 transition-all"
-                  >
-                    <p className="text-[11px] font-bold tracking-[0.2em] uppercase text-surface mb-1">
-                      Auto-bid Settings
-                    </p>
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-[10px] font-bold tracking-[0.15em] uppercase text-stone-600">
-                        Maximum Amount
-                      </label>
-                      <input
-                        {...registerAuto("maxAmount", { valueAsNumber: true })}
-                        type="number"
-                        placeholder="e.g. 5000 EUR"
-                        className="w-full px-3.5 py-3 bg-white border border-stone-200 font-inter text-base text-surface placeholder:font-inter placeholder:text-sm placeholder:text-stone-500 outline-none focus:border-primary transition-colors"
-                      />
-                      {autoErrors.maxAmount && (
-                        <p className="text-[11px] text-red-600 font-medium">
-                          {autoErrors.maxAmount.message}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-[10px] font-bold tracking-[0.15em] uppercase text-stone-600">
-                        Bid Increment{" "}
-                        <span className="normal-case opacity-80 tracking-normal text-stone-500">
-                          (Optional)
-                        </span>
-                      </label>
-                      <input
-                        {...registerAuto("increment", { valueAsNumber: true })}
-                        type="number"
-                        placeholder="e.g. 100 EUR"
-                        className="w-full px-3.5 py-3 bg-white border border-stone-200 font-inter text-base text-surface placeholder:font-inter placeholder:text-sm placeholder:text-stone-500 outline-none focus:border-primary transition-colors"
-                      />
-                    </div>
-                    {autoErrors.root && (
-                      <p className="text-[11px] text-red-600 font-medium">
-                        {autoErrors.root.message}
-                      </p>
-                    )}
+                {!isMyAuction && (
+                  <>
                     <button
-                      type="submit"
-                      disabled={isAutoBidPending}
-                      className="w-full py-3.5 mt-2 bg-surface text-white text-[10px] font-bold tracking-[0.2em] uppercase cursor-pointer transition-colors hover:bg-stone-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                      type="button"
+                      onClick={() => setShowAutoBid(!showAutoBid)}
+                      className="w-full py-3 bg-transparent border border-stone-200 text-[10px] font-bold tracking-[0.15em] uppercase text-stone-600 cursor-pointer transition-colors hover:border-primary hover:text-primary flex items-center justify-center gap-2"
                     >
-                      {isAutoBidPending ? "Processing..." : "Activate"}
+                      <span
+                        className={`text-sm transition-transform duration-300 ${showAutoBid ? "rotate-45" : ""}`}
+                      >
+                        +
+                      </span>
+                      {showAutoBid ? "Hide Auto-bid" : "Set up Auto-bid"}
                     </button>
-                  </form>
+
+                    {showAutoBid && (
+                      <form
+                        onSubmit={handleSubmitAuto(onSubmitAutoBid)}
+                        className="flex flex-col gap-4 p-5 bg-stone-50 border border-stone-200 transition-all"
+                      >
+                        <p className="text-[11px] font-bold tracking-[0.2em] uppercase text-surface mb-1">
+                          Auto-bid Settings
+                        </p>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[10px] font-bold tracking-[0.15em] uppercase text-stone-600">
+                            Maximum Amount
+                          </label>
+                          <input
+                            {...registerAuto("maxAmount", {
+                              valueAsNumber: true,
+                            })}
+                            type="number"
+                            placeholder="e.g. 5000 EUR"
+                            className="w-full px-3.5 py-3 bg-white border border-stone-200 font-inter text-base text-surface placeholder:font-inter placeholder:text-sm placeholder:text-stone-500 outline-none focus:border-primary transition-colors"
+                          />
+                          {autoErrors.maxAmount && (
+                            <p className="text-[11px] text-red-600 font-medium">
+                              {autoErrors.maxAmount.message}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[10px] font-bold tracking-[0.15em] uppercase text-stone-600">
+                            Bid Increment{" "}
+                            <span className="normal-case opacity-80 tracking-normal text-stone-500">
+                              (Optional)
+                            </span>
+                          </label>
+                          <input
+                            {...registerAuto("increment", {
+                              valueAsNumber: true,
+                            })}
+                            type="number"
+                            placeholder="e.g. 100 EUR"
+                            className="w-full px-3.5 py-3 bg-white border border-stone-200 font-inter text-base text-surface placeholder:font-inter placeholder:text-sm placeholder:text-stone-500 outline-none focus:border-primary transition-colors"
+                          />
+                        </div>
+                        {autoErrors.root && (
+                          <p className="text-[11px] text-red-600 font-medium">
+                            {autoErrors.root.message}
+                          </p>
+                        )}
+                        <button
+                          type="submit"
+                          disabled={isAutoBidPending}
+                          className="w-full py-3.5 mt-2 bg-surface text-white text-[10px] font-bold tracking-[0.2em] uppercase cursor-pointer transition-colors hover:bg-stone-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isAutoBidPending ? "Processing..." : "Activate"}
+                        </button>
+                      </form>
+                    )}
+                  </>
                 )}
               </div>
             )}
 
+            {/* VICKREY / FPSB */}
             {(auctionType === "VICKREY" || auctionType === "FPSB") && (
-              <form
-                onSubmit={handleSubmitBid(onSubmitBid)}
-                className="flex flex-col gap-4"
-              >
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-bold tracking-[0.2em] uppercase text-stone-600 flex items-center gap-1.5">
-                    Secret Bid
-                  </label>
-                  <input
-                    {...registerBid("bidAmount", { valueAsNumber: true })}
-                    type="number"
-                    placeholder="Enter your secret bid amount"
-                    className="w-full px-4 py-3.5 bg-stone-50 border border-stone-200 font-inter text-lg text-surface placeholder:font-inter placeholder:text-sm placeholder:text-stone-500 outline-none focus:border-primary focus:bg-white transition-colors duration-300"
-                  />
-                  {bidErrors.bidAmount && (
-                    <p className="text-[11px] text-red-600 font-medium">
-                      {bidErrors.bidAmount.message}
-                    </p>
-                  )}
-                  {bidErrors.root && (
-                    <p className="text-[11px] text-red-600 font-medium">
-                      {bidErrors.root.message}
-                    </p>
-                  )}
-                </div>
-                <button
-                  type="submit"
-                  disabled={isBidPending}
-                  className="w-full py-4 bg-surface text-white text-[11px] font-bold tracking-[0.2em] uppercase cursor-pointer transition-all duration-300 hover:bg-stone-800 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isBidPending ? "Sending..." : "Place Secret Bid"}
-                </button>
-              </form>
+              <>
+                {hasSecretBid && !isMyAuction ? (
+                  <div className="w-full bg-primary/10 text-primary px-5 py-4 text-center text-[11px] font-bold tracking-[0.2em] uppercase border border-primary/20">
+                    You have already placed your secret bid
+                  </div>
+                ) : (
+                  <form
+                    onSubmit={handleSubmitBid(onSubmitBid)}
+                    className="flex flex-col gap-4"
+                  >
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] font-bold tracking-[0.2em] uppercase text-stone-600 flex items-center gap-1.5">
+                        Secret Bid
+                      </label>
+                      <input
+                        {...registerBid("bidAmount", { valueAsNumber: true })}
+                        type="number"
+                        disabled={isMyAuction || isBidPending}
+                        placeholder="Enter your secret bid amount"
+                        className="w-full px-4 py-3.5 bg-stone-50 border border-stone-200 font-inter text-lg text-surface placeholder:font-inter placeholder:text-sm placeholder:text-stone-500 outline-none focus:border-primary focus:bg-white transition-colors duration-300 disabled:opacity-50 disabled:bg-stone-100"
+                      />
+                      {bidErrors.bidAmount && (
+                        <p className="text-[11px] text-red-600 font-medium">
+                          {bidErrors.bidAmount.message}
+                        </p>
+                      )}
+                      {bidErrors.root && (
+                        <p className="text-[11px] text-red-600 font-medium">
+                          {bidErrors.root.message}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={isBidPending || isMyAuction}
+                      className="w-full py-4 bg-surface text-white text-[11px] font-bold tracking-[0.2em] uppercase cursor-pointer transition-all duration-300 hover:bg-stone-800 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isBidPending ? "Sending..." : "Place Secret Bid"}
+                    </button>
+                  </form>
+                )}
+              </>
             )}
           </>
         ) : (
-          <div className="py-6 text-center bg-stone-50 border border-stone-200 rounded-sm">
+          <div className="py-6 px-6 text-center bg-stone-50 border border-stone-200 rounded-sm flex flex-col gap-2">
             <span className="text-[11px] font-bold tracking-[0.25em] uppercase text-stone-600">
               This auction has ended
             </span>
+
+            {/* Winners */}
+            {bids && bids.length > 0 && bids[0].isWinner ? (
+              <span className="text-sm font-medium text-primary">
+                Winner: {bids[0].user.firstName} {bids[0].user.lastName}
+                <br />
+                Final Price: {bids[0].bidAmount.toLocaleString("en-US")} EUR
+              </span>
+            ) : (
+              <span className="text-sm font-medium text-red-500">
+                No winner (Reserve price not met or no bids placed)
+              </span>
+            )}
           </div>
         )}
       </div>
 
+      {/* ── Bids History ── */}
       <div className="border-t border-stone-200 bg-stone-50/50">
         <div className="px-6 py-4 flex items-center justify-between border-b border-stone-100">
           <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-surface">

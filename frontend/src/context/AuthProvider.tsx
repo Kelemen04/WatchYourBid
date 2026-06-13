@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { AuthContext, type AuthState } from "./AuthContext";
 
+// Component that wraps the app and manages global user authentication
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [auth, setAuth] = useState<AuthState>({
     user: null,

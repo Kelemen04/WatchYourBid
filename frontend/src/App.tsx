@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "./context/AuthProvider";
 import PersistLogin from "./components/PersistLogin";
 
+// Global cache manager for data fetching
 const queryClient = new QueryClient();
 
 export default function App() {

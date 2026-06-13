@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom"; // Link importálva
+import { useNavigate, Link } from "react-router-dom";
 import type { AdminUserItemData } from "../dto/user.dto";
 import {
   useGetAllUsers,
@@ -20,7 +20,6 @@ export default function AllUsersList() {
   const currentUserId = getUserId();
   const currentUserRole = getUserRole() || "USER";
 
-  // --- JOGOSULTSÁG KEZELÉSE ---
   useEffect(() => {
     if (currentUserRole !== "ADMIN" && currentUserRole !== "SUPER_ADMIN") {
       navigate("/dashboard");
@@ -67,7 +66,7 @@ export default function AllUsersList() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-primary)]"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -109,7 +108,7 @@ export default function AllUsersList() {
                 key={user.id}
                 className="p-6 border-b border-stone-100 last:border-0 flex flex-col xl:flex-row items-start xl:items-center justify-between gap-6 hover:bg-stone-50/50 transition-colors"
               >
-                {/* Bal oldal: Letisztult adatok, kattintható névvel */}
+                {/* Datas */}
                 <div className="flex flex-col">
                   <div className="flex items-center gap-2">
                     <Link
@@ -129,7 +128,7 @@ export default function AllUsersList() {
                   </span>
                 </div>
 
-                {/* Jobb oldal: Admin vezérlők */}
+                {/* Admin jobs */}
                 <div className="flex items-center gap-4 flex-wrap w-full xl:w-auto xl:justify-end">
                   <span
                     className={`px-3 py-1.5 rounded-lg border text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5 shadow-sm ${getStatusBadge(user.status)}`}

@@ -80,7 +80,32 @@ export const worker = new Worker("auction-tasks", async (job: Job) => {
             });
 
            if (activeBiddersCount <= 1) {
+
+                await prisma.auction.update({
+                    where: { id: job.data.auctionId },
+                    data: { status: "ENDED" }
+                });
+
+                const winner = await prisma.bid.findFirst({
+                    where: { auctionId: job.data.auctionId },
+                    orderBy: { bidAmount: "desc" }
+                });
+
+                if (winner) {
+                    await prisma.bid.update({
+                        where: { id: winner.id },
+                        data: { isWinner: true }
+                    });
+                }
+
                 await auctionTasks.add("auction-close-job", { auctionId: job.data.auctionId, action: "CLOSE" });
+
+                io.to(`auction-${job.data.auctionId}`).emit("AuctionEnded", { 
+                    auctionId: job.data.auctionId,
+                    winnerId: winner?.userId || null,
+                    finalPrice: auctionData.currentPrice
+                });
+
                 return;
             }
 
@@ -105,7 +130,7 @@ export const worker = new Worker("auction-tasks", async (job: Job) => {
             break;
         }
 
-        case "CLOSE": {
+       case "CLOSE": {
             const updateRes = await prisma.auction.updateMany({
                 where: { id: job.data.auctionId, status: { not: "ENDED" } },
                 data: { status: "ENDED" }
@@ -124,23 +149,33 @@ export const worker = new Worker("auction-tasks", async (job: Job) => {
 
             const winner = await prisma.bid.findFirst({
                 where: { auctionId: auction.id },
-                orderBy: { bidAmount: "desc" },
+                orderBy: [{ bidAmount: "desc" }, { bidTime: "asc" }],
             });
 
             if (winner) {
+                if (auction.reservePrice && winner.bidAmount < auction.reservePrice) {
+                    console.log(`Auction ${auction.id} ended, but highest bid (${winner.bidAmount}) didn't meet reserve price (${auction.reservePrice}). No winner.`);
+                    
+                    io.to(`auction-${auction.id}`).emit("AuctionEnded", {
+                        auctionId: auction.id,
+                        winnerId: null, 
+                        finalPrice: null
+                    });
+                    
+                    break;
+                }
+
                 await prisma.bid.update({
                     where: { id: winner.id },
                     data: { isWinner: true }
                 });
-            }
 
-            io.to(`auction-${auction.id}`).emit("AuctionEnded", {
-                auctionId: auction.id,
-                winnerId: winner?.userId,
-                finalPrice: winner?.bidAmount
-            });
+                io.to(`auction-${auction.id}`).emit("AuctionEnded", {
+                    auctionId: auction.id,
+                    winnerId: winner.userId,
+                    finalPrice: winner.bidAmount
+                });
 
-            if (winner) {
                 let payAmount = 0;
 
                 if (auction.auctionType === "VICKREY") {
@@ -149,7 +184,8 @@ export const worker = new Worker("auction-tasks", async (job: Job) => {
                         orderBy: { bidAmount: "desc" },
                         skip: 1,
                     });
-                    payAmount = secondPrice?.bidAmount || auction.startingPrice || 0;
+                    const secondBidValue = secondPrice?.bidAmount || auction.startingPrice || 0;
+                    payAmount = Math.max(secondBidValue, auction.reservePrice || 0);
                 } else {
                     payAmount = winner.bidAmount;
                 }
@@ -187,6 +223,12 @@ export const worker = new Worker("auction-tasks", async (job: Job) => {
                         })
                     ]);
                 }
+            } else {
+                io.to(`auction-${auction.id}`).emit("AuctionEnded", {
+                    auctionId: auction.id,
+                    winnerId: null,
+                    finalPrice: null
+                });
             }
 
             console.log(`Auction ${job.data.auctionId} has been closed (ENDED).`);
@@ -196,12 +238,15 @@ export const worker = new Worker("auction-tasks", async (job: Job) => {
 }, { connection: connection });
 
 export const promotingWorker = new Worker("promoting-tasks", async (job: Job) => {
-    const yesterday = new Date();
+    /* const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     yesterday.setHours(0, 0, 0, 0);
 
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);*/
+
+    const today = new Date();
+    const yesterday = new Date(today.getTime() - 3 * 60 * 1000);
 
     await prisma.auction.updateMany({
         data: { promotedHomeRank: null, promotedCategoryRank: null }
@@ -216,7 +261,7 @@ export const promotingWorker = new Worker("promoting-tasks", async (job: Job) =>
     })
 
     if (bids.length === 0) {
-        console.log("Nem érkezett hirdetési licit a tegnapi napon.");
+        console.log("No promoting bids for today.");
         return;
     }
 
@@ -241,21 +286,28 @@ export const promotingWorker = new Worker("promoting-tasks", async (job: Job) =>
             payAmount = 5;
         }
 
-        await prisma.$transaction([
-            prisma.user.update({
-                where: { id: b.userId },
-                data: { balance: { decrement: payAmount } }
-            }),
-            prisma.transaction.create({
-                data: {
-                    userId: b.userId,
-                    amount: payAmount,
-                    type: "PROMOTION_PAYMENT",
-                    status: "SUCCESS",
-                    stripeSessionId: `promo-home-${b.id}-${Date.now()}`
-                }
-            })
-        ]);
+        try {
+            await prisma.$transaction([
+                prisma.user.update({
+                    where: { id: b.userId },
+                    data: { balance: { decrement: payAmount } }
+                }),
+                prisma.transaction.create({
+                    data: {
+                        userId: b.userId,
+                        amount: payAmount,
+                        type: "PROMOTION_PAYMENT",
+                        status: "SUCCESS",
+                        stripeSessionId: `promo-home-${b.id}-${Date.now()}`
+                    }
+                })
+            ]);
+        } catch (error) {
+            console.error(`Error while promoting (User: ${b.userId}, Auction: ${b.auctionId}). Not enough money?`);
+            await prisma.auction.update({ where: { id: b.auctionId }, data: { promotedHomeRank: null } });
+            
+            continue;
+        }
     }
 
     let smartwatchIndex = 1;

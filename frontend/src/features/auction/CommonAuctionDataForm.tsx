@@ -40,7 +40,7 @@ export default function CommonAuctionDataForm({ setStep }: Props) {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* FEJLÉC - Fix */}
+      {/* Title */}
       <div className="mb-6 flex-shrink-0">
         <h2 className="font-playfair text-background font-bold text-4xl mb-2">
           General Information
@@ -50,7 +50,7 @@ export default function CommonAuctionDataForm({ setStep }: Props) {
         </p>
       </div>
 
-      {/* GÖRGETHETŐ TARTALOM */}
+      {/* FORM */}
       <div className="flex-1 overflow-y-auto pr-2 space-y-5">
         <div className="flex flex-col w-full">
           <label className="text-left font-inter text-text-muted text-xs font-bold tracking-widest uppercase mb-1.5">

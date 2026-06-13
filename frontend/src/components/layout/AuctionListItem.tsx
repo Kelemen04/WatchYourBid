@@ -19,6 +19,19 @@ export default function AuctionListItem({
 
   useEffect(() => {
     const calculateTime = () => {
+      // If ended, set timer to zero
+      if (auction.status === "ENDED" || auction.status === "CANCELLED") {
+        setTimeState({
+          days: 0,
+          hours: 0,
+          minutes: 0,
+          seconds: 0,
+          isEnded: true,
+        });
+        return;
+      }
+
+      // Calculating countdown time
       const difference =
         new Date(auction.endTime).getTime() - new Date().getTime();
 
@@ -53,7 +66,7 @@ export default function AuctionListItem({
     const interval = setInterval(calculateTime, 1000);
 
     return () => clearInterval(interval);
-  }, [auction.endTime]);
+  }, [auction.endTime, auction.status]);
 
   const { mutate } = useAddToWatchlist();
 
@@ -65,8 +78,7 @@ export default function AuctionListItem({
       { auctionId: auction.id },
       {
         onSuccess: () => {
-          // A hook (useAddToWatchlist) a háttérben már mindent frissít!
-          // alert("Added to watchlist!"); // Opcionális
+          alert("Added to watchlist!");
         },
         onError: (err) => {
           alert(err.response?.data?.error || "Failed to add to watchlist");
@@ -113,14 +125,16 @@ export default function AuctionListItem({
         </div>
 
         {/* Auction information section */}
-        <div className="flex-1 flex flex-col py-2">
-          <div>
-            <h3 className="font-playfair text-4xl font-bold text-surface mb-3 group-hover:text-primary transition-colors leading-snug">
+        <div className="flex-1 w-0 flex flex-col py-2">
+          <div className="truncate">
+            <h3 className="font-playfair text-4xl font-bold text-surface mb-3 group-hover:text-primary transition-colors leading-snug truncate">
               {auction.title}
             </h3>
-            <p className="font-inter text-m text-gray-500 line-clamp-3 leading-relaxed">
-              {auction.description ||
-                "No description provided for this luxury timepiece. Please view details for more information regarding condition, provenance, and specifications."}
+          </div>
+
+          <div className="max-w-[100%]">
+            <p className="font-inter text-m text-gray-500 line-clamp-3 leading-relaxed overflow-hidden break-words">
+              {auction.description || "No description provided..."}
             </p>
           </div>
         </div>

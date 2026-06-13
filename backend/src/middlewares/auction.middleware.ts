@@ -3,6 +3,7 @@ import { WatchCategory } from "../../generated/prisma";
 import { prisma } from "../db/client";
 import { AuctionFilterSchema } from "../dto/auction.dto";
 
+// Validate numeric route ID
 export function validateId(req: Request, res: Response, next: NextFunction){
     const id = Number(req.params.id);
 
@@ -15,9 +16,9 @@ export function validateId(req: Request, res: Response, next: NextFunction){
     next();
 }
 
+// Validate category name
 export function validateCategory(req: Request, res: Response, next: NextFunction){
     const category = req.params.categoryName as string;
-    console.log("CAT: ",category);
 
     if(category.toUpperCase() !== WatchCategory.CLOCK && category.toUpperCase() !== WatchCategory.SMARTWATCH 
         && category.toUpperCase() !== WatchCategory.WRISTWATCH && category.toUpperCase() !== WatchCategory.POCKETWATCH){
@@ -29,6 +30,7 @@ export function validateCategory(req: Request, res: Response, next: NextFunction
     next();
 }
 
+// Track view/click counts for trends
 export async function incrementClick(req: Request, res: Response, next: NextFunction){
     const auctionId = req.validatedId as number;
 
@@ -48,6 +50,7 @@ export async function incrementClick(req: Request, res: Response, next: NextFunc
     next()
 }
 
+// Validate query parameters with Zod
 export function validateFilters(req: Request, res: Response, next: NextFunction){
 
     const result = AuctionFilterSchema.safeParse(req.query);

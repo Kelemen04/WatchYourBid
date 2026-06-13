@@ -113,7 +113,7 @@ export default function AllAuctionsList() {
         </div>
       )}
 
-      {/* Rögzített szélességű, középre igazított Pagination */}
+      {/* Pagination */}
       {!isLoading && auctions && (
         <div className="mt-8 flex justify-center items-center gap-8">
           <button

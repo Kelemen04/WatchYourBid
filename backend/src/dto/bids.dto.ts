@@ -25,6 +25,7 @@ export const BidDataSchema = z.object({
   id: z.number(),
   bidAmount: z.number(),
   bidTime: z.union([z.string(), z.date()]).optional(),
+  isWinner: z.boolean(),
   user: z.object({
     id: z.number(),
     firstName: z.string(),

@@ -39,7 +39,9 @@ export default function AllTransactionsList() {
         <div className="flex flex-col gap-3">
           {transactions.map((t) => {
             const isReceive =
-              t.type.includes("RECEIVE") || t.type.includes("UPLOAD");
+              t.type.includes("RECEIVE") ||
+              t.type.includes("UPLOAD") ||
+              t.type.includes("DEPOSIT");
 
             return (
               <div
@@ -59,7 +61,7 @@ export default function AllTransactionsList() {
                   </span>
                 </div>
 
-                {/* Középső rész: Felhasználó adatai */}
+                {/* User data */}
                 <div className="flex flex-col gap-1 flex-1 items-center border-x border-text-muted/10 px-4">
                   <span className="text-sm font-bold text-background uppercase tracking-wider">
                     {t.user?.username || `User #${t.userId}`}
@@ -69,11 +71,17 @@ export default function AllTransactionsList() {
                   </span>
                 </div>
 
-                {/* Jobb oldal: Összeg és Státusz */}
+                {/* Status and price */}
                 <div className="flex flex-col items-end gap-1 flex-1">
                   <span className="font-inter text-xl font-bold text-background">
-                    <span>{isReceive ? "+" : "-"}</span>€
-                    {t.amount.toLocaleString()}
+                    <span
+                      className={
+                        isReceive ? "text-emerald-500" : "text-red-500"
+                      }
+                    >
+                      {isReceive ? "+" : "-"}
+                    </span>
+                    €{t.amount.toLocaleString()}
                   </span>
                   <span className="text-[9px] uppercase tracking-widest text-background">
                     Status: <span className="text-primary">{t.status}</span>
@@ -91,6 +99,7 @@ export default function AllTransactionsList() {
         </div>
       )}
 
+      {/* Pagination */}
       {!isLoading && (
         <div className="mt-8 flex justify-center items-center gap-8">
           <button
@@ -105,7 +114,6 @@ export default function AllTransactionsList() {
             &larr; Previous
           </button>
 
-          {/* AKTUÁLIS OLDALSZÁM */}
           <span className="font-inter font-bold text-background text-sm uppercase tracking-widest w-20 text-center shrink-0">
             Page {page + 1}
           </span>

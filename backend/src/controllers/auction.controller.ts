@@ -6,7 +6,6 @@ import { ZodError } from "zod";
 import { GetTransactionsNumberSchema } from "../dto/transaction.dto";
 
 export async function createAuction(req: Request, res: Response) {
-    console.log("BODY:", req.body);
     const body = req.body as CreateAuctionDTO;
     const userId = req.user?.id as number;
 

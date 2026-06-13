@@ -7,7 +7,7 @@ import { useRegister } from "../../hooks/useAuth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { AxiosError } from "axios";
 import { useForm } from "react-hook-form";
-import { Link } from "react-router-dom"; // Fontos az átirányításhoz!
+import { Link } from "react-router-dom";
 
 export default function RegisterForm() {
   const {
@@ -39,15 +39,21 @@ export default function RegisterForm() {
 
   if (isSuccess) {
     return (
-      <div className="text-center p-10 bg-primary/10 rounded-2xl border-2 border-green-500 max-w-sm mx-auto mt-8">
-        <h2 className="text-2xl font-bold text-green-600 italic uppercase">
-          Welcome on board!
+      <div className="flex flex-col items-center justify-center p-8 md:p-12 bg-white border border-stone-100 rounded-3xl shadow-xl max-w-md mx-auto mt-12 text-center">
+        <h2 className="font-playfair text-3xl font-bold text-surface mb-4">
+          Welcome aboard!
         </h2>
+
+        <p className="font-inter text-stone-600 mb-8 leading-relaxed">
+          We've sent a verification email to your inbox. Please check your email
+          to activate your account.
+        </p>
+
         <Link
           to="/login"
-          className="inline-block mt-6 underline font-bold text-background hover:text-primary transition-colors"
+          className="w-full bg-surface text-white py-3.5 rounded-xl font-bold uppercase tracking-widest text-xs hover:bg-stone-800 transition-all duration-300 shadow-md"
         >
-          Go to login
+          Go to Login
         </Link>
       </div>
     );
@@ -55,7 +61,7 @@ export default function RegisterForm() {
 
   return (
     <div className="my-8">
-      {/* Logó */}
+      {/* LOGO */}
       <div className="flex justify-center items-center w-full">
         <img
           src="./public/images/WatchYourBid.png"
@@ -64,7 +70,7 @@ export default function RegisterForm() {
         />
       </div>
 
-      {/* Címsorok, ahogy a Login-nél */}
+      {/* Title */}
       <h1 className="text-center font-playfair text-text-muted text-4xl mt-3">
         Join WatchYourBid community!
       </h1>
@@ -72,7 +78,6 @@ export default function RegisterForm() {
         Create an account to start bidding!
       </h2>
 
-      {/* Form, pontosan a Login beállításaival */}
       <form
         onSubmit={handleSubmit(onSubmit)}
         className="flex flex-col w-full max-w-sm mx-auto bg-white px-8 rounded-2xl gap-3"
@@ -179,7 +184,7 @@ export default function RegisterForm() {
           {isPending ? "Registering..." : "Register"}
         </button>
 
-        {/* Vissza a Loginhez Link */}
+        {/* Back to login */}
         <div className="text-center mt-2 mb-4">
           <span className="text-sm text-text-muted font-inter">
             Already have an account?{" "}

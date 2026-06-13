@@ -4,7 +4,7 @@ import api from "../api/axios";
 import type { AuctionItemData } from "../dto/auction.dto";
 
 interface MessageResponse {
-    message: string;
+  message: string;
 }
 
 export const useApproveAuction = () => {
@@ -19,8 +19,8 @@ export const useApproveAuction = () => {
       return response.data;
     },
     onSuccess: () => {
+      // Refresh the admins pending list and the public lists so the approved auction appears instantly
       queryClient.invalidateQueries({ queryKey: ["pending-auctions"] });
-
       queryClient.invalidateQueries({ queryKey: ["homeAuctions"] });
       queryClient.invalidateQueries({ queryKey: ["categoryAuctions"] });
       queryClient.invalidateQueries({ queryKey: ["auctionsByFilters"] });
@@ -44,6 +44,7 @@ export const useCancelAuction = () => {
       return response.data;
     },
     onSuccess: () => {
+      // Remove the canceled auction from the pending list
       queryClient.invalidateQueries({ queryKey: ["pending-auctions"] });
     },
     onError: (err) => {
@@ -60,6 +61,7 @@ export const useDeleteReview = (userId: number) => {
       return response.data;
     },
     onSuccess: () => {
+      // Refresh only the specific users reviews so the delete happens instantly
       queryClient.invalidateQueries({ queryKey: ["userReviews", userId] });
     },
   });
