@@ -5,7 +5,7 @@ import App from "./App.tsx";
 import { io } from "socket.io-client";
 
 // Socket.IO connection to the server
-export const socket = io("http://localhost:8000", {
+export const socket = io("http://localhost:80", {
   transports: ["websocket", "polling"],
   withCredentials: true,
 });

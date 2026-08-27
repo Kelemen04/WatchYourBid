@@ -15,17 +15,20 @@ export const worker = new Worker("auction-tasks", async (job: Job) => {
 
     switch(job.data.action) {
         case "START": {
+            // Set auction status to active
             const auction = await prisma.auction.update({
                 where: { id: job.data.auctionId },
                 data: { status: "ACTIVE" }
             });
 
+            // Schedule the final close job
             const delay = Math.max(0, auction.endTime.getTime() - Date.now());
             await auctionTasks.add("auction-close-job", 
                 { auctionId: auction.id, action: "CLOSE" }, 
                 { delay: delay, jobId: `close-${auction.id}` }
             );
 
+            // Handle specific auction type logic
             if (auction.auctionType === "DUTCH") {
                 await auctionTasks.add("auction-dutch-job", 
                     { auctionId: auction.id, action: "PRICE_DROP" }, 
@@ -46,6 +49,7 @@ export const worker = new Worker("auction-tasks", async (job: Job) => {
         }
 
         case "PRICE_DROP": {
+            // Dutch price decrement logic
             const nextPrice = Math.max(
                 auctionData.reservePrice || 0,
                 (auctionData.currentPrice || 0) - (auctionData.moneyInterval || 0)
@@ -56,6 +60,7 @@ export const worker = new Worker("auction-tasks", async (job: Job) => {
                 data: { currentPrice: nextPrice }
             });
 
+            // Schedule next drop
             if (updated.currentPrice > (updated.reservePrice || 0) && updated.endTime > new Date()) {
                 await auctionTasks.add("auction-dutch-job", 
                     { auctionId: updated.id, action: "PRICE_DROP" }, 
@@ -72,6 +77,7 @@ export const worker = new Worker("auction-tasks", async (job: Job) => {
         }
 
         case "PRICE_UP": {
+            // Check active bidders for Japanese auction
             const activeBiddersCount = await prisma.bid.count({
                 where: { 
                     auctionId: job.data.auctionId,
@@ -80,7 +86,7 @@ export const worker = new Worker("auction-tasks", async (job: Job) => {
             });
 
            if (activeBiddersCount <= 1) {
-
+                // End auction and find winner
                 await prisma.auction.update({
                     where: { id: job.data.auctionId },
                     data: { status: "ENDED" }
@@ -98,6 +104,7 @@ export const worker = new Worker("auction-tasks", async (job: Job) => {
                     });
                 }
 
+                // Schedule closing and notify clients
                 await auctionTasks.add("auction-close-job", { auctionId: job.data.auctionId, action: "CLOSE" });
 
                 io.to(`auction-${job.data.auctionId}`).emit("AuctionEnded", { 
@@ -109,6 +116,7 @@ export const worker = new Worker("auction-tasks", async (job: Job) => {
                 return;
             }
 
+            // Increase price and schedule next tick
             const updated = await prisma.auction.update({
                 where: { id: job.data.auctionId },
                 data: { currentPrice: (auctionData.currentPrice || 0) + (auctionData.moneyInterval || 0) }
@@ -131,6 +139,7 @@ export const worker = new Worker("auction-tasks", async (job: Job) => {
         }
 
        case "CLOSE": {
+            // Finalize auction status
             const updateRes = await prisma.auction.updateMany({
                 where: { id: job.data.auctionId, status: { not: "ENDED" } },
                 data: { status: "ENDED" }
@@ -147,12 +156,14 @@ export const worker = new Worker("auction-tasks", async (job: Job) => {
 
             if (!auction) return;
 
+            // Determine winner based on bid amount and time
             const winner = await prisma.bid.findFirst({
                 where: { auctionId: auction.id },
                 orderBy: [{ bidAmount: "desc" }, { bidTime: "asc" }],
             });
 
             if (winner) {
+                // Reserve price validation
                 if (auction.reservePrice && winner.bidAmount < auction.reservePrice) {
                     console.log(`Auction ${auction.id} ended, but highest bid (${winner.bidAmount}) didn't meet reserve price (${auction.reservePrice}). No winner.`);
                     
@@ -165,6 +176,7 @@ export const worker = new Worker("auction-tasks", async (job: Job) => {
                     break;
                 }
 
+                // Award winner and notify
                 await prisma.bid.update({
                     where: { id: winner.id },
                     data: { isWinner: true }
@@ -178,6 +190,7 @@ export const worker = new Worker("auction-tasks", async (job: Job) => {
 
                 let payAmount = 0;
 
+                // Handle payment logic for different types
                 if (auction.auctionType === "VICKREY") {
                     const secondPrice = await prisma.bid.findFirst({
                         where: { auctionId: auction.id },
@@ -190,6 +203,7 @@ export const worker = new Worker("auction-tasks", async (job: Job) => {
                     payAmount = winner.bidAmount;
                 }
 
+                // Execute financial transactions
                 if (payAmount > 0) {
                     await prisma.$transaction([
                         prisma.user.update({
@@ -224,6 +238,7 @@ export const worker = new Worker("auction-tasks", async (job: Job) => {
                     ]);
                 }
             } else {
+                // No bids case
                 io.to(`auction-${auction.id}`).emit("AuctionEnded", {
                     auctionId: auction.id,
                     winnerId: null,
@@ -244,10 +259,11 @@ export const promotingWorker = new Worker("promoting-tasks", async (job: Job) =>
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);*/
-
+    
     const today = new Date();
     const yesterday = new Date(today.getTime() - 3 * 60 * 1000);
 
+    // Reset rankings
     await prisma.auction.updateMany({
         data: { promotedHomeRank: null, promotedCategoryRank: null }
     });
@@ -265,6 +281,7 @@ export const promotingWorker = new Worker("promoting-tasks", async (job: Job) =>
         return;
     }
 
+    // Process homepage promotions
     const topHomeBids = bids.slice(0, 10);
 
     for (let index = 0; index < topHomeBids.length; index++) {
@@ -310,6 +327,7 @@ export const promotingWorker = new Worker("promoting-tasks", async (job: Job) =>
         }
     }
 
+    // Allocate category promotions
     let smartwatchIndex = 1;
     let wristwatchIndex = 1;
     let pocketwatchIndex = 1;
@@ -383,6 +401,7 @@ export const promotingWorker = new Worker("promoting-tasks", async (job: Job) =>
         bidIndex++;
     }
 
+    // Clean up old bids
     await prisma.promotingBids.deleteMany({
         where: { targetDate: { lt: today} },
     })

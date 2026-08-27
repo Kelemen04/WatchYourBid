@@ -4,6 +4,7 @@ import { io } from "../utils/socket"
 import { auctionTasks } from "../jobs/auction.queues";
 
 export const bidService = {
+    // Process a standard bid
     async placeBid(data: PlaceBidDTO, userId: number, auctionId: number) {
         let dutchAuctionEndedData: any = null;
 
@@ -35,7 +36,7 @@ export const bidService = {
                 throw new Error("This auction doesn't exist!")
             }
 
-             if (auction.userId == userId) {
+              if (auction.userId == userId) {
                 throw new Error("You can't bid on your own auction!")
             }
 
@@ -47,6 +48,7 @@ export const bidService = {
                 throw new Error("Invalid bid, auction didn't start or it's already over!")
             }
 
+            // Dutch auction: immediate win logic
             if (auction.auctionType === "DUTCH") {
                 if (data.bidAmount !== auction.currentPrice) {
                     throw new Error("In a Dutch auction, you must buy at exactly the current ticking price!");
@@ -111,6 +113,7 @@ export const bidService = {
                 orderBy: { bidAmount: "desc" }
             })
 
+            // Japanese auction: round-based acceptance
             if (auction.auctionType === "JAPANESE") {
                 if (data.bidAmount !== auction.currentPrice) {
                     throw new Error("In a Japanese auction, you must bid exactly the current round price!");
@@ -128,6 +131,7 @@ export const bidService = {
                     throw new Error("You already accepted the price for this round!");
                 }
             }
+            // Sealed-bid auctions
             else if (auction.auctionType === "FPSB" || auction.auctionType === "VICKREY") {
                 if (data.bidAmount < auction.startingPrice) {
                     throw new Error("Your secret bid must be at least the starting price!");
@@ -138,6 +142,7 @@ export const bidService = {
                     throw new Error("You have already submitted your secret bid for this auction!");
                 }
             } 
+            // English auction
             else {
                 if (lastBid && lastBid.userId === userId) {
                     throw new Error("You're bid is already the highest!")
@@ -168,6 +173,7 @@ export const bidService = {
             return newBid;
         });
 
+        // Handle post-Dutch-auction cleanup
         if (dutchAuctionEndedData) {
             const jobsToClean = await auctionTasks.getJobs(['delayed', 'waiting', 'paused']);
             for (const job of jobsToClean) {
@@ -193,6 +199,7 @@ export const bidService = {
             return newBid;
         }
 
+        // Notify clients about new bid
         if(auction?.auctionType === "FPSB" || auction?.auctionType === "VICKREY"){
             io.to(`auction-${auctionId}`).emit("BidUpdated", {
                 auctionId: auctionId,
@@ -212,6 +219,7 @@ export const bidService = {
         return newBid;
     },
 
+    // Process promotion bids
     async placePromotingBid(data: PlacePromotingBidDTO, userId: number, auctionId: number) {
         const today = new Date();
         // today.setHours(0, 0, 0, 0);
@@ -279,6 +287,7 @@ export const bidService = {
         return newBid;
     },
 
+    // Place auto-bid settings
     async placeAutoBid(data: AutoBidDTO, userId: number, auctionId: number) {
         const autoBidEntry = await prisma.$transaction(async (tx) => {
             const auction = await tx.auction.findUnique({
@@ -376,6 +385,7 @@ export const bidService = {
         return autoBidEntry;
     },
 
+    // Automated bidding engine
     async processAutoBids(auctionId: number, userId: number) {
         let autoBidDetails: any = null;
 
@@ -483,12 +493,12 @@ export const bidService = {
             }
         });
 
-        // Kiküldjük a socket eseményt a háború VÉGÉN (így csak 1 villanás van a frontend-en)
         if (autoBidDetails) {
             io.to(`auction-${auctionId}`).emit("BidUpdated", autoBidDetails);
         }
     },
 
+    // Buy item at fixed price
     async buyNow(userId: number, auctionId: number){
         const transactionData = await prisma.$transaction(async (tx) => {
             const auction = await tx.auction.findUnique({
@@ -597,6 +607,7 @@ export const bidService = {
         }
     },
 
+    // Retrieve recent bids
     async getAuctionBids(auctionId: number, takeNumber: number) {
         const safeAuctionId = Number(auctionId);
 
@@ -631,6 +642,7 @@ export const bidService = {
 
         return result;
     },
+    // Retrieve bids made by specific user
     async getMyBids(userId: number, skip: number, take: number) {
         if (!userId) {
             throw new Error("User ID was not given!");

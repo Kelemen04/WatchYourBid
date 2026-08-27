@@ -18,7 +18,7 @@ initSocket(server);
 
 // Middleware config
 app.use(cors({
-    origin: "http://localhost:8080",
+    origin: ["http://localhost", "http://localhost:80"],
     credentials: true,
 }))
 

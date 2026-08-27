@@ -659,7 +659,6 @@ export const auctionService = {
         const result = await prisma.auction.findMany({
             where: {
                 status: "ACTIVE",
-                // 1. Általános keresőszó (cím, leírás, watchItem modell alapján)
                 ...(filters.searchTerm ? {
                     OR: [
                         { title: { contains: filters.searchTerm, mode: "insensitive" } },
@@ -675,12 +674,10 @@ export const auctionService = {
                 watchItem: {
                     category: filters.category,
                     
-                    // 2. Brand: Részleges szöveges keresés (insensitive)
                     ...(filters.brand ? {
                         brand: { contains: filters.brand, mode: "insensitive" }
                     } : {}),
 
-                    // 3. Material: Részleges szöveges keresés (insensitive)
                     ...(filters.material ? {
                         material: { contains: filters.material, mode: "insensitive" }
                     } : {}),

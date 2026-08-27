@@ -6,8 +6,6 @@ services:
     build: ./frontend
     env_file:
       - ./frontend/.env
-    ports:
-      - 8080:5173
     develop:
       watch:
         - path: ./frontend/package.json
@@ -30,8 +28,6 @@ services:
       DATABASE_URL: postgresql://${DATABASE_USERNAME}:${DATABASE_PASSWORD}@database:5432/${DATABASE_NAME}?schema=public
       MINIO_ENDPOINT: minio 
       MINIO_PORT: 9000
-    ports:
-      - 8000:8000
     develop:
       watch:
         - path: ./backend/package.json
@@ -83,6 +79,19 @@ services:
       start_period: 10s
     volumes:
       - minio_data:/data
+
+  waf:
+    image: owasp/modsecurity-crs:nginx
+    depends_on:
+      - backend
+      - web
+    ports:
+      - 80:80
+    environment:
+      - PARANOIA=1
+    volumes:
+      - ./waf/nginx.conf:/etc/nginx/templates/conf.d/default.conf.template:ro
+    
 
 volumes:
   watchyourbid:

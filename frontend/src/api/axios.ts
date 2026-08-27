@@ -56,7 +56,7 @@ export const getUserRole = (): string | null => {
 // Axios instance setup
 
 const api = axios.create({
-    baseURL: 'http://localhost:8000/api',
+    baseURL: 'http://localhost:80/api',
     withCredentials: true // Required to send cookies
 });
 
@@ -80,7 +80,7 @@ api.interceptors.response.use(
       
       try {
         // Try to get a new access token using the refresh cookie
-        const response = await axios.post('http://localhost:8000/api/auth/refresh', {}, { withCredentials: true });
+        const response = await axios.post('http://localhost:80/api/auth/refresh', {}, { withCredentials: true });
         const newAccessToken = response.data.accessToken;
         
         // Update local state and retry the failed request

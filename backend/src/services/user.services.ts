@@ -93,7 +93,6 @@ export const userService = {
 
         if (!userContext) throw new Error("User not found!");
 
-        // 1. Üzleti szabály: Ha van aukciója vagy licitje, ne töröljön
         const hasAnyAuction = await prisma.auction.findFirst({ where: { userId: userId } });
         const hasAnyBid = await prisma.bid.findFirst({ where: { userId: userId } });
 
@@ -101,16 +100,12 @@ export const userService = {
             throw new Error("You can't delete your account because you have auction or bidding history!");
         }
 
-        // 2. Tranzakció: A törlést a "levelektől" indulva a User felé haladva végezzük
         await prisma.$transaction(async (tx) => {
-            // Töröljük a kapcsolatokat
             await tx.review.deleteMany({ where: { authorId: userId } });
             
-            // Töröljük a Buyer/Seller rekordokat
             await tx.buyer.deleteMany({ where: { userId: userId } });
             await tx.seller.deleteMany({ where: { userId: userId } });
             
-            // Töröljük a címeket (ha léteznek)
             if (userContext.buyer?.shippingAddressId) {
                 await tx.address.deleteMany({ where: { id: userContext.buyer.shippingAddressId } });
             }
@@ -118,11 +113,9 @@ export const userService = {
                 await tx.address.deleteMany({ where: { id: userContext.seller.addressId } });
             }
             
-            // Végül töröljük a usert
             await tx.user.delete({ where: { id: userId } });
         });
 
-        // 3. Kép törlése (tranzakción kívül, mert ez külső rendszer)
         if (userContext.profilePicture) {
             await minioService.deleteUserProfilePicture(userId, userContext.profilePicture);
         }
@@ -246,7 +239,6 @@ export const userService = {
     async updateBuyer(data: BuyerRegisterDTO, userId: number) {
         if (!userId) throw new Error("No user id was given");
 
-        // Ellenőrizzük, hogy létezik-e a buyer profil
         const user = await prisma.user.findUnique({
             where: { id: userId },
             include: { buyer: true }
@@ -262,7 +254,6 @@ export const userService = {
                 firstName: data.firstName,
                 lastName: data.lastName,
                 phoneNumber: data.phoneNumber,
-                // A profilképet a külön upload végpont kezeli, de ha stringként jön, frissíthetjük:
                 ...(data.profilePicture && { profilePicture: data.profilePicture }),
                 
                 buyer: {
@@ -290,7 +281,6 @@ export const userService = {
     async updateSeller(data: SellerRegisterDTO, userId: number) {
         if (!userId) throw new Error("No user id was given");
 
-        // Ellenőrizzük, hogy létezik-e a seller profil
         const user = await prisma.user.findUnique({
             where: { id: userId },
             include: { seller: true }

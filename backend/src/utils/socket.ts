@@ -8,7 +8,7 @@ export let io: Server;
 export const initSocket = (server: HttpServer) => {
   io = new Server(server, {
     cors: {
-      origin: "http://localhost:8080",
+      origin: ["http://localhost", "http://localhost:80"],
       methods: ["GET", "POST"],
       credentials: true
     },
