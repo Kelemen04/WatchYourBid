@@ -97,3 +97,7 @@ volumes:
   watchyourbid:
   minio_data:
   redis_data:
+
+networks:
+  default:
+    name: zapnet
