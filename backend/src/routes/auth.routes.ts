@@ -1,7 +1,8 @@
 import express from 'express';
-import { register, login, refresh, logout, verifyEmail, resendEmailVerification, forgotPassword, resetPassword } from '../controllers/auth.controller'
+import { register, login, refresh, logout, verifyEmail, resendEmailVerification, forgotPassword, resetPassword, googleAuth, googleAuthRedirect } from '../controllers/auth.controller'
 import { RegisterSchema , LoginSchema, ForgotPassword, ResetPassword } from '../dto/auth.dto';
-import { validate } from '../middlewares/auth.middleware';
+import { socialLoginMiddleware, validate } from '../middlewares/auth.middleware';
+import passport from 'passport';
 
 const router = express.Router();
 
@@ -13,5 +14,7 @@ router.get('/verify-email',verifyEmail)
 router.post('/resend-email-verification',resendEmailVerification)
 router.post('/forgot-password',validate(ForgotPassword), forgotPassword)
 router.post('/reset-password',validate(ResetPassword), resetPassword)
+router.get('/google', googleAuth);
+router.get('/google/redirect', socialLoginMiddleware(), googleAuthRedirect);
 
 export default router;

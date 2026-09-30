@@ -1,6 +1,9 @@
-import type { Request, Response } from "express";
+import type { NextFunction, Request, Response } from "express";
 import { authService } from "../services/auth.service";
-import { type RegisterDTO , type LoginDTO, type ForgotPasswordDTO, type ResetPasswordDTO } from "../dto/auth.dto";
+import { type RegisterDTO , type LoginDTO, type ForgotPasswordDTO, type ResetPasswordDTO, type SocialLoginDTO } from "../dto/auth.dto";
+import passport from "passport";
+import { email } from "zod";
+import { profile } from "console";
 
 const cookieOptions = {
   httpOnly: true,
@@ -36,6 +39,29 @@ export async function login(req: Request, res: Response) {
     });
   } catch(e) {
     return res.status(400).json({ error: e instanceof Error ? e.message : "Unknown error" });
+  }
+}
+
+export function googleAuth(req: Request, res: Response, next: NextFunction ) {
+  passport.authenticate('google', {scope: ['profile', 'email']})(req, res, next);
+}
+
+export async function googleAuthRedirect(req: Request, res: Response ) {
+  const user = {
+    id: req.socialUser?.id as string,
+    provider: req.socialUser?.provider as string,
+    displayName: req.socialUser?.displayName as string,
+    email: req.socialUser?.email || undefined ,
+    familyName: req.socialUser?.familyName as string,
+    givenName: req.socialUser?.givenName as string,
+    profilePicture: req.socialUser?.photos as string
+  };
+
+  try {
+    await authService.socialAuthRegister(user);
+    return res.redirect('http://localhost:80/home');
+  } catch(e) {
+    return res.redirect('http://localhost:8000/api/auth/login');
   }
 }
 

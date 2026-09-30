@@ -1,6 +1,6 @@
 import argon2 from "argon2";
 import { prisma } from "../db/client";
-import type { ForgotPasswordDTO, LoginDTO, RegisterDTO, ResetPasswordDTO } from "../dto/auth.dto";
+import type { ForgotPasswordDTO, LoginDTO, RegisterDTO, ResetPasswordDTO, SocialLoginDTO } from "../dto/auth.dto";
 import jwt from "jsonwebtoken";
 import "dotenv/config";
 import { generateAccessToken, generateRefreshToken } from "../middlewares/auth.middleware";
@@ -95,7 +95,21 @@ export const authService = {
       throw new Error("Verify your email before logging in!")
     }
 
-    const isPasswordValid = await argon2.verify(existing.password, data.password);
+    if(!existing.password) {
+      const socialAccount = await prisma.account.findFirst({
+        where: {
+          userId: existing.id
+        }
+      })
+
+      if(socialAccount){
+        throw new Error(`You are already registered via ${socialAccount.provider} auth provider! Login using that account or add a password!`);
+      }
+
+      throw new Error("This account has no password set. Please use social login.");
+    }
+
+    const isPasswordValid = await argon2.verify(existing.password as string, data.password);
     if (!isPasswordValid) {
       throw new Error("Wrong password!");
     }
@@ -117,6 +131,82 @@ export const authService = {
     });
 
     const { password, ...userWithoutPassword } = existing;
+    return { accessToken, refreshToken, user: userWithoutPassword };
+  },
+
+  async socialAuthRegister(user: SocialLoginDTO) {
+    const existingAccount = await prisma.account.findUnique({
+      where:{
+        provider_providerAccountId: {
+          provider: user.provider,
+          providerAccountId: user.id,
+        }
+      }
+    });
+
+    let newUser;
+
+    if (!existingAccount) {
+      const existingUserByEmail = await prisma.user.findUnique({
+        where: { email: user.email as string }
+      });
+
+      if (existingUserByEmail) {
+        newUser = existingUserByEmail;
+        await prisma.account.create({
+          data: {
+            userId: newUser.id,
+            provider: user.provider,
+            providerAccountId: user.id
+          }
+        });
+      } else {
+        newUser = await prisma.user.create({
+          data: {
+            firstName: user.familyName as string,
+            lastName: user.givenName as string,
+            email: user.email as string,
+            profilePicture: user.profilePicture as string,
+            username: user.displayName as string,
+            emailVerified: true,
+          }
+        });
+
+        await prisma.account.create({
+          data: {
+            userId: newUser.id,
+            provider: user.provider,
+            providerAccountId: user.id
+          }
+        });
+      }
+    } else {
+      newUser = await prisma.user.findUnique({
+        where: { id: existingAccount?.userId as number}
+      })
+    }
+
+    if(!newUser) {
+      throw new Error("User doesn't exist!");
+    }
+
+    const userPayload: UserPayload = { username: newUser.username, id: newUser?.id, role: newUser?.role };
+
+    const accessToken = generateAccessToken(userPayload);
+    const refreshToken = generateRefreshToken(userPayload);
+
+    const expireDate = new Date();
+    expireDate.setDate(expireDate.getDate() + 7);
+
+    await prisma.session.create({
+      data: {
+        refreshToken: refreshToken,
+        expiresAt: expireDate,
+        userId: newUser.id
+      }
+    });
+
+    const { password, ...userWithoutPassword } = newUser;
     return { accessToken, refreshToken, user: userWithoutPassword };
   },
 

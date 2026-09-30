@@ -12,7 +12,7 @@ model User {
   username          String          @unique
   firstName         String?         @map("first_name")
   lastName          String?         @map("last_name")
-  password          String
+  password          String?
   email             String          @unique
   passwordResetCode String?         @map("password_reset_code")
   status            UserStatus      @default(PENDING)
@@ -30,9 +30,21 @@ model User {
   bids              Bid[]
   autoBids          AutoBid[]
   auctions          Auction[]
+  account           Account[]
   writtenReviews    Review[]        @relation("WrittenReviews")
   promotingBids     PromotingBids[]
   transactions      Transaction[]
+}
+
+model Account {
+  id Int @id @default(autoincrement())
+
+  provider          String
+  providerAccountId String
+  user              User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId            Int?
+
+  @@unique([provider, providerAccountId])
 }
 
 enum UserStatus {

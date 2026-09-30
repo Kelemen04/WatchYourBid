@@ -17,6 +17,16 @@ export const LoginSchema = z.object({
   password: z.string().min(1, "Password is mandatory!"),
 });
 
+export const SocialLoginSchema = z.object({
+  id: z.string(),
+  provider: z.string(),
+  displayName: z.string().min(1, "Username is mandatory!"),
+  familyName: z.string(),
+  givenName: z.string(),
+  email: z.string().email("Invalid email!").toLowerCase().trim().optional(),
+  profilePicture: z.string().nullable(),
+});
+
 export const ForgotPassword = z.object({
   email: z.string().email("Invalid email!").toLowerCase().trim(),
 })
@@ -33,6 +43,7 @@ export const ResetPassword = z.object({
 })
 
 export type LoginDTO = z.infer<typeof LoginSchema>;
+export type SocialLoginDTO = z.infer<typeof SocialLoginSchema>;
 export type RegisterDTO = z.infer<typeof RegisterSchema>;
 export type ForgotPasswordDTO = z.infer<typeof ForgotPassword>;
 export type ResetPasswordDTO = z.infer<typeof ResetPassword>;

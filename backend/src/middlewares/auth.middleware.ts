@@ -3,6 +3,7 @@ import type { ZodType } from "zod";
 import "dotenv/config";
 import jwt from "jsonwebtoken";
 import type { UserPayload } from "../types/express";
+import passport from "passport";
 
 // Validate request body against Zod schema
 export function validate(schema: ZodType) {
@@ -74,4 +75,26 @@ export function generateAccessToken(user: UserPayload) {
 
 export function generateRefreshToken(user: UserPayload) {
     return jwt.sign(user, process.env.REFRESH_TOKEN_SECRET as string, { expiresIn: '7d' });
+}
+
+export function socialLoginMiddleware() {
+    return (req: Request, res: Response, next: NextFunction) => {
+        passport.authenticate('google', { session: false}, (err, profile) => {
+            if (err || !profile) {
+                return res.redirect('http://localhost:80/login');
+            }
+
+            req.socialUser = {
+                id: profile.id,
+                provider: profile.provider,
+                displayName: profile.displayName,
+                email: profile.emails?.[0]?.value,
+                familyName: profile.name.familyName,
+                givenName: profile.name.givenName,
+                photos: profile.photos?.[0]?.value,
+            };
+
+            next();
+        })(req, res, next);
+    }
 }

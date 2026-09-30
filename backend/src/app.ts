@@ -7,6 +7,7 @@ import { initSocket } from './utils/socket';
 import { promotingTasks } from './jobs/auction.queues';
 import "./jobs/auction.workers";
 import { ensureBucket } from './db/minio';
+import './config/passport-setup'
 
 // Initialize app and server
 const app = express();
