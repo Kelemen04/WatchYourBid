@@ -58,7 +58,9 @@ export async function googleAuthRedirect(req: Request, res: Response ) {
   };
 
   try {
-    await authService.socialAuthRegister(user);
+    const result = await authService.socialAuthRegister(user);
+    res.cookie('refreshToken', result.refreshToken, cookieOptions);
+    
     return res.redirect('http://localhost:80/home');
   } catch(e) {
     return res.redirect('http://localhost:8000/api/auth/login');

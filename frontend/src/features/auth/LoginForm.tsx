@@ -5,6 +5,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import type { AxiosError } from "axios";
 import { Link } from "react-router-dom";
 
+import GoogleAuthButton from "../../components/layout/GoogleAuthButton";
+
 export default function LoginForm() {
   const { mutate, isPending } = useLogin();
 
@@ -107,6 +109,8 @@ export default function LoginForm() {
         >
           {isPending ? "Logging in..." : "Login"}
         </button>
+
+        <GoogleAuthButton />
 
         {/* Forgot Password Link */}
         <Link
